@@ -2,6 +2,7 @@ package com.example.madar.Model;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -32,11 +33,13 @@ public class User {
     @Column(columnDefinition = "varchar(100) not null unique")
     private String email;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotEmpty(message = "Password is required")
     @Size(min = 8, max = 64, message = "Password must be between 8 and 64 characters")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9\\s])\\S{8,64}$", message = "Password must contain uppercase, lowercase, number, and special character")
     @Column(columnDefinition = "varchar(255) not null")
     private String password;
+
 
     @NotEmpty(message = "role is required")
     @Pattern(regexp = "^(ADMIN|USER)$", message = "Role must be ADMIN or USER")
