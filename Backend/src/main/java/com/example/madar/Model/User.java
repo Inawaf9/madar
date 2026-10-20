@@ -8,6 +8,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -64,6 +65,10 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<Payment> payments;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<PropertyComparison> propertyComparisons;
 
 
 
