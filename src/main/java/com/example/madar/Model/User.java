@@ -37,6 +37,11 @@ public class User {
     @Column(columnDefinition = "varchar(255) not null")
     private String password;
 
+    @NotEmpty(message = "role is required")
+    @Pattern(regexp = "^(ADMIN|USER)$", message = "Role must be ADMIN or USER")
+    @Column(columnDefinition = "varchar(20) not null check (role in ('ADMIN','USER'))")
+    private String role;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
@@ -60,9 +65,7 @@ public class User {
     @JsonIgnore
     private Set<Payment> payments;
 
-    @OneToMany(mappedBy = "user")
-    @JsonIgnore
-    private Set<LifestyleInterest> lifestyleInterests;
+
 
     @PrePersist
     public void onCreate() {

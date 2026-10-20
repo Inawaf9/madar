@@ -43,6 +43,11 @@ public class PlacePreference {
     @Column(nullable = false)
     private Integer importance;
 
+
+    @NotNull(message = "visitPerWeek is required")
+    @Column(nullable = false)
+    private Integer visitPerWeek;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
