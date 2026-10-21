@@ -1,7 +1,7 @@
 package com.example.madar.Client;
 
 import com.example.madar.Api.ApiException;
-import com.example.madar.DTO.Out.GooglePlacesResponseDTO;
+import com.example.madar.DTO.Out.GooglePlaces.GooglePlacesResponseDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;

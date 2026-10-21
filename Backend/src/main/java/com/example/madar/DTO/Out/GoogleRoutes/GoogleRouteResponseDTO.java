@@ -1,4 +1,4 @@
-package com.example.madar.DTO.Out;
+package com.example.madar.DTO.Out.GoogleRoutes;
 
 
 

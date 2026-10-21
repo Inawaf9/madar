@@ -1,17 +1,14 @@
 package com.example.madar.Controller;
 
 import com.example.madar.Api.ApiResponse;
-import com.example.madar.DTO.Out.CommuteSummaryResponseDTO;
-import com.example.madar.DTO.Out.GooglePlacesResponseDTO;
+import com.example.madar.DTO.Out.Commute.CommuteSummaryResponseDTO;
+import com.example.madar.DTO.Out.GooglePlaces.GooglePlacesResponseDTO;
 import com.example.madar.Model.PlacePreference;
 import com.example.madar.Service.PlacePreferenceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.example.madar.DTO.Out.CommuteResponseDTO;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/place-preference")

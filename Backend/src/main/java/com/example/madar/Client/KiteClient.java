@@ -1,7 +1,7 @@
 package com.example.madar.Client;
 
 import com.example.madar.Api.ApiException;
-import com.example.madar.DTO.In.KiteDTO;
+import com.example.madar.DTO.In.Property.KiteDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;

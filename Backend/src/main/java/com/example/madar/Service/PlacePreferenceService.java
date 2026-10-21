@@ -2,8 +2,8 @@ package com.example.madar.Service;
 
 import com.example.madar.Api.ApiException;
 import com.example.madar.Client.GooglePlacesClient;
-import com.example.madar.DTO.Out.CommuteSummaryResponseDTO;
-import com.example.madar.DTO.Out.GooglePlacesResponseDTO;
+import com.example.madar.DTO.Out.Commute.CommuteSummaryResponseDTO;
+import com.example.madar.DTO.Out.GooglePlaces.GooglePlacesResponseDTO;
 import com.example.madar.Model.PlacePreference;
 import com.example.madar.Model.User;
 import com.example.madar.Repository.PlacePreferenceRepository;
@@ -12,8 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import com.example.madar.Client.GoogleRoutesClient;
-import com.example.madar.DTO.Out.CommuteResponseDTO;
-import com.example.madar.DTO.Out.GoogleRouteResponseDTO;
+import com.example.madar.DTO.Out.Commute.CommuteResponseDTO;
+import com.example.madar.DTO.Out.GoogleRoutes.GoogleRouteResponseDTO;
 import java.util.ArrayList;
 
 import java.util.List;

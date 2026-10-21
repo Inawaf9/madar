@@ -2,10 +2,10 @@ package com.example.madar.Service;
 
 import com.example.madar.Api.ApiException;
 import com.example.madar.Client.KiteClient;
-import com.example.madar.DTO.In.KiteDTO;
-import com.example.madar.DTO.Out.MatchSummaryDTO;
-import com.example.madar.DTO.Out.PriceStatsDTO;
-import com.example.madar.DTO.Out.PropertyDTO;
+import com.example.madar.DTO.In.Property.KiteDTO;
+import com.example.madar.DTO.Out.Property.MatchSummaryDTO;
+import com.example.madar.DTO.Out.Property.PriceStatsDTO;
+import com.example.madar.DTO.Out.Property.PropertyDTO;
 import com.example.madar.Model.HousingPreference;
 import com.example.madar.Model.User;
 import com.example.madar.Repository.HousingPreferenceRepository;

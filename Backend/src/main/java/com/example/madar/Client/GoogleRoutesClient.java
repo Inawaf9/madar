@@ -1,7 +1,7 @@
 package com.example.madar.Client;
 
 import com.example.madar.Api.ApiException;
-import com.example.madar.DTO.Out.GoogleRouteResponseDTO;
+import com.example.madar.DTO.Out.GoogleRoutes.GoogleRouteResponseDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;

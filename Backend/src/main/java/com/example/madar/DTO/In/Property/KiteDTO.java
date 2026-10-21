@@ -1,4 +1,4 @@
-package com.example.madar.DTO.In;
+package com.example.madar.DTO.In.Property;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
