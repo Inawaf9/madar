@@ -1,12 +1,17 @@
 package com.example.madar.Controller;
 
 import com.example.madar.Api.ApiResponse;
+import com.example.madar.DTO.Out.CommuteSummaryResponseDTO;
+import com.example.madar.DTO.Out.GooglePlacesResponseDTO;
 import com.example.madar.Model.PlacePreference;
 import com.example.madar.Service.PlacePreferenceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.madar.DTO.Out.CommuteResponseDTO;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/place-preference")
@@ -48,4 +53,31 @@ public class PlacePreferenceController {
         placePreferenceService.updateImportance(userId, placeId, importance);
         return ResponseEntity.status(200).body(new ApiResponse("Place importance updated successfully"));
     }
+
+
+    // Get commute details and estimated weekly travel time
+    @GetMapping("/calculate-commutes/{userId}")
+    public ResponseEntity<CommuteSummaryResponseDTO> calculateCommutes(@PathVariable Integer userId, @RequestParam Double latitude, @RequestParam Double longitude) {
+        CommuteSummaryResponseDTO response = placePreferenceService.getCommuteAnalysis(userId, latitude, longitude);
+        return ResponseEntity.status(200).body(response);
+    }
+
+
+    // Search for nearby services around a selected location
+    @GetMapping("/nearby-services")
+    public ResponseEntity<GooglePlacesResponseDTO> getNearbyServices(@RequestParam Double latitude, @RequestParam Double longitude, @RequestParam String placeType, @RequestParam(defaultValue = "2000") Double radiusMeters) {
+
+        GooglePlacesResponseDTO response = placePreferenceService.getNearbyServices(latitude, longitude, placeType, radiusMeters);
+
+        return ResponseEntity.status(200).body(response);
+    }
+
+
+
+
+
+
+
+
+
 }
