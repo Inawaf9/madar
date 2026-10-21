@@ -161,6 +161,13 @@ public class KiteClient {
         return callListings(url);
     }
 
+    //search inside a box on the map with a price range (for similar properties)
+    public KiteDTO.ListResponse searchInBoxWithPrice(String city, String listingType, String propertyType, Integer minPrice, Integer maxPrice, String bbox){
+        String url = "/listings?city=" + city + "&listing_type=" + listingType + "&limit=20&bbox=" + bbox;
+        url = addFilters(url, propertyType, minPrice, maxPrice);
+        return callListings(url);
+    }
+
     //shared call for listing searches
     private KiteDTO.ListResponse callListings(String url){
         try{
@@ -170,5 +177,12 @@ public class KiteClient {
         }catch (RestClientException e){
             throw new ApiException("Kite is unavailable right now");
         }
+    }
+
+    //listings in districts with an optional price range
+    public KiteDTO.ListResponse searchInNeighborhoodsWithPrice(String city, String listingType, String propertyType, Integer minPrice, Integer maxPrice, String neighborhoodIds){
+        String url = "/listings?city=" + city + "&listing_type=" + listingType + "&limit=20&neighborhood_id=" + neighborhoodIds;
+        url = addFilters(url, propertyType, minPrice, maxPrice);
+        return callListings(url);
     }
 }

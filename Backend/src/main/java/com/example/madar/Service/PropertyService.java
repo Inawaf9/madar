@@ -42,20 +42,22 @@ public class PropertyService {
         return convert(response.getData());
     }
 
-    //by my housing preference
-    public List<PropertyDTO> getByPreferences(Integer userId){
+
+    //properties that match my housing preference inside my district
+    public List<PropertyDTO> getByPreferenceInMyDistrict(Integer userId){
         HousingPreference preference = getPreference(userId);
+
+        //this endpoint needs a district, the whole city is within-budget
+        if(preference.getDistrict() == null || preference.getDistrict().isEmpty()){
+            throw new ApiException("Add a district to your preference, or use within-budget to search the whole city");
+        }
+
         String city = preference.getCity().toLowerCase();
         String listingType = preference.getListingType().toLowerCase();
         String propertyType = preference.getPropertyType().toLowerCase();
         int budget = preference.getMaxBudget().intValue();
 
-        //no district:search the whole city
-        if(preference.getDistrict() == null || preference.getDistrict().isEmpty()){
-            return fetch(city, listingType, propertyType, null, budget);
-        }
-
-        //district ask Kite for this neighborhood only
+        //ask Kite for this neighborhood only
         Integer neighborhoodId = findNeighborhoodId(city, preference.getDistrict());
         return convertAll(kiteClient.searchInNeighborhood(city, listingType, propertyType, budget, neighborhoodId));
     }
@@ -114,9 +116,18 @@ public class PropertyService {
 
     //several districts حيين او اكثر عادي
     public List<PropertyDTO> getByDistricts(String city, String listingType, String propertyType, String districts){
+        return getByDistrictsAndPrice(city, listingType, propertyType, districts, null, null);
+    }
+
+
+    //several districts with an optional price range (prices can be null)
+    public List<PropertyDTO> getByDistrictsAndPrice(String city, String listingType, String propertyType, String districts, Integer minPrice, Integer maxPrice){
         propertyType = checkType(propertyType);
         checkSearch(city, listingType, propertyType);
         city = city.toLowerCase();
+        if(minPrice != null && maxPrice != null && minPrice > maxPrice){
+            throw new ApiException("Invalid price range");
+        }
 
         KiteDTO.NeighborhoodsResponse response = kiteClient.getNeighborhoods(city);
         if(response == null || response.getData() == null){
@@ -125,20 +136,18 @@ public class PropertyService {
 
         String ids = "";
         for(String district : districts.split(",")){
-            String name = district.trim();
+            String name = normalizeName(district);
             Integer id = null;
             for(KiteDTO.Neighborhood neighborhood : response.getData()){
-                if(name.equals(neighborhood.getNameAr()) || name.equalsIgnoreCase(neighborhood.getNameEn())){
+                if(name.equals(normalizeName(neighborhood.getNameAr())) || name.equals(normalizeName(neighborhood.getNameEn()))){
                     id = neighborhood.getId();
                     break;
                 }
             }
 
-
-            if(id== null){
-                throw new ApiException("District '" + name + "' was not found in " + city);
+            if(id == null){
+                throw new ApiException("District '" + district.trim() + "' was not found in " + city);
             }
-
 
             if(!ids.isEmpty()){
                 ids += ",";
@@ -146,10 +155,8 @@ public class PropertyService {
             ids += id;
         }
 
-
-        return convertAll(kiteClient.searchInNeighborhoods(city, listingType.toLowerCase(), propertyType, ids));
+        return convertAll(kiteClient.searchInNeighborhoodsWithPrice(city, listingType.toLowerCase(), propertyType, minPrice, maxPrice, ids));
     }
-
     //price range
     public List<PropertyDTO> getByPriceRange(String city, String listingType, String propertyType, Integer minPrice, Integer maxPrice){
         if(minPrice < 0 || maxPrice <= 0 || minPrice > maxPrice){
@@ -236,15 +243,12 @@ public class PropertyService {
             total = countResponse.getData().getTotal();
         }
         //real cheapest in the market
-        Integer cheapest = null;
-        KiteDTO.ListResponse cheapestResponse = kiteClient.getCheapestListing(city, listingType, propertyType, budget);
-        if(cheapestResponse != null && cheapestResponse.getData() != null && !cheapestResponse.getData().isEmpty()){
-            cheapest = cheapestResponse.getData().get(0).getPrice().getYearlySar();
-        }
+        Integer cheapest = getFirstPrice(kiteClient.getCheapestListing(city, listingType, propertyType, budget));
         return new MatchSummaryDTO(budget, total, inMyDistrict, cheapest);
     }
 
-    //similar properties (same city and type, price within 20%)
+
+    //similar properties: same type, price within 20%, rooms ±1, within 5 km of the property, nearest first
     public List<PropertyDTO> getSimilar(String source, String externalId){
         PropertyDTO base = getPropertyById(source, externalId);
         if(base.getPrice() == null || base.getCity() == null){
@@ -252,14 +256,51 @@ public class PropertyService {
         }
         int minPrice = (int) (base.getPrice() * 0.8);
         int maxPrice = (int) (base.getPrice() * 1.2);
-        List<PropertyDTO> properties = fetch(base.getCity(), base.getListingType(), base.getPropertyType(), minPrice, maxPrice);
 
+        //no location: search the whole city by price and rooms only
+        if(base.getLatitude() == null || base.getLongitude() == null){
+            List<PropertyDTO> properties = fetch(base.getCity(), base.getListingType(), base.getPropertyType(), minPrice, maxPrice);
+            List<PropertyDTO> similar = new ArrayList<>();
+            for(PropertyDTO property : properties){
+                if(property.getExternalId().equals(base.getExternalId())){
+                    continue;
+                }
+                //bedrooms: at most 1 room difference (skip the check if one of them is unknown)
+                if(base.getBedrooms() != null && property.getBedrooms() != null && Math.abs(property.getBedrooms() - base.getBedrooms()) > 1){
+                    continue;
+                }
+                similar.add(property);
+            }
+            return similar;
+        }
+
+        //box of 5 km around the property
+        double radiusKm = 5;
+        double latDiff = radiusKm / 111.0;
+        double lngDiff = radiusKm / (111.0 * Math.cos(Math.toRadians(base.getLatitude())));
+        String bbox = String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f",
+                base.getLongitude() - lngDiff, base.getLatitude() - latDiff, base.getLongitude() + lngDiff, base.getLatitude() + latDiff);
+
+        List<PropertyDTO> properties = convertAll(kiteClient.searchInBoxWithPrice(base.getCity().toLowerCase(), base.getListingType().toLowerCase(),
+                base.getPropertyType().toLowerCase(), minPrice, maxPrice, bbox));
+
+        //keep only the real circle, skip the property itself, nearest first
         List<PropertyDTO> similar = new ArrayList<>();
         for(PropertyDTO property : properties){
-            if(!property.getExternalId().equals(base.getExternalId())){
+            if(property.getExternalId().equals(base.getExternalId()) || property.getLatitude() == null || property.getLongitude() == null){
+                continue;
+            }
+            //bedrooms: at most 1 room difference (skip the check if one of them is unknown)
+            if(base.getBedrooms() != null && property.getBedrooms() != null && Math.abs(property.getBedrooms() - base.getBedrooms()) > 1){
+                continue;
+            }
+            double distance = calculateDistanceKm(base.getLatitude(), base.getLongitude(), property.getLatitude(), property.getLongitude());
+            if(distance <= radiusKm){
+                property.setDistanceKm(Math.round(distance * 10) / 10.0);
                 similar.add(property);
             }
         }
+        similar.sort(Comparator.comparing(PropertyDTO::getDistanceKm));
         return similar;
     }
 
@@ -393,5 +434,46 @@ public class PropertyService {
             return null;
         }
         return convert(response.getData().get(0)).getPrice();
+    }
+
+    //districts in a city whose name contains the text (Arabic or English)
+    public List<String> searchDistricts(String city, String text){
+        KiteDTO.NeighborhoodsResponse response = kiteClient.getNeighborhoods(city.toLowerCase());
+        if(response == null || response.getData() == null){
+            throw new ApiException("Could not load neighborhoods for " + city);
+        }
+        String search = normalizeName(text);
+        List<String> names = new ArrayList<>();
+        for(KiteDTO.Neighborhood neighborhood : response.getData()){
+            boolean arabic = normalizeName(neighborhood.getNameAr()).contains(search);
+            boolean english = normalizeName(neighborhood.getNameEn()).contains(search);
+            if(arabic || english){
+                System.out.println("Kite district name: [" + neighborhood.getNameAr() + "]");
+                names.add(neighborhood.getNameAr());
+            }
+            if(names.size() == 10){
+                break;
+            }
+        }
+        return names;
+    }
+
+    //make district names comparable: Arabic digits to English, remove "حي" and all spaces
+    private String normalizeName(String name){
+        if(name == null){
+            return "";
+        }
+        String arabic = "٠١٢٣٤٥٦٧٨٩";
+        String clean = "";
+        for(char c : name.toCharArray()){
+            int index = arabic.indexOf(c);
+            if(index >= 0){
+                clean += index;
+            }else{
+                clean += c;
+            }
+        }
+        clean = clean.replace("حي ", "").replace(" ", "").trim().toLowerCase();
+        return clean;
     }
 }

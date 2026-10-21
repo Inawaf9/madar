@@ -24,10 +24,10 @@ public class PropertyController {
         return ResponseEntity.status(200).body(propertyService.getPropertyById(source, externalId));
     }
 
-    //properties that match my housing preference
-    @GetMapping("/by-preferences/{userId}")
-    public ResponseEntity<?> getByPreferences(@PathVariable Integer userId){
-        return ResponseEntity.status(200).body(propertyService.getByPreferences(userId));
+    //properties that match my housing preference inside my district "ONLYYYY"
+    @GetMapping("/by-preference-in-my-district/{userId}")
+    public ResponseEntity<?> getByPreferenceInMyDistrict(@PathVariable Integer userId){
+        return ResponseEntity.status(200).body(propertyService.getByPreferenceInMyDistrict(userId));
     }
 
     //properties near a location within a radius in km
