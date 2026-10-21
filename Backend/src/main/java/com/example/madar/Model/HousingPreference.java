@@ -22,10 +22,12 @@ public class HousingPreference {
     @Column(columnDefinition = "varchar(100) not null")
     private String region;
 
+    //عدلتها على بيانات ال kite
     @NotEmpty(message = "City is required")
-    @Column(columnDefinition = "varchar(100) not null")
+    @Pattern(regexp = "^[a-z-]+$", message = "City must be in English lowercase like riyadh or jeddah")
     private String city;
 
+    @Size(max = 100, message = "District must be less than 100 characters")
     @Column(columnDefinition = "varchar(100)")
     private String district;
 
@@ -34,7 +36,9 @@ public class HousingPreference {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal maxBudget;
 
+    //عدلتها
     @NotEmpty(message = "Property type is required")
+    @Pattern(regexp = "^(apartment|villa|floor|duplex|building)$", message = "Property type must be apartment, villa, floor, duplex or building")
     @Column(columnDefinition = "varchar(30) not null")
     private String propertyType;
 

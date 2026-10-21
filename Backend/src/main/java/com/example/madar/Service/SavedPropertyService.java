@@ -37,6 +37,7 @@ private final SavedPropertyRepository savedPropertyRepository;
      if(user==null){
          throw new ApiException("User Not Found");
      }
+     savedProperty.setSource(savedProperty.getSource().toUpperCase());
      boolean exist=savedPropertyRepository.existsByUser_IdAndSourceAndExternalPropertyId(user.getId(),savedProperty.getSource(),savedProperty.getExternalPropertyId());
      if(exist){
          throw new ApiException("This property is already in your saved list");

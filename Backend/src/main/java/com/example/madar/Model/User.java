@@ -41,7 +41,7 @@ public class User {
     private String password;
 
 
-    @NotEmpty(message = "role is required")
+    @JsonIgnore
     @Pattern(regexp = "^(ADMIN|USER)$", message = "Role must be ADMIN or USER")
     @Column(length = 20, nullable = false)
     private String role;
