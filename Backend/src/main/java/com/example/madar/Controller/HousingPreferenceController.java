@@ -5,6 +5,7 @@ package com.example.madar.Controller;
 import com.example.madar.Api.ApiResponse;
 import com.example.madar.Model.HousingPreference;
 import com.example.madar.Service.HousingPreferenceService;
+import com.example.madar.Service.PropertyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.List;
 public class HousingPreferenceController {
 
     private final HousingPreferenceService housingPreferenceService;
+    private final PropertyService propertyService;
 
 
     // GET ALL
@@ -56,5 +58,15 @@ public class HousingPreferenceController {
         housingPreferenceService.deleteHousingPreference(userId, preferenceId);
         return ResponseEntity.status(200).body(new ApiResponse("Housing preference deleted successfully"));
     }
+
+
+    //اضفت الايند بوينت حقتي عل ذا الباث (deema)
+
+    // MATCH SUMMARY
+    @GetMapping("/match-summary/{userId}")
+    public ResponseEntity<?> getMatchSummary(@PathVariable Integer userId) {
+        return ResponseEntity.status(200).body(propertyService.getMatchSummary(userId));
+    }
+
 }
 
