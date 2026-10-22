@@ -208,9 +208,13 @@ public class PropertyService {
 
 
 
-
-    //near a location,Kite searches inside a box around the point
+    //near a location, Kite searches inside a box around the point
     public List<PropertyDTO> getNearLocation(String city, String listingType, String propertyType, Double latitude, Double longitude, Double radiusKm){
+        return getNearLocationWithPrice(city, listingType, propertyType, latitude, longitude, radiusKm, null);
+    }
+
+    //near a location with an optional maximum price (null = no price limit)
+    public List<PropertyDTO> getNearLocationWithPrice(String city, String listingType, String propertyType, Double latitude, Double longitude, Double radiusKm, Integer maxPrice){
         if(radiusKm<=0||radiusKm>50){
             throw new ApiException("Radius must be between 0 and 50 km");
         }
@@ -226,7 +230,13 @@ public class PropertyService {
         double lngDiff = radiusKm / (111.0 * Math.cos(Math.toRadians(latitude)));
         String bbox = String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f",
                 longitude - lngDiff, latitude - latDiff, longitude + lngDiff, latitude + latDiff);
-        List<PropertyDTO> properties = convertAll(kiteClient.searchInBox(city.toLowerCase(), listingType.toLowerCase(), propertyType, bbox));
+
+        List<PropertyDTO> properties;
+        if(maxPrice == null){
+            properties = convertAll(kiteClient.searchInBox(city.toLowerCase(), listingType.toLowerCase(), propertyType, bbox));
+        }else{
+            properties = convertAll(kiteClient.searchInBoxWithPrice(city.toLowerCase(), listingType.toLowerCase(), propertyType, 0, maxPrice, bbox));
+        }
 
         //the box has corners, so keep only what is inside the real circle
         List<PropertyDTO> nearby = new ArrayList<>();
@@ -243,7 +253,6 @@ public class PropertyService {
         nearby.sort(Comparator.comparing(PropertyDTO::getDistanceKm));
         return nearby;
     }
-
 
 
 

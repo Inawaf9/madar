@@ -196,7 +196,7 @@ public class PropertyTools {
                              @ToolParam(description = "rent or sale", required = false) String listingType,
                              @ToolParam(description = "apartment, villa, floor, duplex, building or all", required = false) String propertyType,
                              @ToolParam(description = "minimum price in SAR, optional (leave empty if the user did not say)", required = false) Integer minPrice,
-                             @ToolParam(description = "maximum price in SAR") Integer maxPrice,
+                             @ToolParam(description = "maximum yearly price in SAR. Leave it EMPTY when the user says my budget, my cost or within my budget: the user's saved budget is used", required = false) Integer maxPrice,
                              @ToolParam(description = "Arabic district names separated by comma, like النرجس. Required if the user mentioned a district", required = false) String districts){
         try{
             city = orPreference(city, "city");
@@ -205,9 +205,16 @@ public class PropertyTools {
             if(minPrice == null){
                 minPrice = 0;
             }
+            //no price from the user: use the budget from the housing preference
             if(maxPrice == null){
-                return "Error: maximum price is required";
+                HousingPreference preference = housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+                if(preference == null || preference.getMaxBudget() == null){
+                    return "Error: ask the user for a maximum price";
+                }
+                maxPrice = preference.getMaxBudget().intValue();
+                usedData += "ميزانية المستخدم: " + maxPrice + " ريال\n";
             }
+            System.out.println("priceRange called: city=" + city + ", type=" + propertyType + ", min=" + minPrice + ", max=" + maxPrice);
 
             //the user asked for a district: search only inside it
             if(districts != null && !districts.isBlank()){
@@ -232,21 +239,78 @@ public class PropertyTools {
 
 
 
-    @Tool(description = "Listings near a point (latitude, longitude) within a radius in km, nearest first. Use coordinates from myPlaces, never guess them. City, listing type and property type are optional, the user's preference is used if they are empty")
+    @Tool(description = "Listings near a point (latitude, longitude) within a radius in km, nearest first. Use coordinates from myPlaces, never guess them. If the user also says my budget or within my budget, set withinMyBudget to true. City, listing type and property type are optional, the user's preference is used if they are empty")
     public Object nearLocation(@ToolParam(description = "city in English lowercase, like riyadh or jeddah", required = false) String city,
                                @ToolParam(description = "rent or sale", required = false) String listingType,
                                @ToolParam(description = "apartment, villa, floor, duplex, building or all", required = false) String propertyType,
                                @ToolParam(description = "latitude of the point") Double latitude,
                                @ToolParam(description = "longitude of the point") Double longitude,
-                               @ToolParam(description = "radius in km, from 1 to 50") Double radiusKm){
+                               @ToolParam(description = "radius in km, from 1 to 50") Double radiusKm,
+                               @ToolParam(description = "true if the user wants listings within the saved budget", required = false) Boolean withinMyBudget,
+                               @ToolParam(description = "maximum yearly price in SAR if the user said a number", required = false) Integer maxPrice){
         try{
             city = orPreference(city, "city");
             listingType = orPreference(listingType, "listingType");
             propertyType = orPreference(propertyType, "propertyType");
 
-            return remember(propertyService.getNearLocation(city, listingType, propertyType, latitude, longitude, radiusKm));
+            //"within my budget": take the budget from the housing preference
+            if(maxPrice == null && Boolean.TRUE.equals(withinMyBudget)){
+                HousingPreference preference = housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+                if(preference != null && preference.getMaxBudget() != null){
+                    maxPrice = preference.getMaxBudget().intValue();
+                    usedData += "ميزانية المستخدم: " + maxPrice + " ريال\n";
+                }
+            }
+            System.out.println("nearLocation called: city=" + city + ", radius=" + radiusKm + ", max=" + maxPrice);
+            return remember(propertyService.getNearLocationWithPrice(city, listingType, propertyType, latitude, longitude, radiusKm, maxPrice));
         }catch (ApiException e){
             return "Error: " + e.getMessage();
+        }catch (Exception e){
+            return UNEXPECTED_ERROR;
+        }
+    }
+
+
+    @Tool(description = "Distance in km between one card from the previous answer and one of the user's important places (like work). ALWAYS use this for any distance question, never calculate or guess a distance yourself")
+    public String distanceToMyPlace(@ToolParam(description = "card number from the previous answer, 1 for the first") Integer number,
+                                    @ToolParam(description = "place name or type, like work or دوام. Empty if the user has one place", required = false) String place){
+        try{
+            if(number == null || number < 1 || number > previousCards.size()){
+                return track("لا يوجد عقار رقم " + number + " في الرد السابق.");
+            }
+            PropertyDTO card = previousCards.get(number - 1);
+            if(card.getLatitude() == null || card.getLongitude() == null){
+                return track("موقع هذا العقار غير موجود في الإعلان، فما نقدر نحسب المسافة.");
+            }
+
+            List<PlacePreference> places = placePreferenceRepository.findPlacePreferencesByUser_Id(userId);
+            if(places.isEmpty()){
+                return track("المستخدم ما أضاف أماكن مهمة. قل له يضيف مكان دوامه أول.");
+            }
+            //find the place by name or type, or take the only place
+            PlacePreference chosen = null;
+            if(places.size() == 1){
+                chosen = places.get(0);
+            }
+            for(PlacePreference p : places){
+                if(place != null && !place.isBlank()
+                        && ((p.getName() != null && p.getName().toLowerCase().contains(place.toLowerCase()))
+                        || (p.getType() != null && p.getType().toLowerCase().contains(place.toLowerCase())))){
+                    chosen = p;
+                    break;
+                }
+            }
+            if(chosen == null){
+                String names = "";
+                for(PlacePreference p : places){
+                    names += p.getName() + " (" + p.getType() + ")، ";
+                }
+                return track("ما عرفت أي مكان يقصد. أماكنه: " + names + "اسأله أي واحد.");
+            }
+
+            double distance = propertyService.calculateDistanceKm(chosen.getLatitude(), chosen.getLongitude(), card.getLatitude(), card.getLongitude());
+            distance = Math.round(distance * 10) / 10.0;
+            return track("المسافة بين عقار " + number + " في حي " + card.getNeighborhood() + " و " + chosen.getName() + ": " + distance + " كم (خط مستقيم)");
         }catch (Exception e){
             return UNEXPECTED_ERROR;
         }
@@ -434,6 +498,13 @@ public class PropertyTools {
                     + "، المساحة " + (p.getAreaSqm() == null ? "غير مذكورة" : Math.round(p.getAreaSqm()) + " متر مربع");
             if(p.getDistanceKm() != null){
                 line += "، المسافة " + p.getDistanceKm() + " كم";
+            }
+            //bathrooms and the owner's description are real data too
+            if(p.getBathrooms() != null){
+                line += "، دورات المياه " + p.getBathrooms();
+            }
+            if(p.getDescription() != null && !p.getDescription().isBlank()){
+                line += "\nوصف عقار " + (i + 1) + ": " + p.getDescription();
             }
             usedData += line + "\n";
         }

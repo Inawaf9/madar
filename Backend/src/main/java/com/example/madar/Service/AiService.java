@@ -272,10 +272,31 @@ public class AiService {
                 return false;
             }
         }
-        //rooms written as words can not be checked, so they are not allowed
-        if(text.contains("غرفتين") || text.contains("غرفة وحدة") || text.contains("غرفة واحدة")
-                || lowerText.contains("one bedroom") || lowerText.contains("two bedroom") || lowerText.contains("three bedroom")){
-            return false;
+        //rooms written as words: change the word to a number and check it like "2 غرف"
+        String[][] roomWords = {
+                {"غرفة وحدة", "1"}, {"غرفة واحدة", "1"}, {"غرفتين", "2"},
+                {"one bedroom", "1"}, {"two bedroom", "2"}, {"three bedroom", "3"}
+        };
+        for(String[] word : roomWords){
+            if(lowerText.contains(word[0]) && !lowerAllowed.contains("عدد الغرف " + word[1])){
+                return false;
+            }
+        }
+        //distances are small numbers too: "4.5 كم" or "3 km" must exist in the data
+        List<Double> allowedNumbers = extractNumbers(allowedText);
+        Matcher km = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*(كم|كيلو|km|kilomet)").matcher(lowerText);
+        while(km.find()){
+            double distance = Double.parseDouble(km.group(1));
+            boolean found = false;
+            for(Double real : allowedNumbers){
+                if(Math.abs(real - distance) < 0.01){
+                    found = true;
+                    break;
+                }
+            }
+            if(!found){
+                return false;
+            }
         }
         return true;
     }
