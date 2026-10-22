@@ -36,6 +36,26 @@ public class Payment {
     @Column(unique = true, length = 150)
     private String providerPaymentId;
 
+    // New checkout amounts use the smallest currency unit. Legacy rows remain unset.
+    @Column(length = 3)
+    private String currency;
+
+    @Column(unique = true, length = 150)
+    private String providerIntentId;
+
+    @Column(unique = true, length = 100)
+    private String localReference;
+
+    @JsonIgnore
+    @Column(unique = true, length = 100)
+    private String checkoutKey;
+
+    private Integer accessDurationHours;
+
+    private LocalDateTime accessExpiresAt;
+
+    private Integer refundedAmount;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -10,6 +10,7 @@ import com.example.madar.DTO.Out.Property.PropertyDTO;
 import com.example.madar.DTO.Out.Recommendation.*;
 import com.example.madar.Model.HousingPreference;
 import com.example.madar.Repository.HousingPreferenceRepository;
+import com.example.madar.Util.PlaceCategories;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -267,28 +268,8 @@ public class RecommendationService {
         serviceTypes.add("pharmacy");
         serviceTypes.add("hospital");
 
-        // Additional categories based on saved interests
-        Map<String, String> interestTypes = Map.of(
-                "FITNESS", "gym",
-                "CAFES", "cafe",
-                "RESTAURANTS", "restaurant",
-                "SHOPPING", "shopping_mall",
-                "BEAUTY", "beauty_salon",
-                "NATURE", "park");
-
-        if (preference.getInterests() != null) {
-            for (String interest : preference.getInterests()) {
-                if (interest != null) {
-                    String type = interestTypes.get(
-                            interest.trim().toUpperCase(Locale.ROOT)
-                    );
-
-                    if (type != null) {
-                        serviceTypes.add(type);
-                    }
-                }
-            }
-        }
+        // Housing interests already use the supported Google Places category identifiers.
+        serviceTypes.addAll(PlaceCategories.normalize(preference.getInterests()));
 
         // Null means nearby services could not be verified
         Double servicesScore = null;

@@ -8,6 +8,7 @@ import com.example.madar.Model.PlacePreference;
 import com.example.madar.Model.User;
 import com.example.madar.Repository.PlacePreferenceRepository;
 import com.example.madar.Repository.UserRepository;
+import com.example.madar.Util.PlaceCategories;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Service
 public class PlacePreferenceService {
+    public static final Set<String> SUPPORTED_PLACE_TYPES = PlaceCategories.SUPPORTED_TYPES;
     private final PlacePreferenceRepository placePreferenceRepository;
     private final UserRepository userRepository;
     private final GoogleRoutesClient googleRoutesClient;
@@ -182,9 +184,7 @@ public List<PlacePreference>getMyPlaces(Integer userId){
         }
 
         // Validate supported service categories
-        Set<String> allowedTypes = Set.of("supermarket", "hospital", "pharmacy", "park", "gym", "cafe", "restaurant", "school", "shopping_mall");
-
-        if (placeType == null || !allowedTypes.contains(placeType)) {
+        if (placeType == null || !SUPPORTED_PLACE_TYPES.contains(placeType)) {
             throw new ApiException("Unsupported place type");
         }
 
