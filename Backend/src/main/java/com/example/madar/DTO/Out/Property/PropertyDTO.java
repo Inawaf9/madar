@@ -1,8 +1,10 @@
 package com.example.madar.DTO.Out.Property;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.util.List;
 
 @Data
@@ -26,9 +28,17 @@ public class PropertyDTO {
     private String image;
     private String updatedAt;
     private Double distanceKm; // يتعبى بس في near-location
+    private String originalTitle; // العنوان مثل ما كتبه صاحب الإعلان
+    private String cityName;
+    private String description; // وصف صاحب الإعلان، أو ترجمته الإنجليزية من Kite
+
+    @JsonIgnore
+    private String neighborhoodEn; // اسم الحي بالإنجليزي من Kite (للاستخدام الداخلي)
+
+    @JsonIgnore
+    private String descriptionEn; // ترجمة الوصف من Kite (للاستخدام الداخلي)
 
     // Public cards/details retain the provider's original price and attribution.
-    private String description;
     private Integer bathrooms;
     private String pricePeriod;
     private Long postedPrice;

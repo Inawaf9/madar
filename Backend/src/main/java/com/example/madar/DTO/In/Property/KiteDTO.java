@@ -64,6 +64,8 @@ public class KiteDTO {
         private String title;
         private String headline;
         private String description;
+        @JsonProperty("description_en")
+        private String descriptionEn;
         @JsonProperty("listing_type")
         private String listingType;
         @JsonProperty("property_type")
@@ -107,6 +109,8 @@ public class KiteDTO {
         private Integer neighborhoodId;
         @JsonProperty("neighborhood_name_ar")
         private String neighborhood;
+        @JsonProperty("neighborhood_name_en")
+        private String neighborhoodEn;
         private Double lat;
         private Double lng;
     }
