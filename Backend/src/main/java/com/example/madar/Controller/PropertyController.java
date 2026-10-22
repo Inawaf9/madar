@@ -14,56 +14,56 @@ public class PropertyController {
 
     //search (propertyType can be "all")
     @GetMapping("/search/{city}/{listingType}/{propertyType}/{maxPrice}")
-    public ResponseEntity<?> search(@PathVariable String city, @PathVariable String listingType, @PathVariable String propertyType, @PathVariable Integer maxPrice){
-        return ResponseEntity.status(200).body(propertyService.search(city, listingType, propertyType, maxPrice));
+    public ResponseEntity<?> search(@PathVariable String city, @PathVariable String listingType, @PathVariable String propertyType, @PathVariable Integer maxPrice, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(propertyService.localize(propertyService.search(city, listingType, propertyType, maxPrice), lang));
     }
 
     //get property details
     @GetMapping("/get/{source}/{externalId}")
-    public ResponseEntity<?> getPropertyById(@PathVariable String source, @PathVariable String externalId){
-        return ResponseEntity.status(200).body(propertyService.getPropertyById(source, externalId));
+    public ResponseEntity<?> getPropertyById(@PathVariable String source, @PathVariable String externalId, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(propertyService.localizeOne(propertyService.getPropertyById(source, externalId), lang));
     }
 
-    //properties that match my housing preference inside my district "ONLYYYY"
+    //properties that match my housing preference inside my district only
     @GetMapping("/by-preference-in-my-district/{userId}")
-    public ResponseEntity<?> getByPreferenceInMyDistrict(@PathVariable Integer userId){
-        return ResponseEntity.status(200).body(propertyService.getByPreferenceInMyDistrict(userId));
+    public ResponseEntity<?> getByPreferenceInMyDistrict(@PathVariable Integer userId, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(propertyService.localize(propertyService.getByPreferenceInMyDistrict(userId), lang));
     }
 
     //properties near a location within a radius in km
     @GetMapping("/near-location/{city}/{listingType}/{propertyType}/{latitude}/{longitude}/{radiusKm}")
-    public ResponseEntity<?> getNearLocation(@PathVariable String city, @PathVariable String listingType, @PathVariable String propertyType, @PathVariable Double latitude, @PathVariable Double longitude, @PathVariable Double radiusKm){
-        return ResponseEntity.status(200).body(propertyService.getNearLocation(city, listingType, propertyType, latitude, longitude, radiusKm));
+    public ResponseEntity<?> getNearLocation(@PathVariable String city, @PathVariable String listingType, @PathVariable String propertyType, @PathVariable Double latitude, @PathVariable Double longitude, @PathVariable Double radiusKm, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(propertyService.localize(propertyService.getNearLocation(city, listingType, propertyType, latitude, longitude, radiusKm), lang));
     }
 
     //properties within my budget in the whole city
     @GetMapping("/within-budget/{userId}")
-    public ResponseEntity<?> getWithinBudget(@PathVariable Integer userId){
-        return ResponseEntity.status(200).body(propertyService.getWithinBudget(userId));
+    public ResponseEntity<?> getWithinBudget(@PathVariable Integer userId, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(propertyService.localize(propertyService.getWithinBudget(userId), lang));
     }
 
     //properties cheaper than my budget by a margin
     @GetMapping("/under-budget-margin/{userId}/{margin}")
-    public ResponseEntity<?> getUnderBudgetMargin(@PathVariable Integer userId, @PathVariable Integer margin){
-        return ResponseEntity.status(200).body(propertyService.getUnderBudgetMargin(userId, margin));
+    public ResponseEntity<?> getUnderBudgetMargin(@PathVariable Integer userId, @PathVariable Integer margin, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(propertyService.localize(propertyService.getUnderBudgetMargin(userId, margin), lang));
     }
 
     //properties in several districts (comma separated)
     @GetMapping("/by-districts/{city}/{listingType}/{propertyType}/{districts}")
-    public ResponseEntity<?> getByDistricts(@PathVariable String city, @PathVariable String listingType, @PathVariable String propertyType, @PathVariable String districts){
-        return ResponseEntity.status(200).body(propertyService.getByDistricts(city, listingType, propertyType, districts));
+    public ResponseEntity<?> getByDistricts(@PathVariable String city, @PathVariable String listingType, @PathVariable String propertyType, @PathVariable String districts, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(propertyService.localize(propertyService.getByDistricts(city, listingType, propertyType, districts), lang));
     }
 
     //properties between a min and max price
     @GetMapping("/price-range/{city}/{listingType}/{propertyType}/{minPrice}/{maxPrice}")
-    public ResponseEntity<?> getByPriceRange(@PathVariable String city, @PathVariable String listingType, @PathVariable String propertyType, @PathVariable Integer minPrice, @PathVariable Integer maxPrice){
-        return ResponseEntity.status(200).body(propertyService.getByPriceRange(city, listingType, propertyType, minPrice, maxPrice));
+    public ResponseEntity<?> getByPriceRange(@PathVariable String city, @PathVariable String listingType, @PathVariable String propertyType, @PathVariable Integer minPrice, @PathVariable Integer maxPrice, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(propertyService.localize(propertyService.getByPriceRange(city, listingType, propertyType, minPrice, maxPrice), lang));
     }
 
     //sort: price, price-desc, newest, price-drop
     @GetMapping("/sort/{city}/{listingType}/{sortBy}")
-    public ResponseEntity<?> sortProperties(@PathVariable String city, @PathVariable String listingType, @PathVariable String sortBy){
-        return ResponseEntity.status(200).body(propertyService.sortProperties(city, listingType, sortBy));
+    public ResponseEntity<?> sortProperties(@PathVariable String city, @PathVariable String listingType, @PathVariable String sortBy, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(propertyService.localize(propertyService.sortProperties(city, listingType, sortBy), lang));
     }
 
     //market price stats for one housing type
@@ -80,7 +80,7 @@ public class PropertyController {
 
     //similar properties (same city and type, price within 20%)
     @GetMapping("/similar/{source}/{externalId}")
-    public ResponseEntity<?> getSimilar(@PathVariable String source, @PathVariable String externalId){
-        return ResponseEntity.status(200).body(propertyService.getSimilar(source, externalId));
+    public ResponseEntity<?> getSimilar(@PathVariable String source, @PathVariable String externalId, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(propertyService.localize(propertyService.getSimilar(source, externalId), lang));
     }
 }

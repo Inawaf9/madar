@@ -61,7 +61,7 @@ public class AiService {
 
             الأحياء:
             - إذا ذكر المستخدم حياً أو أكثر، نفّذ مباشرة واستدعِ compareDistricts بأسماء الأحياء بدون ما تسأله "تبي تشوف؟".
-            - إذا ذكر المستخدم حياً ومبلغاً مع بعض، استخدم compareDistricts ومرر له الحد الأدنى والأعلى، لا تستخدم priceRange.
+            - إذا ذكر المستخدم حياً ومبلغاً مع بعض، استخدم priceRange ومرر الحي في districts، لا تستخدم compareDistricts.
             - إذا سأل المستخدم "و<حي>؟" بعد مقارنة، أضف الحي الجديد للأحياء اللي قبل وقارنهم كلهم.
             - إذا رجع خطأ District not found، استدعِ findDistricts مرة وحدة بنفس الاسم.
             - لا تقترح أسماء أحياء إلا إذا رجعت من findDistricts، واكتبها بنفس الشكل بالضبط. وإذا ما رجعت أسماء، قل إن الحي غير موجود في بياناتنا.
@@ -96,8 +96,12 @@ public class AiService {
             - ابدأ ردك بكلمة ترحيب قصيرة مثل "أبشر" أو "حياك"، واختمه بسؤال يساعد المستخدم في الخطوة الجاية.
             - ادخل في الجواب مباشرة، بدون عبارات مثل "بناءً على اللي فهمته" أو "حسب المعلومات".
             - لما تتكلم عن حي المستخدم قل "الحي اللي اخترته" أو اسم الحي مباشرة.
-            - اكتب ردك كفقرة واحدة قصيرة بدون أسطر جديدة، وبدون رموز تنسيق مثل ** أو # أو - أو جداول.
-            - خلك مختصر، واذكر أهم 3 عقارات بالكثير مع سعرها وحيها.
+            - اكتب ردك بصيغة Markdown بهذا الشكل: سطر افتتاحي قصير، ثم نقطة تبدأ بـ "- " لكل عقار، ثم سطر أخير فيه سؤال.
+            - في نقطة العقار: رقمه حسب ترتيب البطاقات، والسعر بالخط العريض، ثم الحي والغرف والمساحة. مثال: - **1.** **75000 ريال** · الملقا · 3 غرف · 141 م²
+            - في المقارنة: الخلاصة بسطر، ثم نقطة لكل حي فيها رقمين أو ثلاثة بس.
+            - استخدم الخط العريض ** للأسعار وأرقام البطاقات بس. لا تستخدم عناوين # ولا جداول ولا روابط.
+            - خلك مختصر، واذكر أهم 3 عقارات بالكثير.
+            - إذا ما فيه عقارات في الرد، اكتب فقرة قصيرة بدون نقاط.
             - الأرقام والأسعار تكتبها بالأرقام زي ما هي، بدون تقريب.
             - الأسعار بالريال سنوياً للإيجار.
             """;
@@ -155,49 +159,55 @@ public class AiService {
                 budgetPosition, generatedByAi, match, stats);
     }
 
-
     //chatbot: the AI picks which of our endpoints to call, and remembers the conversation
+    //the reply and the cards are in the language the user wrote in
     public ChatReplyDTO chat(Integer userId, String message){
         if(userRepository.findUserById(userId) == null){
             throw new ApiException("User not found");
         }
+        String lang = detectMessageLang(message);
+        //same rules, plus the reply language
+        String rules = CHAT_RULES + languageRule(lang);
 
         //first try
         PropertyTools tools = newTools(userId, message);
-        String reply = aiTestClient.chat(CHAT_RULES, message, tools, "user-" + userId);
+        String reply = aiTestClient.chat(rules, message, tools, "user-" + userId);
 
-        //the AI asked instead of acting (type, city, rent or sale, or "do you want to see?") without calling any tool: try again
-        if(tools.getUsedData().isEmpty() && asksForKnownInfo(reply)){
-            System.out.println("Chat retry: AI asked instead of using tools");
+        //the AI asked, or said "not found", without calling any tool: try again
+        if(tools.getUsedData().isEmpty() && (asksForKnownInfo(reply) || claimsWithoutSearch(reply))){
             tools = newTools(userId, message);
-            reply = aiTestClient.chat(CHAT_RULES,
-                    message + "\n(تنبيه من النظام: نفّذ الطلب مباشرة باستخدام الأدوات بدون سؤال تأكيد. النوع والإيجار والبيع من تفضيلات المستخدم، والمدينة من المحادثة أو التفضيلات، والأماكن المهمة من myPlaces)",
+            reply = aiTestClient.chat(rules,
+                    message + "\n(تنبيه من النظام: ما استدعيت أي أداة. نفّذ الطلب الآن باستخدام الأدوات بدون سؤال تأكيد. النوع والإيجار والبيع من تفضيلات المستخدم، والمدينة من المحادثة أو التفضيلات، والأماكن المهمة من myPlaces. وإذا المستخدم يقصد عقار من الرد السابق، استخدم previousListing أو similarToPrevious)",
                     tools, "user-" + userId);
         }
 
         //every number must come from the tools of this message, if not: try again once
         if(!numbersAreFrom(reply, tools.getUsedData() + " " + message)){
-            System.out.println("Chat retry: numbers not found in tool data");
             System.out.println("Rejected reply: " + reply);
             System.out.println("Tool data: " + tools.getUsedData());
             tools = newTools(userId, message);
-            reply = aiTestClient.chat(CHAT_RULES,
+            reply = aiTestClient.chat(rules,
                     message + "\n(تنبيه من النظام: استدعِ الأدوات الآن واستخدم أرقامها فقط، لا تعتمد على الرسائل السابقة)",
                     tools, "user-" + userId);
 
-            //still not real: safe answer without numbers
+            //still not real: safe answer without numbers, in the user's language
             if(!numbersAreFrom(reply, tools.getUsedData() + " " + message)){
                 System.out.println("Rejected again: " + reply);
-                return new ChatReplyDTO("ما قدرت أتأكد من الأرقام لهالسؤال، جرّب تسألني بشكل أوضح، مثل: وريني شقق في الملقا.", new ArrayList<>());
+                String safe = "ما قدرت أتأكد من الأرقام لهالسؤال، جرّب تسألني بشكل أوضح، مثل: وريني شقق في الملقا.";
+                if(lang.equals("en")){
+                    safe = "I could not verify the numbers for this question. Try asking more clearly, for example: show me apartments in Al Malqa.";
+                }
+                return new ChatReplyDTO(safe, new ArrayList<>());
             }
         }
-        //save the new cards, so the next message can say "the first listing"
         //save the new list of cards (not a single listing), so "the second listing" still means the same list
         if(tools.getLastProperties().size() > 1){
             lastCardsByUser.put(userId, tools.getLastProperties());
         }
-        return new ChatReplyDTO(cleanReply(reply), tools.getLastProperties());
+        //cards in the same language as the message
+        return new ChatReplyDTO(cleanReply(reply), propertyService.localize(tools.getLastProperties(), lang));
     }
+
 
     //start a new chat: forget the old messages and the old cards
     public void clearChat(Integer userId){
@@ -252,15 +262,18 @@ public class AiService {
                 return false;
             }
         }
-        //rooms are small numbers, so check them separately: "2 غرف" must exist in the data
-        Matcher rooms = Pattern.compile("(\\d+)\\s*(غرف|غرفة)").matcher(text);
+        //rooms are small numbers, so check them separately: "2 غرف" or "2 bedrooms" must exist in the data or in the user's message
+        String lowerText = text.toLowerCase();
+        String lowerAllowed = allowedText.toLowerCase();
+        Matcher rooms = Pattern.compile("(\\d+)\\s*-?\\s*(غرف|غرفة|bedrooms|bedroom|rooms|room)").matcher(lowerText);
         while(rooms.find()){
-            if(!allowedText.contains("عدد الغرف " + rooms.group(1))){
+            if(!lowerAllowed.contains("عدد الغرف " + rooms.group(1)) && !lowerAllowed.contains(rooms.group(0))){
                 return false;
             }
         }
         //rooms written as words can not be checked, so they are not allowed
-        if(text.contains("غرفتين") || text.contains("غرفة وحدة") || text.contains("غرفة واحدة")){
+        if(text.contains("غرفتين") || text.contains("غرفة وحدة") || text.contains("غرفة واحدة")
+                || lowerText.contains("one bedroom") || lowerText.contains("two bedroom") || lowerText.contains("three bedroom")){
             return false;
         }
         return true;
@@ -314,14 +327,18 @@ public class AiService {
                 highlights, advice);
     }
 
-    //remove markdown symbols and new lines, keep one clean text
+
+    //keep Markdown for the frontend: only remove headings and extra empty lines
     private String cleanReply(String reply){
         if(reply == null){
             return "";
         }
-        String clean = reply.replace("**", "").replace("*", "").replace("#", "").replace("\n", " ").replace("- ", "");
-        while(clean.contains("  ")){
-            clean = clean.replace("  ", " ");
+        String clean = reply.replace("\r", "");
+        //no headings: "## title" becomes "title"
+        clean = clean.replaceAll("(?m)^#{1,6}\\s*", "");
+        //no more than one empty line
+        while(clean.contains("\n\n\n")){
+            clean = clean.replace("\n\n\n", "\n\n");
         }
         return clean.trim();
     }
@@ -336,12 +353,28 @@ public class AiService {
         if(reply.contains("تضيف مكان") || reply.contains("تضيف موقع") || reply.contains("أضف مكان") || reply.contains("ضيف مكان")){
             return true;
         }
-        if(!reply.contains("؟")){
+        if(!reply.contains("؟") && !reply.contains("?")){
             return false;
         }
+        String lower = reply.toLowerCase();
         return reply.contains("نوع العقار") || reply.contains("شقة أو فيلا") || reply.contains("للإيجار أو للبيع")
                 || reply.contains("إيجار أو بيع") || reply.contains("أي مدينة") || reply.contains("حد أدنى")
-                || reply.contains("تبغى تشوف") || reply.contains("تبي تشوف") || reply.contains("تقصد");
+                || reply.contains("تبغى تشوف") || reply.contains("تبي تشوف") || reply.contains("تقصد")
+                || lower.contains("which city") || lower.contains("what type") || lower.contains("rent or buy") || lower.contains("rent or sale");
+    }
+
+
+
+    //true if the AI says "not found" without calling any tool (it did not really search)
+    private boolean claimsWithoutSearch(String reply){
+        if(reply == null){
+            return false;
+        }
+        String lower = reply.toLowerCase();
+        return reply.contains("ما لقيت") || reply.contains("مالقيت") || reply.contains("ما قدرت ألاقي")
+                || reply.contains("لا يوجد") || reply.contains("ما فيه شي") || reply.contains("غير موجود")
+                || lower.contains("couldn't find") || lower.contains("could not find") || lower.contains("no listings")
+                || lower.contains("not found") || lower.contains("no results");
     }
 
     //find the city the user wrote in the message (null if none)
@@ -361,5 +394,31 @@ public class AiService {
         tools.setCityFromMessage(detectCity(message));
         tools.setPreviousCards(lastCardsByUser.get(userId));
         return tools;
+    }
+
+
+    //the language the user wrote in: more English letters = en, otherwise ar
+    private String detectMessageLang(String message){
+        int arabic = 0;
+        int english = 0;
+        for(char c : message.toCharArray()){
+            if(c >= '\u0600' && c <= '\u06FF'){
+                arabic++;
+            }else if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')){
+                english++;
+            }
+        }
+        if(english > arabic){
+            return "en";
+        }
+        return "ar";
+    }
+
+    //tell the AI which language to reply in
+    private String languageRule(String lang){
+        if(lang.equals("en")){
+            return "\nلغة الرد: اكتب الرد بالإنجليزي فقط (English)، بنفس كل القواعد فوق، وبدون اللهجة السعودية. عدد الغرف اكتبه مثل \"3 bedrooms\"، والأسعار مثل \"75000 SAR\".";
+        }
+        return "\nلغة الرد: اكتب الرد بالعربي باللهجة السعودية البيضاء.";
     }
 }

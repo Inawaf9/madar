@@ -246,11 +246,11 @@ public class PropertyTools {
                                    @ToolParam(description = "apartment, villa, floor, duplex, building or all", required = false) String propertyType,
                                    @ToolParam(description = "district names separated by comma") String districts){
         try{
-            System.out.println("compareDistricts called: city=" + city + ", districts=" + districts);
             city = orPreference(city, "city");
             listingType = orPreference(listingType, "listingType");
             propertyType = orPreference(propertyType, "propertyType");
-            System.out.println("compareDistricts called: city=" + city + ", districts=" + districts);
+            //Arabic comma "،" works like ","
+            districts = districts.replace("،", ",");
 
             //all districts together, for the frontend cards
             List<PropertyDTO> cards = remember(propertyService.getByDistricts(city, listingType, propertyType, districts));
@@ -265,6 +265,10 @@ public class PropertyTools {
             String result = "ملخص محسوب من آخر الإعلانات المعروضة (عينة وليس كل السوق):\n";
             for(String district : districts.split(",")){
                 String name = district.trim();
+                //skip empty names like "النرجس,"
+                if(name.isEmpty()){
+                    continue;
+                }
                 int count = 0;
                 int minPrice = 0;
                 long totalPrice = 0;
