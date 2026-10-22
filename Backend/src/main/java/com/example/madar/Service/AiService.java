@@ -1,8 +1,9 @@
 package com.example.madar.Service;
 
 import com.example.madar.Api.ApiException;
-import com.example.madar.Client.AiTestClient;
+import com.example.madar.Client.OpenRouterClient;
 import com.example.madar.DTO.Out.*;
+import com.example.madar.DTO.Out.Property.*;
 import com.example.madar.Model.HousingPreference;
 import com.example.madar.Repository.HousingPreferenceRepository;
 import com.example.madar.Repository.PlacePreferenceRepository;
@@ -21,7 +22,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class AiService {
 
-    private final AiTestClient aiTestClient;
+    private final OpenRouterClient openRouterClient;
     private final PropertyService propertyService;
     private final HousingPreferenceRepository housingPreferenceRepository;
     private final PlacePreferenceRepository placePreferenceRepository;
@@ -144,7 +145,7 @@ public class AiService {
                 + "- أغلى سعر في السوق: " + valueOrMissing(stats.getMaxPrice()) + "\n"
                 + "- موقع الميزانية من السوق: " + budgetPosition;
 
-        AiInsightDTO insight = aiTestClient.askFor(RULES,
+        AiInsightDTO insight = openRouterClient.askFor(RULES,
                 data + "\n\nاكتب عنواناً قصيراً، وملخصاً بجملة واحدة، و3 نقاط مهمة من البيانات، ونصيحة واحدة.",
                 AiInsightDTO.class);
 
@@ -171,12 +172,12 @@ public class AiService {
 
         //first try
         PropertyTools tools = newTools(userId, message);
-        String reply = aiTestClient.chat(rules, message, tools, "user-" + userId);
+        String reply = openRouterClient.chat(rules, message, tools, "user-" + userId);
 
         //the AI asked, or said "not found", without calling any tool: try again
         if(tools.getUsedData().isEmpty() && (asksForKnownInfo(reply) || claimsWithoutSearch(reply))){
             tools = newTools(userId, message);
-            reply = aiTestClient.chat(rules,
+            reply = openRouterClient.chat(rules,
                     message + "\n(تنبيه من النظام: ما استدعيت أي أداة. نفّذ الطلب الآن باستخدام الأدوات بدون سؤال تأكيد. النوع والإيجار والبيع من تفضيلات المستخدم، والمدينة من المحادثة أو التفضيلات، والأماكن المهمة من myPlaces. وإذا المستخدم يقصد عقار من الرد السابق، استخدم previousListing أو similarToPrevious)",
                     tools, "user-" + userId);
         }
@@ -186,7 +187,7 @@ public class AiService {
             System.out.println("Rejected reply: " + reply);
             System.out.println("Tool data: " + tools.getUsedData());
             tools = newTools(userId, message);
-            reply = aiTestClient.chat(rules,
+            reply = openRouterClient.chat(rules,
                     message + "\n(تنبيه من النظام: استدعِ الأدوات الآن واستخدم أرقامها فقط، لا تعتمد على الرسائل السابقة)",
                     tools, "user-" + userId);
 
@@ -214,7 +215,7 @@ public class AiService {
         if(userRepository.findUserById(userId) == null){
             throw new ApiException("User not found");
         }
-        aiTestClient.clearChat("user-" + userId);
+        openRouterClient.clearChat("user-" + userId);
         lastCardsByUser.remove(userId);
     }
 

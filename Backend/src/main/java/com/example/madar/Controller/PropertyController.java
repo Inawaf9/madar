@@ -1,8 +1,12 @@
 package com.example.madar.Controller;
 
 import com.example.madar.Service.PropertyService;
+import com.example.madar.Service.NearbyInterestService;
+import com.example.madar.DTO.In.Property.PropertySearchRequestDTO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -11,6 +15,20 @@ import org.springframework.web.bind.annotation.*;
 public class PropertyController {
 
     private final PropertyService propertyService;
+    private final NearbyInterestService nearbyInterestService;
+
+    @GetMapping("/nearby-interests/{userId}/{source}/{externalId}")
+    public ResponseEntity<?> getNearbyInterests(@PathVariable Integer userId, @PathVariable String source,
+                                               @PathVariable String externalId,
+                                               @RequestParam(defaultValue = "2000") Double radius) {
+        return ResponseEntity.status(200).body(nearbyInterestService.analyzeProperty(userId, source, externalId, radius));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchPublic(@Valid @ModelAttribute PropertySearchRequestDTO request,
+                                          @RequestParam MultiValueMap<String, String> parameters) {
+        return ResponseEntity.status(200).body(propertyService.searchPublic(request, parameters));
+    }
 
     //search (propertyType can be "all")
     @GetMapping("/search/{city}/{listingType}/{propertyType}/{maxPrice}")

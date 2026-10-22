@@ -1,9 +1,9 @@
 package com.example.madar.Service;
 
 import com.example.madar.Api.ApiException;
-import com.example.madar.DTO.Out.MatchSummaryDTO;
-import com.example.madar.DTO.Out.PriceStatsDTO;
-import com.example.madar.DTO.Out.PropertyDTO;
+import com.example.madar.DTO.Out.Property.MatchSummaryDTO;
+import com.example.madar.DTO.Out.Property.PriceStatsDTO;
+import com.example.madar.DTO.Out.Property.PropertyDTO;
 import com.example.madar.Model.HousingPreference;
 import com.example.madar.Model.PlacePreference;
 import com.example.madar.Repository.HousingPreferenceRepository;
@@ -21,14 +21,13 @@ public class PropertyTools {
     private final HousingPreferenceRepository housingPreferenceRepository;
     private final PlacePreferenceRepository placePreferenceRepository;
     private final Integer userId;
-    //the last listings returned by any tool, sent to the frontend as cards
     private List<PropertyDTO> lastProperties = new ArrayList<>();
-    //the cards shown in the previous answer (saved by AiService)
     private List<PropertyDTO> previousCards = new ArrayList<>();
-    //all data the tools returned in this message (used to check the AI numbers)
     private String usedData = "";
     private String cityFromMessage;
     private static final String UNEXPECTED_ERROR = "Error: something went wrong while searching, try again";
+
+
 
     public PropertyTools(PropertyService propertyService, HousingPreferenceRepository housingPreferenceRepository,
                          PlacePreferenceRepository placePreferenceRepository, Integer userId){
@@ -38,20 +37,23 @@ public class PropertyTools {
         this.userId = userId;
     }
 
-    //the listings the frontend will show as cards
+
     public List<PropertyDTO> getLastProperties(){
         return lastProperties;
     }
 
-    //the data the tools returned, to check the AI numbers
+
     public String getUsedData(){
         return usedData;
     }
 
-    //the city Java found in the user's message
+
+
     public void setCityFromMessage(String cityFromMessage){
         this.cityFromMessage = cityFromMessage;
     }
+
+
     public void setPreviousCards(List<PropertyDTO> previousCards){
         if(previousCards != null){
             this.previousCards = previousCards;
@@ -81,6 +83,7 @@ public class PropertyTools {
         }
     }
 
+
     @Tool(description = "Get the user's important places (work, university, family...) with their coordinates")
     public String myPlaces(){
         try{
@@ -99,6 +102,7 @@ public class PropertyTools {
             return UNEXPECTED_ERROR;
         }
     }
+
 
     @Tool(description = "The user's position in the market: budget, how many listings fit the budget in the city and in the user's district, and the cheapest one")
     public String myMarketSummary(){
@@ -120,6 +124,7 @@ public class PropertyTools {
         }
     }
 
+
     @Tool(description = "Find the exact district names in a city that contain a text. Use it before compareDistricts if you are not sure about the district name, or after a 'District not found' error")
     public String findDistricts(@ToolParam(description = "city in English lowercase, like riyadh or jeddah", required = false) String city,
                                 @ToolParam(description = "part of the district name, like الحرمين") String text){
@@ -138,6 +143,7 @@ public class PropertyTools {
             return UNEXPECTED_ERROR;
         }
     }
+
 
     @Tool(description = "Use this for ANY question about prices in a city (cheapest, most expensive, how many listings). It does not give an average. City, listing type and property type are optional, the user's preference is used if they are empty")
     public String priceStats(@ToolParam(description = "city in English lowercase, like riyadh or jeddah", required = false) String city,
@@ -159,6 +165,7 @@ public class PropertyTools {
         }
     }
 
+
     @Tool(description = "Listings that match the user's preference inside the user's district")
     public Object myDistrictProperties(){
         try{
@@ -170,6 +177,7 @@ public class PropertyTools {
         }
     }
 
+
     @Tool(description = "Listings within the user's budget in the whole city")
     public Object withinMyBudget(){
         try{
@@ -180,6 +188,8 @@ public class PropertyTools {
             return UNEXPECTED_ERROR;
         }
     }
+
+
 
     @Tool(description = "Search listings by price: up to a maximum yearly price, with an optional minimum price. If the user mentioned a district, you MUST put it in districts. City, listing type and property type are optional, the user's preference is used if they are empty")
     public Object priceRange(@ToolParam(description = "city in English lowercase, like riyadh or jeddah", required = false) String city,
@@ -220,6 +230,8 @@ public class PropertyTools {
         }
     }
 
+
+
     @Tool(description = "Listings near a point (latitude, longitude) within a radius in km, nearest first. Use coordinates from myPlaces, never guess them. City, listing type and property type are optional, the user's preference is used if they are empty")
     public Object nearLocation(@ToolParam(description = "city in English lowercase, like riyadh or jeddah", required = false) String city,
                                @ToolParam(description = "rent or sale", required = false) String listingType,
@@ -240,6 +252,8 @@ public class PropertyTools {
         }
     }
 
+
+
     @Tool(description = "Compare several districts, or list listings in one or more districts. Districts are Arabic names separated by comma, like النرجس,الملقا. City, listing type and property type are optional, the user's preference is used if they are empty")
     public String compareDistricts(@ToolParam(description = "city in English lowercase, like riyadh or jeddah", required = false) String city,
                                    @ToolParam(description = "rent or sale", required = false) String listingType,
@@ -249,10 +263,10 @@ public class PropertyTools {
             city = orPreference(city, "city");
             listingType = orPreference(listingType, "listingType");
             propertyType = orPreference(propertyType, "propertyType");
-            //Arabic comma "،" works like ","
+
             districts = districts.replace("،", ",");
 
-            //all districts together, for the frontend cards
+
             List<PropertyDTO> cards = remember(propertyService.getByDistricts(city, listingType, propertyType, districts));
 
             //best district by average price and by average area (calculated in Java)

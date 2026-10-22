@@ -2,22 +2,30 @@ package com.example.madar.Service;
 
 import com.example.madar.Api.ApiException;
 import com.example.madar.Client.KiteClient;
-import com.example.madar.DTO.In.KiteDTO;
-import com.example.madar.DTO.Out.MatchSummaryDTO;
-import com.example.madar.DTO.Out.PriceStatsDTO;
-import com.example.madar.DTO.Out.PropertyDTO;
+import com.example.madar.DTO.In.Property.KiteDTO;
+import com.example.madar.DTO.In.Property.PropertySearchRequestDTO;
+import com.example.madar.DTO.Out.Property.MatchSummaryDTO;
+import com.example.madar.DTO.Out.Property.PriceStatsDTO;
+import com.example.madar.DTO.Out.Property.PropertyDTO;
+import com.example.madar.DTO.Out.Property.PropertySearchResponseDTO;
 import com.example.madar.Model.HousingPreference;
 import com.example.madar.Model.User;
 import com.example.madar.Repository.HousingPreferenceRepository;
 import com.example.madar.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -26,9 +34,132 @@ public class PropertyService {
     private final KiteClient kiteClient;
     private final UserRepository userRepository;
     private final HousingPreferenceRepository housingPreferenceRepository;
-    //neighborhood lists already loaded from Kite, one per city (so we do not call Kite every time)
     private final Map<String, List<KiteDTO.Neighborhood>> neighborhoodsByCity = new HashMap<>();
 
+
+    // Public discovery does not read users, saved preferences or commute/essential interests.
+    public PropertySearchResponseDTO searchPublic(PropertySearchRequestDTO request, Map<String, List<String>> parameters) {
+        Set<String> allowed = Set.of("city", "q", "type", "purpose", "neighborhoodId", "minPrice", "maxPrice",
+                "minArea", "maxArea", "minBedrooms", "minBathrooms", "furnished", "rentFrequency", "sort", "limit", "cursor", "lang");
+        for (Map.Entry<String, List<String>> parameter : parameters.entrySet()) {
+            if (!allowed.contains(parameter.getKey())) {
+                throw new ApiException("Unsupported search parameter: " + parameter.getKey());
+            }
+            if (parameter.getValue().size() != 1) {
+                throw new ApiException("Search parameter must be supplied once: " + parameter.getKey());
+            }
+            if (parameter.getValue().get(0).isBlank()) {
+                throw new ApiException("Search parameter must not be blank: " + parameter.getKey());
+            }
+
+
+        }
+        //language check first, before calling Kite
+        String lang = "ar";
+        if(parameters.containsKey("lang")){
+            lang = checkLang(parameters.get("lang").get(0));
+        }
+        if (request.getQ() != null && request.getQ().isBlank()) {
+            throw new ApiException("Query must not be blank");
+        }
+        if (request.getCursor() != null && request.getCursor().isBlank()) {
+            throw new ApiException("Cursor must not be blank");
+        }
+        if (request.getMinPrice() != null && request.getMaxPrice() != null
+                && request.getMinPrice() > request.getMaxPrice()) {
+            throw new ApiException("Minimum price must not exceed maximum price");
+        }
+        if ((request.getMinArea() != null && !Double.isFinite(request.getMinArea()))
+                || (request.getMaxArea() != null && !Double.isFinite(request.getMaxArea()))
+                || (request.getMinArea() != null && request.getMaxArea() != null && request.getMinArea() > request.getMaxArea())) {
+            throw new ApiException("Invalid area range");
+        }
+        if ("sale".equals(request.getPurpose()) && request.getRentFrequency() != null) {
+            throw new ApiException("Rent frequency cannot be combined with sale purpose");
+        }
+
+
+        Map<String, Object> filters = new LinkedHashMap<>();
+        filters.put("city", request.getCity());
+        putFilter(filters, "q", request.getQ());
+        putFilter(filters, "property_type", "all".equals(request.getType()) ? null : request.getType());
+        filters.put("listing_type", request.getPurpose());
+        putFilter(filters, "neighborhood_id", request.getNeighborhoodId());
+        putFilter(filters, "price_min", request.getMinPrice());
+        putFilter(filters, "price_max", request.getMaxPrice());
+        putFilter(filters, "area_min", request.getMinArea());
+        putFilter(filters, "area_max", request.getMaxArea());
+        putFilter(filters, "beds_min", request.getMinBedrooms());
+        putFilter(filters, "bathrooms_min", request.getMinBathrooms());
+        putFilter(filters, "furnished", request.getFurnished());
+        putFilter(filters, "rent_frequency", request.getRentFrequency());
+        String sort = switch (request.getSort()) {
+            case "price" -> "price_asc";
+            case "price-desc" -> "price_desc";
+            case "price-drop" -> "price_drop";
+            default -> request.getSort();
+        };
+        filters.put("sort", sort);
+        filters.put("limit", request.getLimit());
+        putFilter(filters, "cursor", request.getCursor());
+
+        KiteDTO.ListResponse response = kiteClient.discoverListings(filters);
+        if (response == null || response.getData() == null || response.getPagination() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Kite returned an incomplete search response");
+        }
+        KiteDTO.Pagination pagination = response.getPagination();
+        if (pagination.getLimit() == null || pagination.getLimit() < 1
+                || pagination.getHasMore() == null || pagination.getResultWindowReached() == null
+                || (pagination.getHasMore() && !pagination.getResultWindowReached()
+                && (pagination.getNextCursor() == null || pagination.getNextCursor().isBlank()))) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Kite returned incomplete pagination");
+        }
+        List<PropertyDTO> properties = new ArrayList<>();
+        // Preserve the provider's complete page and order, including commercial properties and land.
+        for (KiteDTO.Listing listing : response.getData()) {
+            if (listing == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Kite returned an invalid listing");
+            }
+            properties.add(convertPublicListing(listing));
+        }
+
+        properties = localize(properties, lang);
+        return new PropertySearchResponseDTO(properties, new PropertySearchResponseDTO.Pagination(
+                pagination.getLimit(), pagination.getNextCursor(), pagination.getHasMore(), pagination.getResultWindowReached()));
+    }
+
+    private void putFilter(Map<String, Object> filters, String name, Object value) {
+        if (value != null) {
+            filters.put(name, value);
+        }
+    }
+
+    private PropertyDTO convertPublicListing(KiteDTO.Listing listing) {
+        PropertyDTO property = convert(listing);
+        property.setExternalId(listing.getId() == null ? null : listing.getId().toString());
+        if (property.getTitle() == null || property.getTitle().isBlank()) {
+            property.setTitle(listing.getHeadline());
+        }
+        property.setDescription(listing.getDescription());
+        property.setBathrooms(listing.getBathrooms());
+        property.setPricePeriod("rent".equals(listing.getListingType()) ? "yearly"
+                : "sale".equals(listing.getListingType()) ? "total" : null);
+        if (listing.getPrice() != null && listing.getPrice().getAsPosted() != null) {
+            property.setPostedPrice(listing.getPrice().getAsPosted().getAmount());
+            property.setPostedPricePeriod(listing.getPrice().getAsPosted().getFrequency());
+        }
+        if (listing.getSource() != null) {
+            property.setSourceUrl(listing.getSource().getUrl());
+        }
+        if (listing.getLocation() != null) {
+            property.setNeighborhoodId(listing.getLocation().getNeighborhoodId());
+        }
+        List<String> images = listing.getImages() == null ? List.of()
+                : listing.getImages().stream().filter(Objects::nonNull).toList();
+        property.setImages(images);
+        property.setImage(images.isEmpty() ? null : images.get(0));
+        return property;
+    }
 
     //search
     public List<PropertyDTO> search(String city, String listingType, String propertyType, Integer maxPrice){
@@ -49,7 +180,7 @@ public class PropertyService {
         if(response==null || response.getData()== null){
             throw new ApiException("Property not found");
         }
-        return convert(response.getData());
+        return convertPublicListing(response.getData());
     }
 
 
@@ -405,7 +536,7 @@ public class PropertyService {
 
     //distance between two points in km
     //معادلة Haversine تحسب المسافة الحقيقية على سطح الكرة الأرضية من خطوط الطول والعرض. 6371 هو نصف قطر الأرض
-    private double calculateDistanceKm(double lat1, double lng1, double lat2, double lng2){
+    public double calculateDistanceKm(double lat1, double lng1, double lat2, double lng2){
         double dLat = Math.toRadians(lat2 - lat1);
         double dLng = Math.toRadians(lng2 - lng1);
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
@@ -593,6 +724,14 @@ public class PropertyService {
         copy.setDistanceKm(property.getDistanceKm());
         copy.setNeighborhoodEn(property.getNeighborhoodEn());
         copy.setDescriptionEn(property.getDescriptionEn());
+        //(cards and details)
+        copy.setBathrooms(property.getBathrooms());
+        copy.setPricePeriod(property.getPricePeriod());
+        copy.setPostedPrice(property.getPostedPrice());
+        copy.setPostedPricePeriod(property.getPostedPricePeriod());
+        copy.setSourceUrl(property.getSourceUrl());
+        copy.setImages(property.getImages());
+        copy.setNeighborhoodId(property.getNeighborhoodId());
 
         //keep the owner's title, and build a new one in the chosen language
         if(property.getOriginalTitle() != null){
@@ -747,7 +886,14 @@ public class PropertyService {
                 title = "دوبلكس";
             }else if(type.equals("building")){
                 title = "عمارة";
+            }else if(type.equals("office")){
+               title = "مكتب";
+            }else if(type.equals("shop")){
+               title = "محل";
+            }else if(type.equals("warehouse")) {
+                title = "مستودع";
             }
+
             if(property.getBedrooms() != null){
                 if(property.getBedrooms() == 1){
                     title += " غرفة وحدة";

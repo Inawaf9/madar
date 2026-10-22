@@ -6,10 +6,13 @@ import com.example.madar.Model.HousingPreference;
 import com.example.madar.Model.User;
 import com.example.madar.Repository.HousingPreferenceRepository;
 import com.example.madar.Repository.UserRepository;
+import com.example.madar.Util.PlaceCategories;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +47,15 @@ public class HousingPreferenceService {
         return preference;
     }
 
+    // Materialize the collection inside the transaction, before external API calls.
+    @Transactional(readOnly = true)
+    public Set<String> getInterestsByUserId(Integer userId) {
+        if (userId == null || userId <= 0) {
+            throw new ApiException("Invalid user ID");
+        }
+        return PlaceCategories.normalize(getHousingPreferenceByUserId(userId).getInterests());
+    }
+
     // ADD
     public void addHousingPreference(Integer userId, HousingPreference housingPreference) {
 
@@ -58,11 +70,13 @@ public class HousingPreferenceService {
             throw new ApiException("User already has housing preferences");
         }
 
+        housingPreference.setInterests(PlaceCategories.normalize(housingPreference.getInterests()));
         housingPreference.setUser(user);
         housingPreferenceRepository.save(housingPreference);
     }
 
     // UPDATE
+    @Transactional
     public void updateHousingPreference(Integer userId, Integer preferenceId, HousingPreference updatedPreference) {
 
         User user = userRepository.findUserById(userId);
@@ -80,12 +94,17 @@ public class HousingPreferenceService {
             throw new ApiException("This housing preference does not belong to the user");
         }
 
+        Set<String> interests = PlaceCategories.normalize(updatedPreference.getInterests() == null
+                ? preference.getInterests() : updatedPreference.getInterests());
+
         preference.setRegion(updatedPreference.getRegion());
         preference.setCity(updatedPreference.getCity());
         preference.setDistrict(updatedPreference.getDistrict());
         preference.setMaxBudget(updatedPreference.getMaxBudget());
         preference.setPropertyType(updatedPreference.getPropertyType());
         preference.setListingType(updatedPreference.getListingType());
+
+        preference.setInterests(interests);
 
         housingPreferenceRepository.save(preference);
     }
@@ -110,4 +129,6 @@ public class HousingPreferenceService {
 
         housingPreferenceRepository.delete(preference);
     }
+
+
 }

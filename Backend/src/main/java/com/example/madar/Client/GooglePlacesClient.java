@@ -1,7 +1,7 @@
 package com.example.madar.Client;
 
 import com.example.madar.Api.ApiException;
-import com.example.madar.DTO.Out.GooglePlacesResponseDTO;
+import com.example.madar.DTO.Out.GooglePlaces.GooglePlacesResponseDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -56,4 +56,29 @@ public class GooglePlacesClient {
         }
     }
 
+    // A circular bias is only a search context; the service filters returned coordinates.
+    public GooglePlacesResponseDTO searchPlacesByText(Double latitude, Double longitude, String query, Double radiusMeters) {
+        Map<String, Object> request = Map.of(
+                "textQuery", query,
+                "pageSize", 20,
+                "locationBias", Map.of("circle", Map.of(
+                        "center", Map.of("latitude", latitude, "longitude", longitude),
+                        "radius", radiusMeters))
+        );
+
+        try {
+            GooglePlacesResponseDTO response = restClient.post()
+                    .uri("/v1/places:searchText")
+                    .header("X-Goog-FieldMask", "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.types")
+                    .body(request)
+                    .retrieve()
+                    .body(GooglePlacesResponseDTO.class);
+            if (response == null) {
+                throw new ApiException("Google Places returned an empty response");
+            }
+            return response.places() == null ? new GooglePlacesResponseDTO(List.of()) : response;
+        } catch (RestClientException e) {
+            throw new ApiException("Failed to search places by text");
+        }
+    }
 }

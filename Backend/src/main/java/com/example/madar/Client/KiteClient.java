@@ -1,13 +1,17 @@
 package com.example.madar.Client;
 
 import com.example.madar.Api.ApiException;
-import com.example.madar.DTO.In.KiteDTO;
+import com.example.madar.DTO.In.Property.KiteDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Map;
 
 @Component
 public class KiteClient {
@@ -24,6 +28,31 @@ public class KiteClient {
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .build();
     }
+    // Public discovery reuses the same client; URI variables safely encode text and opaque cursors.
+    public KiteDTO.ListResponse discoverListings(Map<String, Object> filters) {
+        try {
+            return restClient.get().uri(builder -> {
+                builder.path("/listings");
+                filters.forEach((name, value) -> builder.queryParam(name, "{" + name + "}"));
+                return builder.build(filters);
+            }).retrieve().body(KiteDTO.ListResponse.class);
+        } catch (HttpClientErrorException e) {
+            int status = e.getStatusCode().value();
+            if (status == 400) {
+                throw new ApiException("Kite rejected the city, filters, cursor, or page size allowed by the current plan");
+            }
+            if (status == 429) {
+                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, getErrorMessage(status));
+            }
+            if (status == 404) {
+                throw new ApiException("Kite city or filter reference was not found");
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Kite could not complete the property search");
+        } catch (RestClientException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Kite is unavailable right now");
+        }
+    }
+
     //search listings
     public KiteDTO.ListResponse searchListings(String city, String listingType, String propertyType, Integer minPrice, Integer maxPrice){
         String url = "/listings?city=" + city + "&listing_type=" + listingType + "&limit=20";
