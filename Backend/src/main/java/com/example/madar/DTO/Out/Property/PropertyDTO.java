@@ -3,6 +3,7 @@ package com.example.madar.DTO.Out.Property;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -25,4 +26,14 @@ public class PropertyDTO {
     private String image;
     private String updatedAt;
     private Double distanceKm; // يتعبى بس في near-location
+
+    // Public cards/details retain the provider's original price and attribution.
+    private String description;
+    private Integer bathrooms;
+    private String pricePeriod;
+    private Long postedPrice;
+    private String postedPricePeriod;
+    private String sourceUrl;
+    private List<String> images;
+    private Integer neighborhoodId;
 }

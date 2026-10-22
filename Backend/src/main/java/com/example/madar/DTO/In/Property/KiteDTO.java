@@ -15,6 +15,20 @@ public class KiteDTO {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ListResponse {
         private List<Listing> data;
+        private Pagination pagination;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Pagination {
+        private Integer limit;
+        @JsonProperty("next_cursor")
+        private String nextCursor;
+        @JsonProperty("has_more")
+        private Boolean hasMore;
+        @JsonProperty("result_window_reached")
+        private Boolean resultWindowReached;
     }
 
     // رد عقار واحد
@@ -49,12 +63,14 @@ public class KiteDTO {
         private String url;
         private String title;
         private String headline;
+        private String description;
         @JsonProperty("listing_type")
         private String listingType;
         @JsonProperty("property_type")
         private String propertyType;
         private Price price;
         private Integer bedrooms;
+        private Integer bathrooms;
         @JsonProperty("area_sqm")
         private Double areaSqm;
         private Location location;
@@ -70,6 +86,16 @@ public class KiteDTO {
     public static class Price {
         @JsonProperty("yearly_sar")
         private Integer yearlySar;
+        @JsonProperty("as_posted")
+        private PostedPrice asPosted;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class PostedPrice {
+        private Long amount;
+        private String frequency;
     }
 
     @Data
@@ -77,6 +103,8 @@ public class KiteDTO {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Location {
         private String city;
+        @JsonProperty("neighborhood_id")
+        private Integer neighborhoodId;
         @JsonProperty("neighborhood_name_ar")
         private String neighborhood;
         private Double lat;
@@ -105,5 +133,6 @@ public class KiteDTO {
     @JsonIgnoreProperties(ignoreUnknown = true)//تجاهل أي حقل موجود في الـ جسون وما له مقابل في الكلاس
     public static class Source {
         private String name;
+        private String url;
     }
 }

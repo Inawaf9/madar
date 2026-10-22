@@ -54,10 +54,11 @@ public class HousingPreference {
 
 
     // Interests are stored in a separate table without creating an Interest entity.
-    // These interests help personalize property recommendations based on nearby services.
+    // Supported nearby-service category identifiers, managed with the housing preference.
     @ElementCollection
-    @CollectionTable(name = "housing_interests", joinColumns = @JoinColumn(name = "housing_preference_id"))
-    @Column(name = "interest")
+    @CollectionTable(name = "housing_interests", joinColumns = @JoinColumn(name = "housing_preference_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"housing_preference_id", "interest"}))
+    @Column(name = "interest", nullable = false)
     private Set<String> interests = new HashSet<>();
 
     @OneToOne

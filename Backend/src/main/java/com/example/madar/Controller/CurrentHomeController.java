@@ -58,4 +58,32 @@ public class CurrentHomeController {
         currentHomeService.deleteCurrentHome(userId, homeId);
         return ResponseEntity.status(200).body(new ApiResponse("Current home deleted successfully"));
     }
+    @PostMapping("/{userId}/confirm-move")
+    public ResponseEntity<?> confirmMove(@PathVariable Integer userId) {
+        currentHomeService.confirmMove(userId);
+        return ResponseEntity.status(200).body(new ApiResponse("Move confirmed successfully"));
+    }
+
+    @GetMapping("/{userId}/neighborhood")
+    public ResponseEntity<?> getNeighborhood(@PathVariable Integer userId) {
+        return ResponseEntity.status(200).body(currentHomeService.getNeighborhood(userId));
+    }
+
+    @GetMapping("/{userId}/nearby-by-category")
+    public ResponseEntity<?> getNearbyByCategory(@PathVariable Integer userId,
+                                                @RequestParam String category, @RequestParam Double radius) {
+        return ResponseEntity.status(200).body(currentHomeService.getNearbyByCategory(userId, category, radius));
+    }
+
+    @GetMapping("/{userId}/nearest-essential")
+    public ResponseEntity<?> getNearestEssential(@PathVariable Integer userId,
+                                                @RequestParam(defaultValue = "2000") Double radius) {
+        return ResponseEntity.status(200).body(currentHomeService.getNearestEssential(userId, radius));
+    }
+
+    @GetMapping("/{userId}/nearby-search")
+    public ResponseEntity<?> searchNearby(@PathVariable Integer userId, @RequestParam String query,
+                                         @RequestParam(defaultValue = "2000") Double radius) {
+        return ResponseEntity.status(200).body(currentHomeService.searchNearby(userId, query, radius));
+    }
 }
