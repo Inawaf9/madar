@@ -2,14 +2,27 @@ package com.example.madar.Service;
 
 
 
+import com.example.madar.AI.RecommendationAI;
 import com.example.madar.Api.ApiException;
+import com.example.madar.DTO.Out.Property.PropertyDTO;
+import com.example.madar.DTO.Out.Recommendation.ComparedPropertyDTO;
+import com.example.madar.DTO.Out.Recommendation.ComparisonExplanationDTO;
+import com.example.madar.DTO.Out.Recommendation.PropertyComparisonResultDTO;
+import com.example.madar.DTO.Out.Recommendation.PropertyMatchResponseDTO;
+import com.example.madar.Model.HousingPreference;
 import com.example.madar.Model.PropertyComparison;
+import com.example.madar.Model.SavedProperty;
 import com.example.madar.Model.User;
+import com.example.madar.Repository.HousingPreferenceRepository;
 import com.example.madar.Repository.PropertyComparisonRepository;
+import com.example.madar.Repository.SavedPropertyRepository;
 import com.example.madar.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -18,6 +31,12 @@ public class PropertyComparisonService {
 
     private final PropertyComparisonRepository comparisonRepository;
     private final UserRepository userRepository;
+    private final RecommendationService recommendationService;
+    private final HousingPreferenceRepository housingPreferenceRepository;
+    private final RecommendationAI recommendationAI;
+    private final PropertyService propertyService;
+    private final SavedPropertyRepository savedPropertyRepository;
+
 
 
 
@@ -100,6 +119,46 @@ public class PropertyComparisonService {
     }
 
 
+    //extra endpoint
+
+
+    // Compare two properties directly without saving them
+    public PropertyComparisonResultDTO compareTwoProperties(Integer userId, String firstSource, String firstPropertyId, String secondSource, String secondPropertyId) {
+
+        if (firstSource == null || secondSource == null || firstPropertyId == null || secondPropertyId == null ||
+                firstSource.isBlank() || secondSource.isBlank() || firstPropertyId.isBlank() || secondPropertyId.isBlank()) {
+            throw new ApiException("Both property IDs and sources are required");
+        }
+
+        if (firstSource.equalsIgnoreCase(secondSource) && firstPropertyId.equals(secondPropertyId)) {
+            throw new ApiException("Cannot compare a property with itself");
+        }
+
+        HousingPreference preference = getHousingPreference(userId);
+
+        PropertyDTO firstProperty = propertyService.getPropertyById(firstSource, firstPropertyId);
+
+        PropertyDTO secondProperty = propertyService.getPropertyById(secondSource, secondPropertyId);
+
+        List<ComparedPropertyDTO> compared = new ArrayList<>();
+
+        compared.add(calculateComparedProperty(userId, firstProperty, null));
+        compared.add(calculateComparedProperty(userId, secondProperty, null));
+
+        return buildComparisonResult(compared, preference);
+    }
+
+
+    // Compare selected saved properties with AI analysis
+    public PropertyComparisonResultDTO compareMultipleProperties(Integer userId, List<Integer> savedPropertyIds) {
+
+        HousingPreference preference = getHousingPreference(userId);
+
+        List<ComparedPropertyDTO> compared = compareSavedProperties(userId, savedPropertyIds);
+
+        return buildComparisonResult(compared, preference);
+    }
+
 
 
 
@@ -136,13 +195,13 @@ public class PropertyComparisonService {
             // Check if both comparisons have the same properties in the same order
             // Example: A-B = A-B
             boolean sameOrder = savedComparison.getFirstPropertyId().equals(firstId) && savedComparison.getFirstPropertySource().equals(firstSource) &&
-                            savedComparison.getSecondPropertyId().equals(secondId) && savedComparison.getSecondPropertySource().equals(secondSource);
+                    savedComparison.getSecondPropertyId().equals(secondId) && savedComparison.getSecondPropertySource().equals(secondSource);
 
 
             // Check if both comparisons have the same properties in reverse order
             // Example: A-B = B-A
             boolean reversedOrder = savedComparison.getFirstPropertyId().equals(secondId) && savedComparison.getFirstPropertySource().equals(secondSource) &&
-                            savedComparison.getSecondPropertyId().equals(firstId) && savedComparison.getSecondPropertySource().equals(firstSource);
+                    savedComparison.getSecondPropertyId().equals(firstId) && savedComparison.getSecondPropertySource().equals(firstSource);
 
 
             // Reject the comparison if it already exists in either order
@@ -153,5 +212,63 @@ public class PropertyComparisonService {
     }
 
 
+    // Sort properties and generate AI analysis
+    private PropertyComparisonResultDTO buildComparisonResult(List<ComparedPropertyDTO> compared, HousingPreference preference) {
+
+        compared.sort(Comparator.comparing(ComparedPropertyDTO::matchScore).reversed());
+
+        ComparisonExplanationDTO aiAnalysis = recommendationAI.explainComparison(compared, preference);
+
+        return new PropertyComparisonResultDTO(compared, aiAnalysis);
+    }
+
+
+    // Calculate suitability and prepare a comparison item
+    private ComparedPropertyDTO calculateComparedProperty(Integer userId, PropertyDTO property, Integer savedPropertyId) {
+
+        PropertyMatchResponseDTO score = recommendationService.calculateMatchWithoutPlaces(userId, property);
+
+        return new ComparedPropertyDTO(savedPropertyId, property.getExternalId(), property.getSource(), property.getTitle(), property.getNeighborhood(), property.getPrice(), property.getBedrooms(), property.getAreaSqm(), property.getImage(), property.getListingUrl(), score.matchScore(), score.housingScore(), score.commuteScore());
+    }
+
+
+
+    // Compare selected properties from the user's saved list
+    private List<ComparedPropertyDTO> compareSavedProperties(Integer userId, List<Integer> savedPropertyIds) {
+
+        if (savedPropertyIds == null || savedPropertyIds.size() < 2 || savedPropertyIds.size() > 4 || savedPropertyIds.contains(null) ||
+                new HashSet<>(savedPropertyIds).size() != savedPropertyIds.size()) {
+            throw new ApiException("Choose 2 to 4 different saved properties");
+        }
+
+        List<ComparedPropertyDTO> compared = new ArrayList<>();
+
+        for (Integer savedPropertyId : savedPropertyIds) {
+
+            SavedProperty savedProperty = savedPropertyRepository.findSavedPropertyByIdAndUser_Id(savedPropertyId, userId);
+
+            if (savedProperty == null) {
+                throw new ApiException("Saved property not found for this user: " + savedPropertyId);
+            }
+
+            PropertyDTO property = propertyService.getPropertyById(savedProperty.getSource(), savedProperty.getExternalPropertyId());
+
+            compared.add(calculateComparedProperty(userId, property, savedProperty.getId()));
+        }
+
+        return compared;
+    }
+
+    // Retrieve and validate housing preferences
+    private HousingPreference getHousingPreference(Integer userId) {
+
+        HousingPreference preference = housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+
+        if (preference == null) {
+            throw new ApiException("Housing preferences not found");
+        }
+
+        return preference;
+    }
 
 }

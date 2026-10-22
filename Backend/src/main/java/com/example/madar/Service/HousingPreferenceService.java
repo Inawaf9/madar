@@ -9,6 +9,7 @@ import com.example.madar.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -87,6 +88,10 @@ public class HousingPreferenceService {
         preference.setPropertyType(updatedPreference.getPropertyType());
         preference.setListingType(updatedPreference.getListingType());
 
+        if (updatedPreference.getInterests() != null) {
+            preference.setInterests(new HashSet<>(updatedPreference.getInterests()));
+        }
+
         housingPreferenceRepository.save(preference);
     }
 
@@ -110,4 +115,6 @@ public class HousingPreferenceService {
 
         housingPreferenceRepository.delete(preference);
     }
+
+
 }

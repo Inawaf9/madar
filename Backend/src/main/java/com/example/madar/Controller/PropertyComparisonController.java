@@ -3,6 +3,7 @@ package com.example.madar.Controller;
 
 
 import com.example.madar.Api.ApiResponse;
+import com.example.madar.DTO.Out.Recommendation.PropertyComparisonResultDTO;
 import com.example.madar.Model.PropertyComparison;
 import com.example.madar.Service.PropertyComparisonService;
 import jakarta.validation.Valid;
@@ -66,4 +67,26 @@ public class PropertyComparisonController {
         comparisonService.deleteComparison(userId, comparisonId);
         return ResponseEntity.status(200).body(new ApiResponse("Comparison deleted successfully"));
     }
+
+
+
+
+    // Compare two properties without saving them
+    @GetMapping("/compare-two/{userId}/{firstSource}/{firstPropertyId}/{secondSource}/{secondPropertyId}")
+    public ResponseEntity<?> compareTwoProperties(@PathVariable Integer userId, @PathVariable String firstSource, @PathVariable String firstPropertyId, @PathVariable String secondSource, @PathVariable String secondPropertyId) {
+        return ResponseEntity.status(200).body(comparisonService.compareTwoProperties(userId, firstSource, firstPropertyId, secondSource, secondPropertyId));
+    }
+
+
+
+    // Compare selected saved properties with AI
+    @GetMapping("/compare-multiple/{userId}/{savedPropertyIds}")
+    public ResponseEntity<PropertyComparisonResultDTO> compareMultipleProperties(@PathVariable Integer userId, @PathVariable List<Integer> savedPropertyIds) {
+
+        return ResponseEntity.status(200).body(comparisonService.compareMultipleProperties(userId, savedPropertyIds));
+    }
+
+
+
+
 }
