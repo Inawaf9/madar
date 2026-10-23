@@ -1,6 +1,7 @@
 package com.example.madar.Service;
 
 import com.example.madar.Api.ApiException;
+import com.example.madar.DTO.Out.SavedProperty.SavedPropertySummaryDTO;
 import com.example.madar.Model.SavedProperty;
 import com.example.madar.Model.User;
 import com.example.madar.Repository.SavedPropertyRepository;
@@ -9,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -23,9 +26,7 @@ private final SavedPropertyRepository savedPropertyRepository;
       throw new ApiException("User not found");
   }
   List<SavedProperty>userList=savedPropertyRepository.findSavedPropertiesByUser_Id(userId);
-  if(userList.isEmpty()){
-      throw new ApiException("No saved properties found for this user");
-  }
+
   return userList;
  }
 
@@ -58,6 +59,33 @@ private final SavedPropertyRepository savedPropertyRepository;
             throw new ApiException("You are not authorized to delete this saved property");
         }
         savedPropertyRepository.delete(savedProperty);
+    }
+
+
+    // Check if a property is saved by the user
+    public boolean isPropertySaved(Integer userId, String source, String externalId) {
+
+        User user = userRepository.findUserById(userId);
+        if (user == null) {
+            throw new ApiException("User not found");
+        }
+
+        return savedPropertyRepository.existsByUser_IdAndSourceAndExternalPropertyId(userId, source.toUpperCase(java.util.Locale.ROOT), externalId);
+    }
+
+    // Get saved properties summary
+    public SavedPropertySummaryDTO getSavedPropertiesSummary(Integer userId) {
+
+        User user = userRepository.findUserById(userId);
+        if (user == null) {
+            throw new ApiException("User not found");
+        }
+
+        List<SavedProperty> savedProperties = savedPropertyRepository.findSavedPropertiesByUser_Id(userId);
+
+        Map<String, Long> countBySource = savedProperties.stream().collect(Collectors.groupingBy(SavedProperty::getSource, Collectors.counting()));
+
+        return new SavedPropertySummaryDTO(savedProperties.size(), countBySource);
     }
 
 

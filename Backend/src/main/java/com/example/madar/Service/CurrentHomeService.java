@@ -3,6 +3,7 @@ package com.example.madar.Service;
 
 import com.example.madar.Api.ApiException;
 import com.example.madar.Client.GooglePlacesClient;
+import com.example.madar.DTO.Out.CurrentHome.CurrentHomeStatusDTO;
 import com.example.madar.DTO.Out.GooglePlaces.GooglePlacesResponseDTO;
 import com.example.madar.DTO.Out.GooglePlaces.NearbyPlaceResponseDTO;
 import com.example.madar.DTO.Out.GooglePlaces.NearbyInterestResponseDTO;
@@ -121,6 +122,8 @@ public class CurrentHomeService {
         currentHomeRepository.delete(currentHome);
     }
 
+    //extra endpoints
+
     // Confirm the user's single stored home without changing its other data.
     @Transactional
     public void confirmMove(Integer userId) {
@@ -207,6 +210,32 @@ public class CurrentHomeService {
                 .sorted(Comparator.comparing(NearbyPlaceResponseDTO::straightLineDistanceMeters)).toList();
     }
 
+
+
+    // Get the user's current home status
+    public CurrentHomeStatusDTO getCurrentHomeStatus(Integer userId) {
+
+        User user = userRepository.findUserById(userId);
+        if (user == null) {
+            throw new ApiException("User not found");
+        }
+
+        CurrentHome currentHome = currentHomeRepository.findCurrentHomeByUser_Id(userId);
+
+        if (currentHome == null) {
+            return new CurrentHomeStatusDTO("NO_HOME", null, null);
+        }
+
+        if (currentHome.getMovedInAt() == null) {
+            return new CurrentHomeStatusDTO("PENDING_MOVE", currentHome.getId(), null);
+        }
+
+        return new CurrentHomeStatusDTO("MOVED_IN", currentHome.getId(), currentHome.getMovedInAt());
+    }
+
+
+
+    //helper methods
     private CurrentHome getConfirmedHome(Integer userId) {
         CurrentHome home = getCurrentHomeByUserId(userId);
         if (home.getMovedInAt() == null) {
@@ -225,6 +254,7 @@ public class CurrentHomeService {
 
     //extra endpoints
 
+    //if there is  no use for it it will be delete
     public void isConfirmed(Integer userId){
 
         User user = userRepository.findUserById(userId);

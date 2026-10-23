@@ -1,6 +1,7 @@
 package com.example.madar.Controller;
 
 import com.example.madar.Api.ApiResponse;
+import com.example.madar.DTO.Out.User.UserDashboardSummaryDTO;
 import com.example.madar.Model.User;
 import com.example.madar.Service.UserService;
 import jakarta.validation.Valid;
@@ -60,5 +61,16 @@ public class UserController {
     public ResponseEntity<?> adminDeleteUser(@PathVariable Integer adminId, @PathVariable Integer userId){
         userService.adminDeleteUser(adminId, userId);
         return ResponseEntity.status(200).body(new ApiResponse("User deleted by admin successfully"));
+    }
+
+    @GetMapping("/profile-completion/{userId}")
+    public ResponseEntity<?> getProfileCompletion(@PathVariable Integer userId) {
+        return ResponseEntity.status(200).body(userService.getProfileCompletion(userId));
+    }
+
+    @GetMapping("/dashboard-summary/{userId}")
+    public ResponseEntity<UserDashboardSummaryDTO> getDashboardSummary(@PathVariable Integer userId) {
+
+        return ResponseEntity.status(200).body(userService.getDashboardSummary(userId));
     }
 }

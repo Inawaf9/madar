@@ -3,6 +3,7 @@ package com.example.madar.Controller;
 
 
 import com.example.madar.DTO.In.Recommendation.RecommendationWeightsDTO;
+import com.example.madar.DTO.Out.Recommendation.NeighborhoodSuitabilityDTO;
 import com.example.madar.DTO.Out.Recommendation.PropertyMatchResponseDTO;
 import com.example.madar.DTO.Out.Recommendation.SmartRecommendationResponseDTO;
 import com.example.madar.Service.RecommendationService;
@@ -30,9 +31,16 @@ public class RecommendationController {
 
     // Generate the top 10 personalized property recommendations
     @PostMapping("/smart/{userId}")
-    public ResponseEntity<SmartRecommendationResponseDTO> getSmartRecommendations(@PathVariable Integer userId, @RequestBody(required = false) @Valid RecommendationWeightsDTO weights) {
+    public ResponseEntity<SmartRecommendationResponseDTO> getSmartRecommendations(@PathVariable Integer userId, @RequestBody(required = false) @Valid RecommendationWeightsDTO weights,@RequestHeader(value = "Accept-Language", defaultValue = "ar") String language) {
 
-        return ResponseEntity.status(200).body(recommendationService.getSmartRecommendations(userId, weights));
+        return ResponseEntity.status(200).body(recommendationService.getSmartRecommendations(userId, weights,language));
     }
+
+    // Evaluate a neighborhood for the current user's lifestyle and commutes
+    @GetMapping("/neighborhood-suitability/{userId}")
+    public ResponseEntity<NeighborhoodSuitabilityDTO> getNeighborhoodSuitability(@PathVariable Integer userId, @RequestParam Double latitude, @RequestParam Double longitude, @RequestParam(required = false) String district,@RequestHeader(value = "Accept-Language", defaultValue = "ar") String language) {
+        return ResponseEntity.status(200).body(recommendationService.getNeighborhoodSuitability(userId, latitude, longitude, district,language));
+    }
+
 
 }

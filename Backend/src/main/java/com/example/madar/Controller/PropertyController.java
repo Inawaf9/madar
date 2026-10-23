@@ -101,4 +101,9 @@ public class PropertyController {
     public ResponseEntity<?> getSimilar(@PathVariable String source, @PathVariable String externalId, @RequestParam(defaultValue = "ar") String lang){
         return ResponseEntity.status(200).body(propertyService.localize(propertyService.getSimilar(source, externalId), lang));
     }
+
+    @GetMapping("/match-summary/{userId}")
+    public ResponseEntity<?> getMatchSummary(@PathVariable Integer userId) {
+        return ResponseEntity.status(200).body(propertyService.getMatchSummary(userId));
+    }
 }

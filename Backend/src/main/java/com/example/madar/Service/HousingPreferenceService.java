@@ -105,6 +105,7 @@ public class HousingPreferenceService {
         preference.setListingType(updatedPreference.getListingType());
 
         preference.setInterests(interests);
+        preference.setOccupantsCount(updatedPreference.getOccupantsCount());
 
         housingPreferenceRepository.save(preference);
     }

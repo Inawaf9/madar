@@ -41,7 +41,11 @@ public class HousingPreference {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal maxBudget;
 
-    //عدلتها
+    @NotNull(message = "Occupants count is required")
+    @Min(value = 1, message = "Occupants count must be at least 1")
+    @Column(columnDefinition = "int not null")
+    private Integer occupantsCount;
+
     @NotEmpty(message = "Property type is required")
     @Pattern(regexp = "^(apartment|villa|floor|duplex|building)$", message = "Property type must be apartment, villa, floor, duplex or building")
     @Column(columnDefinition = "varchar(30) not null")

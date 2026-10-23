@@ -3,6 +3,7 @@ package com.example.madar.Controller;
 
 
 import com.example.madar.Api.ApiResponse;
+import com.example.madar.DTO.Out.CurrentHome.CurrentHomeStatusDTO;
 import com.example.madar.Model.CurrentHome;
 import com.example.madar.Service.CurrentHomeService;
 import jakarta.validation.Valid;
@@ -86,4 +87,12 @@ public class CurrentHomeController {
                                          @RequestParam(defaultValue = "2000") Double radius) {
         return ResponseEntity.status(200).body(currentHomeService.searchNearby(userId, query, radius));
     }
+
+
+    @GetMapping("/status/{userId}")
+    public ResponseEntity<CurrentHomeStatusDTO> getCurrentHomeStatus(@PathVariable Integer userId) {
+
+        return ResponseEntity.status(200).body(currentHomeService.getCurrentHomeStatus(userId));
+    }
+
 }

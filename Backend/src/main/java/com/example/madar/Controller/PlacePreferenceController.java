@@ -3,6 +3,7 @@ package com.example.madar.Controller;
 import com.example.madar.Api.ApiResponse;
 import com.example.madar.DTO.Out.Commute.CommuteSummaryResponseDTO;
 import com.example.madar.DTO.Out.GooglePlaces.GooglePlacesResponseDTO;
+import com.example.madar.DTO.Out.PlacePreference.PlacePreferenceSummaryDTO;
 import com.example.madar.Model.PlacePreference;
 import com.example.madar.Service.PlacePreferenceService;
 import com.example.madar.Service.PaymentService;
@@ -70,6 +71,12 @@ public class PlacePreferenceController {
         GooglePlacesResponseDTO response = placePreferenceService.getNearbyServices(latitude, longitude, placeType, radiusMeters);
 
         return ResponseEntity.status(200).body(response);
+    }
+
+    @GetMapping("/summary/{userId}")
+    public ResponseEntity<PlacePreferenceSummaryDTO> getPlacesSummary(@PathVariable Integer userId) {
+
+        return ResponseEntity.status(200).body(placePreferenceService.getPlacesSummary(userId));
     }
 
 

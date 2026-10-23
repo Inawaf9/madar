@@ -73,17 +73,19 @@ public class PropertyComparisonController {
 
     // Compare two properties without saving them
     @GetMapping("/compare-two/{userId}/{firstSource}/{firstPropertyId}/{secondSource}/{secondPropertyId}")
-    public ResponseEntity<?> compareTwoProperties(@PathVariable Integer userId, @PathVariable String firstSource, @PathVariable String firstPropertyId, @PathVariable String secondSource, @PathVariable String secondPropertyId) {
-        return ResponseEntity.status(200).body(comparisonService.compareTwoProperties(userId, firstSource, firstPropertyId, secondSource, secondPropertyId));
+
+    public ResponseEntity<?> compareTwoProperties(@PathVariable Integer userId, @PathVariable String firstSource, @PathVariable String firstPropertyId, @PathVariable String secondSource, @PathVariable String secondPropertyId
+    ,@RequestHeader(value = "Accept-Language", defaultValue = "ar") String language) {
+        return ResponseEntity.status(200).body(comparisonService.compareTwoProperties(userId, firstSource, firstPropertyId, secondSource, secondPropertyId,language));
     }
 
 
 
     // Compare selected saved properties with AI
     @GetMapping("/compare-multiple/{userId}/{savedPropertyIds}")
-    public ResponseEntity<PropertyComparisonResultDTO> compareMultipleProperties(@PathVariable Integer userId, @PathVariable List<Integer> savedPropertyIds) {
+    public ResponseEntity<PropertyComparisonResultDTO> compareMultipleProperties(@PathVariable Integer userId, @PathVariable List<Integer> savedPropertyIds,@RequestHeader(value = "Accept-Language", defaultValue = "ar") String language) {
 
-        return ResponseEntity.status(200).body(comparisonService.compareMultipleProperties(userId, savedPropertyIds));
+        return ResponseEntity.status(200).body(comparisonService.compareMultipleProperties(userId, savedPropertyIds,language));
     }
 
 

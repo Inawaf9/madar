@@ -123,7 +123,7 @@ public class PropertyComparisonService {
 
 
     // Compare two properties directly without saving them
-    public PropertyComparisonResultDTO compareTwoProperties(Integer userId, String firstSource, String firstPropertyId, String secondSource, String secondPropertyId) {
+    public PropertyComparisonResultDTO compareTwoProperties(Integer userId, String firstSource, String firstPropertyId, String secondSource, String secondPropertyId,String language) {
 
         if (firstSource == null || secondSource == null || firstPropertyId == null || secondPropertyId == null ||
                 firstSource.isBlank() || secondSource.isBlank() || firstPropertyId.isBlank() || secondPropertyId.isBlank()) {
@@ -145,18 +145,18 @@ public class PropertyComparisonService {
         compared.add(calculateComparedProperty(userId, firstProperty, null));
         compared.add(calculateComparedProperty(userId, secondProperty, null));
 
-        return buildComparisonResult(compared, preference);
+        return buildComparisonResult(compared, preference,language);
     }
 
 
     // Compare selected saved properties with AI analysis
-    public PropertyComparisonResultDTO compareMultipleProperties(Integer userId, List<Integer> savedPropertyIds) {
+    public PropertyComparisonResultDTO compareMultipleProperties(Integer userId, List<Integer> savedPropertyIds,String language) {
 
         HousingPreference preference = getHousingPreference(userId);
 
         List<ComparedPropertyDTO> compared = compareSavedProperties(userId, savedPropertyIds);
 
-        return buildComparisonResult(compared, preference);
+        return buildComparisonResult(compared, preference,language);
     }
 
 
@@ -213,11 +213,11 @@ public class PropertyComparisonService {
 
 
     // Sort properties and generate AI analysis
-    private PropertyComparisonResultDTO buildComparisonResult(List<ComparedPropertyDTO> compared, HousingPreference preference) {
+    private PropertyComparisonResultDTO buildComparisonResult(List<ComparedPropertyDTO> compared, HousingPreference preference,String language) {
 
         compared.sort(Comparator.comparing(ComparedPropertyDTO::matchScore).reversed());
 
-        ComparisonExplanationDTO aiAnalysis = recommendationAI.explainComparison(compared, preference);
+        ComparisonExplanationDTO aiAnalysis = recommendationAI.explainComparison(compared, preference,language);
 
         return new PropertyComparisonResultDTO(compared, aiAnalysis);
     }

@@ -4,6 +4,7 @@ import com.example.madar.Api.ApiException;
 import com.example.madar.Client.GooglePlacesClient;
 import com.example.madar.DTO.Out.Commute.CommuteSummaryResponseDTO;
 import com.example.madar.DTO.Out.GooglePlaces.GooglePlacesResponseDTO;
+import com.example.madar.DTO.Out.PlacePreference.PlacePreferenceSummaryDTO;
 import com.example.madar.Model.PlacePreference;
 import com.example.madar.Model.User;
 import com.example.madar.Repository.PlacePreferenceRepository;
@@ -18,7 +19,9 @@ import com.example.madar.DTO.Out.GoogleRoutes.GoogleRouteResponseDTO;
 import java.util.ArrayList;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -37,9 +40,7 @@ public List<PlacePreference>getMyPlaces(Integer userId){
         throw new ApiException("User not found");
     }
     List<PlacePreference>userPlaces=placePreferenceRepository.findPlacePreferencesByUser_Id(userId);
-    if(userPlaces.isEmpty()){
-        throw new ApiException("No places found for this user");
-    }
+
     return userPlaces;
 }
 
@@ -193,6 +194,20 @@ public List<PlacePreference>getMyPlaces(Integer userId){
     }
 
 
+    // Get important locations summary
+    public PlacePreferenceSummaryDTO getPlacesSummary(Integer userId) {
+
+        User user = userRepository.findUserById(userId);
+        if (user == null) {
+            throw new ApiException("User not found");
+        }
+
+        List<PlacePreference> places = placePreferenceRepository.findPlacePreferencesByUser_Id(userId);
+
+        Map<String, Long> countByType = places.stream().collect(Collectors.groupingBy(PlacePreference::getType, Collectors.counting()));
+
+        return new PlacePreferenceSummaryDTO(places.size(), countByType);
+    }
 
 
 
