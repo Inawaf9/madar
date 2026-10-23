@@ -38,6 +38,16 @@ public class PropertyDTO {
     @JsonIgnore
     private String descriptionEn; // ترجمة الوصف من Kite (للاستخدام الداخلي)
 
+    //both languages in the same response, so the frontend can switch language without a new request
+    private String titleAr;
+    private String titleEn;
+    private String neighborhoodAr;
+    private String neighborhoodNameEn;
+    private String cityNameAr;
+    private String cityNameEn;
+    private String descriptionAr;
+    private String descriptionTextEn;
+
     // Public cards/details retain the provider's original price and attribution.
     private Integer bathrooms;
     private String pricePeriod;

@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/saved-property")
 @RequiredArgsConstructor
 public class SavedPropertyController {
-
     private final SavedPropertyService savedPropertyService;
 
-    //get my saved properties
+
+    //get my saved properties (live data, both languages)
     @GetMapping("/get/{userId}")
-    public ResponseEntity<?> getMySavedProperty(@PathVariable Integer userId){
-        return ResponseEntity.status(200).body(savedPropertyService.getMySavedProperty(userId));
+    public ResponseEntity<?> getMySavedProperty(@PathVariable Integer userId, @RequestParam(defaultValue = "ar") String lang){
+        return ResponseEntity.status(200).body(savedPropertyService.getMySavedProperty(userId, lang));
     }
 
     //add saved property
