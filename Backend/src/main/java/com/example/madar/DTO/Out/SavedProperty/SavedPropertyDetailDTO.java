@@ -16,6 +16,8 @@ public class SavedPropertyDetailDTO {
     private String externalPropertyId;
     private String source;
     private String titleSnapshot;
+    private String titleSnapshotAr;
+    private String titleSnapshotEn;
     private LocalDateTime savedAt;
 
     //new: live listing from Kite in both languages

@@ -44,7 +44,8 @@ private final PropertyService propertyService;
                 available = false;
             }
             result.add(new SavedPropertyDetailDTO(saved.getId(), saved.getExternalPropertyId(), saved.getSource(),
-                    saved.getTitleSnapshot(), saved.getSavedAt(), available, property));
+                    saved.getTitleSnapshot(), saved.getTitleSnapshotAr(), saved.getTitleSnapshotEn(),
+                    saved.getSavedAt(), available, property));
         }
         return result;
     }
@@ -62,6 +63,15 @@ private final PropertyService propertyService;
      if(exist){
          throw new ApiException("This property is already in your saved list");
      }
+        //get the property from Kite: make sure it exists and save its title in both languages
+        PropertyDTO property;
+        try{
+            property = propertyService.getPropertyById(savedProperty.getSource(), savedProperty.getExternalPropertyId());
+        }catch (Exception e){
+            throw new ApiException("Property not found");
+        }
+        savedProperty.setTitleSnapshotAr(propertyService.localizeOne(property, "ar").getTitle());
+        savedProperty.setTitleSnapshotEn(propertyService.localizeOne(property, "en").getTitle());
         savedProperty.setId(null);
         savedProperty.setUser(user);
         savedPropertyRepository.save(savedProperty);
