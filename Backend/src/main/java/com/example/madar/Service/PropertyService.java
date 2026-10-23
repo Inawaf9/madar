@@ -4,10 +4,7 @@ import com.example.madar.Api.ApiException;
 import com.example.madar.Client.KiteClient;
 import com.example.madar.DTO.In.Property.KiteDTO;
 import com.example.madar.DTO.In.Property.PropertySearchRequestDTO;
-import com.example.madar.DTO.Out.Property.MatchSummaryDTO;
-import com.example.madar.DTO.Out.Property.PriceStatsDTO;
-import com.example.madar.DTO.Out.Property.PropertyDTO;
-import com.example.madar.DTO.Out.Property.PropertySearchResponseDTO;
+import com.example.madar.DTO.Out.Property.*;
 import com.example.madar.Model.HousingPreference;
 import com.example.madar.Model.User;
 import com.example.madar.Repository.HousingPreferenceRepository;
@@ -518,6 +515,33 @@ public class PropertyService {
 
 
 
+    // Analyze property affordability based on the user's budget
+    public PropertyAffordabilityDTO analyzeAffordability(Integer userId, String source, String externalId) {
+
+        HousingPreference preference = housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+
+        if (preference == null) {
+            throw new ApiException("Housing preferences not found");
+        }
+
+        if (preference.getMaxBudget() == null || preference.getMaxBudget().doubleValue() <= 0) {
+            throw new ApiException("Housing budget is invalid");
+        }
+
+        PropertyDTO property = getPropertyById(source, externalId);
+
+        if (property.getPrice() == null || property.getPrice() <= 0) {
+            throw new ApiException("Property price is unavailable");
+        }
+
+        double budget = preference.getMaxBudget().doubleValue();
+        double price = property.getPrice();
+
+        double difference = budget - price;
+        double percentage = Math.round((Math.abs(difference) / budget) * 10000.0) / 100.0;
+
+        return new PropertyAffordabilityDTO(property.getExternalId(), price, budget, Math.round(difference * 100.0) / 100.0, percentage, price <= budget);
+    }
 
 
     /////Helper methods/////

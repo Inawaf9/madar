@@ -227,6 +227,30 @@ public class RecommendationService {
 
 
 
+    // Compare two neighborhood locations based on existing suitability scores
+    public NeighborhoodComparisonDTO compareNeighborhoods(Integer userId, Double firstLatitude, Double firstLongitude, String firstDistrict, Double secondLatitude, Double secondLongitude, String secondDistrict, String language) {
+
+        NeighborhoodSuitabilityDTO first = getNeighborhoodSuitability(userId, firstLatitude, firstLongitude, firstDistrict, language);
+
+        NeighborhoodSuitabilityDTO second = getNeighborhoodSuitability(userId, secondLatitude, secondLongitude, secondDistrict, language);
+
+        double firstScore = first.neighborhoodScore();
+        double secondScore = second.neighborhoodScore();
+
+        double difference = Math.round(Math.abs(firstScore - secondScore) * 100.0) / 100.0;
+
+        String betterNeighborhood;
+
+        if (firstScore > secondScore) {
+            betterNeighborhood = "FIRST";
+        } else if (secondScore > firstScore) {
+            betterNeighborhood = "SECOND";
+        } else {
+            betterNeighborhood = "TIE";
+        }
+
+        return new NeighborhoodComparisonDTO(first, second, betterNeighborhood, difference);
+    }
 
 
 

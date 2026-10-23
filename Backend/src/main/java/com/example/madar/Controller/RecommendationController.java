@@ -3,6 +3,7 @@ package com.example.madar.Controller;
 
 
 import com.example.madar.DTO.In.Recommendation.RecommendationWeightsDTO;
+import com.example.madar.DTO.Out.Recommendation.NeighborhoodComparisonDTO;
 import com.example.madar.DTO.Out.Recommendation.NeighborhoodSuitabilityDTO;
 import com.example.madar.DTO.Out.Recommendation.PropertyMatchResponseDTO;
 import com.example.madar.DTO.Out.Recommendation.SmartRecommendationResponseDTO;
@@ -43,4 +44,11 @@ public class RecommendationController {
     }
 
 
+    @GetMapping("/compare-neighborhoods/{userId}")
+    public ResponseEntity<NeighborhoodComparisonDTO> compareNeighborhoods(
+            @PathVariable Integer userId, @RequestParam Double firstLatitude, @RequestParam Double firstLongitude, @RequestParam String firstDistrict,
+            @RequestParam Double secondLatitude, @RequestParam Double secondLongitude, @RequestParam String secondDistrict, @RequestHeader(value = "Accept-Language", defaultValue = "ar") String language) {
+
+        return ResponseEntity.status(200).body(recommendationService.compareNeighborhoods(userId, firstLatitude, firstLongitude, firstDistrict, secondLatitude, secondLongitude, secondDistrict, language));
+    }
 }

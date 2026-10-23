@@ -1,5 +1,6 @@
 package com.example.madar.Controller;
 
+import com.example.madar.DTO.Out.Property.PropertyAffordabilityDTO;
 import com.example.madar.Service.PropertyService;
 import com.example.madar.Service.NearbyInterestService;
 import com.example.madar.DTO.In.Property.PropertySearchRequestDTO;
@@ -105,5 +106,11 @@ public class PropertyController {
     @GetMapping("/match-summary/{userId}")
     public ResponseEntity<?> getMatchSummary(@PathVariable Integer userId) {
         return ResponseEntity.status(200).body(propertyService.getMatchSummary(userId));
+    }
+
+    @GetMapping("/affordability/{userId}")
+    public ResponseEntity<PropertyAffordabilityDTO> analyzeAffordability(@PathVariable Integer userId, @RequestParam String source, @RequestParam String externalId) {
+
+        return ResponseEntity.status(200).body(propertyService.analyzeAffordability(userId, source, externalId));
     }
 }
