@@ -6,14 +6,12 @@ import com.example.madar.Model.HousingPreference;
 import com.example.madar.Model.User;
 import com.example.madar.Repository.HousingPreferenceRepository;
 import com.example.madar.Repository.UserRepository;
-import com.example.madar.Util.PlaceCategories;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor

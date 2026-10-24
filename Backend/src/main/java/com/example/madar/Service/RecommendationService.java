@@ -286,6 +286,202 @@ public class RecommendationService {
 
 
 
+    public NeighborhoodSuggestionsResponseDTO suggestNeighborhoods(Integer userId, String language) {
+        return suggestNeighborhoods(userId, language, null);
+    }
+
+    public NeighborhoodSuggestionsResponseDTO suggestNeighborhoods(Integer userId, String language, RecommendationWeightsDTO weights) {
+
+
+        HousingPreference preference =
+                housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+
+        if (preference == null) {
+            throw new ApiException("Housing preferences not found");
+        }
+
+        if (preference.getMaxBudget() == null
+                || preference.getMaxBudget().signum() <= 0) {
+            throw new ApiException("Housing budget is invalid");
+        }
+
+        // Find available properties matching the user's housing preferences
+        List<PropertyDTO> properties = propertyService.search(
+                preference.getCity(),
+                preference.getListingType(),
+                preference.getPropertyType(),
+                preference.getMaxBudget().intValue()
+        );
+
+        if (properties == null || properties.isEmpty()) {
+            throw new ApiException("No matching properties found");
+        }
+
+        // Group valid properties by neighborhood
+        Map<String, List<PropertyDTO>> neighborhoods = new LinkedHashMap<>();
+
+        for (PropertyDTO property : properties) {
+
+            if (property == null
+                    || property.getNeighborhood() == null
+                    || property.getNeighborhood().isBlank()
+                    || property.getLatitude() == null
+                    || property.getLongitude() == null
+                    || !Double.isFinite(property.getLatitude())
+                    || !Double.isFinite(property.getLongitude())
+                    || Math.abs(property.getLatitude()) > 90
+                    || Math.abs(property.getLongitude()) > 180
+                    || property.getPrice() == null
+                    || property.getPrice() <= 0
+                    || property.getPrice() > preference.getMaxBudget().doubleValue()) {
+                continue;
+            }
+
+            String district = property.getNeighborhood().trim();
+
+            neighborhoods.computeIfAbsent(
+                    district, key -> new ArrayList<>()
+            ).add(property);
+        }
+
+        if (neighborhoods.isEmpty()) {
+            throw new ApiException("No neighborhoods with valid property locations");
+        }
+
+        // Evaluate up to 5 candidate neighborhoods
+        List<List<PropertyDTO>> candidates = neighborhoods.values()
+                .stream()
+                .sorted(Comparator.comparingInt(
+                        (List<PropertyDTO> group) -> group.size()
+                ).reversed())
+                .limit(5)
+                .toList();
+
+        List<NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood> evaluated =
+                new ArrayList<>();
+
+        for (List<PropertyDTO> group : candidates) {
+
+            // Select a representative actual listing location
+            List<Double> latitudes = group.stream()
+                    .map(PropertyDTO::getLatitude)
+                    .sorted()
+                    .toList();
+
+            List<Double> longitudes = group.stream()
+                    .map(PropertyDTO::getLongitude)
+                    .sorted()
+                    .toList();
+
+            double middleLatitude = latitudes.get(latitudes.size() / 2);
+            double middleLongitude = longitudes.get(longitudes.size() / 2);
+
+            PropertyDTO representative = group.stream()
+                    .min(Comparator.comparingDouble(property ->
+                            Math.pow(property.getLatitude() - middleLatitude, 2)
+                                    + Math.pow(
+                                    (property.getLongitude() - middleLongitude)
+                                            * Math.cos(Math.toRadians(middleLatitude)),
+                                    2
+                            )
+                    ))
+                    .orElseThrow();
+
+            Integer lowestPrice = group.stream()
+                    .map(PropertyDTO::getPrice)
+                    .min(Integer::compareTo)
+                    .orElse(null);
+
+            // Reuse our existing neighborhood scoring and AI explanation
+            try {
+                NeighborhoodSuitabilityDTO suitability =
+                        getNeighborhoodSuitability(
+                                userId,
+                                representative.getLatitude(),
+                                representative.getLongitude(),
+                                representative.getNeighborhood(),
+                                language
+                        );
+
+
+                PropertyMatchResponseDTO match = calculateScore(
+                        userId,
+                        representative,
+                        preference,
+                        weights,
+                        false,
+                        suitability.servicesScore()
+                );
+
+
+
+                evaluated.add(
+                        new NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood(
+                                0,
+                                representative.getNeighborhood(),
+                                representative.getLatitude(),
+                                representative.getLongitude(),
+                                group.size(),
+                                lowestPrice,
+                                match.housingScore(),
+                                match.matchScore(),
+                                suitability
+                        )
+                );
+
+
+            } catch (ApiException e) {
+                // Skip a candidate only if its suitability cannot be evaluated
+                log.warn(
+                        "Neighborhood {} could not be evaluated: {}",
+                        representative.getNeighborhood(),
+                        e.getMessage()
+                );
+            }
+        }
+
+        if (evaluated.isEmpty()) {
+            throw new ApiException("Neighborhood suggestions are unavailable");
+        }
+
+
+        evaluated.sort(Comparator.comparingDouble((NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood item) -> item.matchScore()).reversed());
+
+
+        List<NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood> top =
+                new ArrayList<>();
+
+        for (int i = 0; i < Math.min(3, evaluated.size()); i++) {
+
+            var item = evaluated.get(i);
+
+
+            top.add(
+                    new NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood(
+                            i + 1,
+                            item.district(),
+                            item.latitude(),
+                            item.longitude(),
+                            item.sampledPropertyCount(),
+                            item.lowestSampledPrice(),
+                            item.housingScore(),
+                            item.matchScore(),
+                            item.suitability()
+                    )
+            );
+
+        }
+
+        String aiAnalysis = recommendationAI.explainNeighborhoodSuggestions(top, preference, language);
+
+        return new NeighborhoodSuggestionsResponseDTO(
+                preference.getCity(),
+                "Suggestions are based on available Kite property samples, "
+                        + "not every neighborhood in the city. "
+                        + "Coordinates represent actual sampled listings.",
+                top, aiAnalysis);
+
+    }
 
 
 
@@ -518,7 +714,7 @@ public class RecommendationService {
             housingScore += 5;
         }
         // Adjust housing suitability based on household size and bedrooms
-// Evaluate bedroom suitability based on household size
+        // Evaluate bedroom suitability based on household size
         Integer occupantsCount = preference.getOccupantsCount();
         Integer bedrooms = property.getBedrooms();
 

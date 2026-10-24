@@ -3,10 +3,7 @@ package com.example.madar.Controller;
 
 
 import com.example.madar.DTO.In.Recommendation.RecommendationWeightsDTO;
-import com.example.madar.DTO.Out.Recommendation.NeighborhoodComparisonDTO;
-import com.example.madar.DTO.Out.Recommendation.NeighborhoodSuitabilityDTO;
-import com.example.madar.DTO.Out.Recommendation.PropertyMatchResponseDTO;
-import com.example.madar.DTO.Out.Recommendation.SmartRecommendationResponseDTO;
+import com.example.madar.DTO.Out.Recommendation.*;
 import com.example.madar.Service.RecommendationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -51,4 +48,13 @@ public class RecommendationController {
 
         return ResponseEntity.status(200).body(recommendationService.compareNeighborhoods(userId, firstLatitude, firstLongitude, firstDistrict, secondLatitude, secondLongitude, secondDistrict, language));
     }
+    
+
+    @PostMapping("/suggest-neighborhoods/{userId}")
+    public ResponseEntity<NeighborhoodSuggestionsResponseDTO> suggestNeighborhoodsWithWeights(@PathVariable Integer userId, @RequestBody(required = false) @Valid RecommendationWeightsDTO weights, @RequestHeader(value = "Accept-Language", defaultValue = "ar") String language) {
+
+        return ResponseEntity.ok(recommendationService.suggestNeighborhoods(userId, language, weights));
+    }
+
+
 }
