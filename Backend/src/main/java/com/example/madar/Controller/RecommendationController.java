@@ -2,6 +2,7 @@ package com.example.madar.Controller;
 
 
 
+import com.example.madar.Api.ApiResponse;
 import com.example.madar.DTO.In.Recommendation.RecommendationWeightsDTO;
 import com.example.madar.DTO.Out.Recommendation.*;
 import com.example.madar.Service.RecommendationService;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -48,13 +50,30 @@ public class RecommendationController {
 
         return ResponseEntity.status(200).body(recommendationService.compareNeighborhoods(userId, firstLatitude, firstLongitude, firstDistrict, secondLatitude, secondLongitude, secondDistrict, language));
     }
-    
+
 
     @PostMapping("/suggest-neighborhoods/{userId}")
     public ResponseEntity<NeighborhoodSuggestionsResponseDTO> suggestNeighborhoodsWithWeights(@PathVariable Integer userId, @RequestBody(required = false) @Valid RecommendationWeightsDTO weights, @RequestHeader(value = "Accept-Language", defaultValue = "ar") String language) {
 
-        return ResponseEntity.ok(recommendationService.suggestNeighborhoods(userId, language, weights));
+        return ResponseEntity.status(200).body(recommendationService.suggestNeighborhoods(userId, language, weights));
     }
+
+
+    @PutMapping("/select-neighborhood/{userId}")
+    public ResponseEntity<ApiResponse> selectNeighborhood(@PathVariable Integer userId, @RequestBody Map<String, String> request) {
+
+        recommendationService.selectNeighborhood(userId, request.get("district"));
+
+        return ResponseEntity.status(200).body(new ApiResponse("Neighborhood selected successfully"));
+    }
+
+
+    @PostMapping("/selected-neighborhood-properties/{userId}")
+    public ResponseEntity<SmartRecommendationResponseDTO> getSelectedNeighborhoodRecommendations(@PathVariable Integer userId, @RequestBody(required = false) @Valid RecommendationWeightsDTO weights, @RequestHeader(value = "Accept-Language", defaultValue = "ar") String language) {
+
+        return ResponseEntity.status(200).body(recommendationService.getSelectedNeighborhoodRecommendations(userId, weights, language));
+    }
+
 
 
 }
