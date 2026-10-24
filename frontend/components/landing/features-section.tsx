@@ -2,6 +2,7 @@
 
 import { Compass, ExternalLink, HeartHandshake, MapPin, Scale, Sparkles } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { SectionHeading } from "./section-heading";
 import { motion, useReducedMotion } from "motion/react";
 
 const features = [
@@ -26,7 +27,7 @@ export function FeaturesSection() {
     <section className="bg-card py-14 sm:py-18 lg:py-20">
       <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-2xl"><p className={`text-xs font-bold text-accent-ink ${locale === "en" ? "tracking-[0.12em]" : ""}`}>{t("eyebrow")}</p><h2 className={`mt-3 font-heading text-[clamp(1.85rem,3.5vw,3rem)] font-medium leading-[1.25] ${locale === "en" ? "tracking-[-0.03em]" : "tracking-normal"}`}>{t("title")}</h2><p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">{t("description")}</p></div>
+          <SectionHeading eyebrow={t("eyebrow")} title={t("title")} description={t("description")} />
           <p className="inline-flex items-center gap-2 pb-1 text-xs text-muted-foreground"><span className="size-1.5 rounded-full bg-accent" />{t("demoNote")}</p>
         </div>
 

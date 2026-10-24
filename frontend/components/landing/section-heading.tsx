@@ -2,6 +2,7 @@
 
 import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
+import { DisplayHeading } from "@/components/typography/display-heading";
 
 type SectionHeadingProps = {
   eyebrow: string;
@@ -22,7 +23,7 @@ export function SectionHeading({ eyebrow, title, description, align = "start", t
   return (
     <div className={cn("max-w-2xl", align === "center" && "mx-auto text-center", className)}>
       {eyebrow ? <p className={cn("text-xs font-bold", locale === "en" && "tracking-[.12em]", inverse ? "text-comparison-foreground/85" : "text-accent-ink")}>{eyebrow}</p> : null}
-      <h2 className={cn("text-[clamp(1.75rem,3.25vw,2.75rem)] leading-[1.4] text-balance", eyebrow && "mt-3", editorial ? "font-display font-bold" : "font-heading font-medium", textColor)}>{title}</h2>
+      <DisplayHeading as="h2" variant="editorial" className={cn(eyebrow && "mt-3", !editorial && "font-heading font-medium", textColor)}>{title}</DisplayHeading>
       <p className={cn("mt-4 max-w-2xl text-sm leading-7 sm:text-base sm:leading-8", mutedColor)}>{description}</p>
     </div>
   );

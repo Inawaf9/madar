@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     ".next-production-check/**",
     "out/**",
     "build/**",
+    "public/maplibre/**",
     "next-env.d.ts",
   ]),
 ]);

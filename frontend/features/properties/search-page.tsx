@@ -1,18 +1,39 @@
 "use client";
+import { DisplayHeading } from "@/components/typography/display-heading";
+import { useEffect } from "react";
+import { useLocale } from "next-intl";
+import { useLocationTranslations } from "./use-location-translations";
+import { apiLanguage } from "@/lib/api/config";
 import { useSearchParams } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useLocationSelection } from "./location-hooks";
 import { discovery } from "@/lib/api/discovery";
-import { parseSearch, serializeQuery } from "@/lib/api/discovery-contracts";
+import { parseSearch } from "@/lib/api/discovery-contracts";
+import { serializeQuery } from "@/lib/api/query";
+import { usePreferenceSearch } from "./use-preference-search";
+import { searchSnapshot, searchStateKey } from "./preference-search";
 import { SearchForm } from "./search-form";
 import { PropertyCard } from "./property-card";
-import { PropertyGridSkeleton } from "./skeletons";
-import { ErrorState, EmptyState, PageHeading } from "@/features/product/shared";
+import { PropertyGridSkeleton, SearchSkeleton } from "./skeletons";
+import { ErrorState } from "@/components/shared/error-state";
+import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 
 export function PropertySearchPage() {
+  const locale = useLocale(); const ar = locale === "ar"; const language = apiLanguage(locale);
   const params = useSearchParams(); const serialized = params.toString();
+  const preferences = usePreferenceSearch(serialized);
   const parsed = parseSearch(new URLSearchParams(serialized));
-  const filters = parsed.success ? parsed.data : undefined;
+  const t = useLocationTranslations();
+  const location = useLocationSelection(params.get("city") || "", params.get("neighborhoodId") || "");
+  useEffect(() => {
+    const next = new URLSearchParams(serialized);
+    next.delete("region");
+    next.delete("cityId");
+    if (next.toString() !== serialized) window.history.replaceState(null, "", `${window.location.pathname}?${next}${window.location.hash}`);
+  }, [serialized]);
+  const locationDraft = params.get("locationDraft") === "1";
+  const filters = !preferences.initializing && parsed.success && location.ready && !locationDraft ? { ...parsed.data, lang: language } : undefined;
   const result = useInfiniteQuery({
     queryKey: ["property-search", filters ? serializeQuery(filters) : serialized],
     initialPageParam: filters?.cursor,
@@ -26,17 +47,33 @@ export function PropertySearchPage() {
   const unique = new Set<string>();
   const properties = result.data?.pages.flatMap(page => page.data).filter((p, index) => { const key = p.externalId ? `${p.source}:${p.externalId}` : `missing:${index}`; if (unique.has(key)) return false; unique.add(key); return true; }) || [];
   const last = result.data?.pages.at(-1);
+  const preferencesApplied = params.get(searchStateKey) === "preferences";
+  const replaceSearch = (next: URLSearchParams) => window.history.pushState(null, "", `${window.location.pathname}?${next}${window.location.hash}`);
+  if (preferences.initializing) return <div className="flex flex-col gap-4"><div role="status" className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground"><span>{ar ? "جارٍ تجهيز البحث وفق تفضيلاتك…" : "Preparing search from your preferences…"}</span><Button variant="ghost" size="sm" onClick={() => replaceSearch(searchSnapshot(new URLSearchParams(serialized), {}, "manual"))}>{ar ? "المتابعة دون تفضيلات" : "Continue without preferences"}</Button></div><SearchSkeleton /></div>;
+  const broaden = () => {
+    const next = new URLSearchParams(serialized);
+    ["neighborhoodId", "minPrice", "maxPrice", "minArea", "maxArea", "minBedrooms", "minBathrooms", "q", "furnished", "rentFrequency", "cursor", "locationDraft", "preferenceNotice"].forEach(key => next.delete(key));
+    next.set("type", "all"); next.set(searchStateKey, "manual"); replaceSearch(next);
+  };
   return <div className="flex flex-col gap-8">
-    <PageHeading title="اكتشف بيتًا يناسب حياتك" description="تصفح العقارات دون تسجيل. اختر مدينة وحدّد احتياجاتك، ثم احفظ خياراتك إن رغبت." />
-    <SearchForm key={serialized} initial={Object.fromEntries(params)} />
-    {!params.get("city") ? <EmptyState title="اختر مدينة لبدء البحث" description="لا نختار موقعًا نيابةً عنك. الاستكشاف العام لا يتطلب ملفًا شخصيًا." /> : !parsed.success ? <p role="alert" className="rounded-2xl border border-destructive p-5 text-destructive">{parsed.message}</p> : result.isPending ? <PropertyGridSkeleton /> : <>
-      {result.isError ? <ErrorState error={result.error} retry={() => void result.refetch()} /> : null}
-      {!result.isError && !properties.length ? <EmptyState title="لا توجد نتائج مطابقة" description="جرّب تعديل الميزانية أو نوع العقار أو الفلاتر الأخرى." /> : null}
-      {properties.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{properties.map((property, index) => <PropertyCard key={`${property.source}:${property.externalId || index}`} property={property} />)}</div> : null}
-      {result.isFetchingNextPage ? <p role="status">جارٍ تحميل دفعة إضافية…</p> : null}
-      {result.hasNextPage ? <Button size="lg" disabled={result.isFetching} onClick={() => { if (!result.isFetching) void result.fetchNextPage(); }}>تحميل المزيد</Button> : null}
-      {last?.pagination.resultWindowReached ? <p className="text-sm text-muted-foreground">وصلت إلى حد نافذة نتائج المزوّد. ضيّق نطاق البحث لرؤية خيارات أخرى.</p> : null}
-      {last && !result.hasNextPage && properties.length ? <p className="text-xs text-muted-foreground">انتهت النتائج المتاحة لهذا البحث؛ لا يعني ذلك حصر جميع الإعلانات.</p> : null}
+    <header className="flex flex-col gap-2"><DisplayHeading>{ar ? "البحث عن عقار" : "Property search"}</DisplayHeading><p className="text-sm leading-7 text-muted-foreground">{t("searchDescription")}</p></header>
+    <div className="flex min-w-0 flex-col gap-3">
+      {preferences.userId ? <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><Button type="button" variant="ghost" size="sm" disabled={preferences.restoring} onClick={() => void preferences.restore()}>{preferences.restoring ? ar ? "جارٍ تحميل تفضيلاتك…" : "Loading preferences…" : ar ? "استخدام تفضيلاتي" : "Use my preferences"}</Button>{preferencesApplied ? <p role="status" className="text-xs text-muted-foreground">{ar ? "تفضيلات سكن مطبّقة؛ يمكنك تعديلها هنا دون تغيير التفضيلات المحفوظة." : "Housing preferences applied. Changes here do not update saved preferences."}</p> : null}</div> : null}
+      {preferences.feedback ? <p role="status" className="text-xs text-muted-foreground">{preferences.feedback === "none" ? ar ? "لا توجد تفضيلات محفوظة بعد؛ يمكنك البحث مباشرة." : "No saved preferences yet. You can search directly." : ar ? "تعذّر تحميل التفضيلات الآن؛ يمكنك متابعة البحث يدويًا." : "Preferences could not be loaded. You can continue searching manually."}</p> : null}
+      {preferencesApplied && params.has("preferenceNotice") ? <p role="status" className="text-xs text-muted-foreground">{ar ? "بعض التفضيلات لم تُطبق لتعذّر مطابقتها بكتالوج المواقع أو حدود البحث. راجع القيم المختارة." : "Some preferences could not be matched to the location catalog or search limits. Review the selected filters."}</p> : null}
+      <SearchForm key={serialized} initial={Object.fromEntries(params)} initialQuery={serialized} onInteraction={preferences.cancelRestore} />
+    </div>
+    <section aria-label={ar ? "نتائج العقارات" : "Property results"} className="flex min-w-0 flex-col gap-5"><div className="flex flex-wrap items-baseline justify-between gap-2"><DisplayHeading as="h2" variant="section">{ar ? "نتائج البحث" : "Search results"}</DisplayHeading>{properties.length ? <p className="text-xs text-muted-foreground">{ar ? `تم تحميل ${properties.length} من العقارات` : `${properties.length} properties loaded`}</p> : null}</div>
+    {!params.get("city") ? <EmptyState title={ar ? "اختر مدينة لبدء البحث" : "Choose a city to start"} description={ar ? "يمكنك البحث مباشرة أو استخدام تفضيلاتك المحفوظة إن وجدت." : "Search directly or use your saved preferences when available."} /> : !parsed.success ? <p role="alert" className="rounded-2xl border border-destructive p-5 text-destructive">{parsed.message}</p> : location.pending ? <div role="status"><span className="sr-only">{t("checkingLocations")}</span><PropertyGridSkeleton appearance="image" count={6} /></div> : (location.cities.isError && !location.cities.data) || (params.get("neighborhoodId") && location.neighborhoods.isError && !location.neighborhoods.data) ? <p role="alert" className="rounded-2xl border border-destructive p-5 text-sm leading-7 text-destructive">{t("catalogError")} — {t("catalogErrorHelp")}</p> : !location.ready ? <p role="alert" className="rounded-2xl border p-5 text-sm leading-7">{t("invalidLocation")} — {t("invalidLocationHelp")}</p> : locationDraft ? <EmptyState title={t("draftTitle")} description={t("draftHelp")} /> : result.isPending ? <PropertyGridSkeleton appearance="image" count={6} /> : <>
+      {result.isError ? <ErrorState error={result.error} retry={() => { if (!result.isFetching) void result.refetch(); }} retryDisabled={result.isFetching} /> : null}
+      {result.isRefetching && !result.isFetchingNextPage ? <p role="status" className="text-xs text-muted-foreground">{ar ? "جارٍ تحديث نتائج البحث…" : "Updating search results…"}</p> : null}
+      {!result.isError && !properties.length ? <EmptyState title={ar ? "لا توجد نتائج مطابقة" : "No matching properties"} description={preferencesApplied ? ar ? "لم نجد عقارات تطابق تفضيلاتك ضمن النتائج المتاحة. يمكنك توسيع البحث." : "No available properties matched your saved preferences. You can broaden the search." : ar ? "جرّب تعديل الميزانية أو نوع العقار أو الفلاتر الأخرى." : "Try adjusting the budget, property type or other filters."}><Button variant="outline" onClick={broaden}>{ar ? "توسيع البحث" : "Broaden search"}</Button></EmptyState> : null}
+      {properties.length ? <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">{properties.map((property, index) => <PropertyCard key={`${property.source}:${property.externalId || index}`} property={property} appearance="image" />)}</div> : null}
+      {result.isFetchingNextPage ? <PropertyGridSkeleton appearance="image" count={3} /> : null}
+      {result.hasNextPage ? <Button size="lg" disabled={result.isFetching} onClick={() => { if (!result.isFetching) void result.fetchNextPage(); }}>{ar ? "تحميل المزيد" : "Load more"}</Button> : null}
+      {last?.pagination.resultWindowReached ? <p className="text-sm text-muted-foreground">{ar ? "وصلت إلى حد نافذة نتائج المزوّد. ضيّق نطاق البحث لرؤية خيارات أخرى." : "The provider result limit was reached. Narrow the search for other options."}</p> : null}
+      {last && !result.isError && !result.hasNextPage && properties.length ? <p className="text-xs text-muted-foreground">{ar ? "انتهت النتائج المتاحة لهذا البحث؛ لا يعني ذلك حصر جميع الإعلانات." : "End of available results for this search; this may not include every listing."}</p> : null}
     </>}
+    </section>
   </div>;
 }

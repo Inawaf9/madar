@@ -1,5 +1,6 @@
-import { ApiError } from "@/lib/api/errors";
-import { BACKEND_PROXY_PREFIX } from "@/lib/api/config";
+import { serializeQuery } from "./query";
+import { ApiError } from "./errors";
+import { BACKEND_PROXY_PREFIX } from "./config";
 
 type RequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
@@ -39,4 +40,10 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/** Shared GET query serialization; domain clients retain their exact DTOs. */
+export function apiGet<T>(path: string, params: object = {}, signal?: AbortSignal): Promise<T> {
+  const query = Object.keys(params).length ? `?${serializeQuery(params)}` : "";
+  return apiRequest<T>(`${path}${query}`, { signal });
 }
