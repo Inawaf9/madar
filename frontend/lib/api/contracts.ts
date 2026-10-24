@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { categories } from "./discovery-contracts";
 
 export type ApiResponse = { message: string | null };
 export type UserResponse = {
@@ -22,6 +23,8 @@ export type HousingPreference = {
   city: string;
   district?: string | null;
   maxBudget: number;
+  occupantsCount: number | null;
+  interests: string[] | null;
   propertyType: string;
   listingType: "rent" | "sale";
   user?: UserResponse | null;
@@ -78,6 +81,8 @@ export const currentHomeSchema = z.object({
 });
 export const housingPreferenceSchema = z.object({
   region: z.string().min(1).max(100), city: z.string().regex(/^[a-z-]+$/), district: z.string().max(100).optional(),
+  occupantsCount: requiredNumber.pipe(z.number().int().min(1).max(2147483647)),
+  interests: z.array(z.enum(categories)),
   maxBudget: requiredNumber.pipe(z.number().min(1)), propertyType: z.enum(["apartment", "villa", "floor", "duplex", "building"]), listingType: z.enum(["rent", "sale"]),
 });
 export type PlaceInput = z.infer<typeof placeSchema>;
@@ -91,5 +96,10 @@ export const accountSchema = z.object({
   email: z.email().max(100),
   password: z.string().min(8).max(64).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9\s])\S{8,64}$/),
 });
-export const loginSchema = z.object({ email: z.email(), password: z.string().min(1) });
 export type AccountInput = z.infer<typeof accountSchema>;
+
+export type HomeStatus = { status: "NO_HOME" | "PENDING_MOVE" | "MOVED_IN"; homeId: number | null; movedInAt: string | null };
+export type ProfileCompletion = { completionPercentage: number; housingCompleted: boolean; placesCompleted: boolean; interestsCompleted: boolean; readyForSearch: boolean; missingFeatures: { feature: string; messageKey: string }[] };
+export type DashboardSummary = { userId: number; housingPreferencesCompleted: boolean; savedPropertiesCount: number; importantLocationsCount: number; currentHomeStatus: HomeStatus["status"] };
+export type SavedSummary = { totalSaved: number; countBySource: Record<string, number> };
+export type PlacesSummary = { totalPlaces: number; countByType: Record<string, number> };

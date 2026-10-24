@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
-import { serializeQuery } from "@/lib/api/discovery-contracts";
+import { serializeQuery } from "@/lib/api/query";
 import { ArrowUpLeft, Link2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";

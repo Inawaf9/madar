@@ -2,5 +2,5 @@
 export const instant = false;
 import { Suspense } from "react";
 import { ProfilePage } from "@/features/product/profile";
-import { Loading } from "@/features/product/shared";
-export default function Page() { return <Suspense fallback={<Loading />}><ProfilePage /></Suspense>; }
+import { ProfileSkeleton } from "@/components/product/page-skeleton";
+export default function Page() { return <Suspense fallback={<ProfileSkeleton />}><ProfilePage /></Suspense>; }

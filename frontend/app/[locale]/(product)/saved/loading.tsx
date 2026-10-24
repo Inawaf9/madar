@@ -1,2 +1,2 @@
-import { PageSkeleton } from "@/components/product/page-skeleton";
-export default function Loading() { return <PageSkeleton kind="cards" />; }
+import { SavedPageSkeleton } from "@/components/product/page-skeleton";
+export default function Loading() { return <SavedPageSkeleton />; }

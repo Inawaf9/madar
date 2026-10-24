@@ -340,7 +340,7 @@
     "noComparisons": "Bring two options together",
     "noComparisonsHint": "Choose two saved homes in the form to create your first pair.",
     "comparisonPair": "Your property pair",
-    "referenceComparisonHint": "This pair contains saved references. Price, commute and suitability analysis need backend listing and analysis services.",
+    "referenceComparisonHint": "These are stored references. Request a computed backend comparison separately without changing the saved references.",
     "createComparison": "Create a pair",
     "editComparison": "Change the selected homes",
     "viewEdit": "View and edit",
@@ -378,7 +378,11 @@
       "second": "Second home",
       "searchTerm": "Search term",
       "searchMode": "Search mode",
-      "priority": "Priority"
+      "priority": "Priority",
+      "occupantsCount": "Number of occupants",
+      "secondLatitude": "Second latitude",
+      "secondLongitude": "Second longitude",
+      "secondDistrict": "Second district label"
     },
     "rateLimited": "The provider is rate limiting requests. Wait before retrying.",
     "providerUnavailable": "The service provider is unavailable. Try again later.",
@@ -389,6 +393,23 @@
     "interests": "Essential interests",
     "neighborhood": "Home and neighborhood",
     "payments": "Payments",
-    "housingCityHint": "Use the lowercase English city slug, with hyphens if needed, such as riyadh. Preference validation differs from public search."
+    "housingCityHint": "Use the lowercase English city slug, with hyphens if needed, such as riyadh. Preference validation differs from public search.",
+    "housingSetupRequired": "Set up housing preferences first, or continue public browsing.",
+    "propertyPriceUnavailable": "The source has no usable property price.",
+    "neighborhoodUnavailable": "Neighborhood suitability data is unavailable. Try again later.",
+    "occupantsRequired": "Enter an integer occupant count of at least one.",
+    "noRecommendationCandidates": "No candidates were returned for these preferences. Adjust them or continue public search.",
+    "insufficientMatchingData": "Price or coordinate data is insufficient for matching."
+  },
+  "profile": {
+    "housingPreference": {
+      "missing": "Add housing preferences to personalize your options."
+    },
+    "importantLocations": {
+      "missing": "Optionally add important places for commute analysis."
+    },
+    "interests": {
+      "missing": "Optionally choose the nearby services that matter to you."
+    }
   }
 }

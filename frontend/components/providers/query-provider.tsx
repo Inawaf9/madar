@@ -2,7 +2,6 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
-import { MapsProvider } from "@/components/maps/maps-provider";
 import { Toaster } from "sonner";
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
@@ -12,5 +11,5 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       mutations: { retry: 0 },
     },
   }));
-  return <QueryClientProvider client={client}><MapsProvider>{children}</MapsProvider><Toaster toastOptions={{ style: { fontFamily: "var(--font-thmanyah-sans)", background: "var(--popover)", color: "var(--popover-foreground)", borderColor: "var(--border)" } }} /></QueryClientProvider>;
+  return <QueryClientProvider client={client}>{children}<Toaster toastOptions={{ style: { fontFamily: "var(--font-thmanyah-sans)", background: "var(--popover)", color: "var(--popover-foreground)", borderColor: "var(--border)" } }} /></QueryClientProvider>;
 }

@@ -10,18 +10,6 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --color-region-riyadh: var(--region-riyadh);
-  --color-region-riyadh-surface: var(--region-riyadh-surface);
-  --color-region-jeddah: var(--region-jeddah);
-  --color-region-jeddah-surface: var(--region-jeddah-surface);
-  --color-region-abha: var(--region-abha);
-  --color-region-abha-surface: var(--region-abha-surface);
-  --color-region-ahsa: var(--region-ahsa);
-  --color-region-ahsa-surface: var(--region-ahsa-surface);
-  --color-region-alula: var(--region-alula);
-  --color-region-alula-surface: var(--region-alula-surface);
-  --color-region-tabuk: var(--region-tabuk);
-  --color-region-tabuk-surface: var(--region-tabuk-surface);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -58,7 +46,31 @@
   --font-heading: var(--font-thmanyah-sans), sans-serif;
   --font-display: var(--font-thmanyah-display), var(--font-thmanyah-sans), serif;
   --shadow-stone: var(--stone-shadow);
-  --font-mono: "SFMono-Regular", Consolas, monospace;
+  /* Code, portals and third-party controls belong to the same font system. */
+  --font-mono: var(--font-thmanyah-sans), sans-serif;
+  /* There are no 600/800 files. Resolve these aliases to supplied weights. */
+  --font-weight-semibold: 500;
+  --font-weight-extrabold: 700;
+  --text-xs--line-height: 1.65;
+  --text-sm--line-height: 1.7;
+  --text-base--line-height: 1.75;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.65;
+  --text-title: 1rem;
+  --text-title--line-height: 1.6;
+  --text-section: 1.125rem;
+  --text-section--line-height: 1.55;
+  --text-page: clamp(1.5rem, 2.2vw, 1.875rem);
+  --text-page--line-height: 1.5;
+  --text-editorial: clamp(1.75rem, 3.2vw, 2.75rem);
+  --text-editorial--line-height: 1.45;
+  --text-hero: clamp(2.25rem, 4.3vw, 4rem);
+  --text-hero--line-height: 1.4;
+  --text-price: 1.25rem;
+  --text-price--line-height: 1.5;
+  --shadow-panel: var(--panel-shadow);
+  --shadow-floating: var(--floating-shadow);
+  --color-scrim: var(--scrim);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -74,6 +86,7 @@
   --brand-photo-foreground: #FFFFFF;
   --photo-overlay: #292A3040;
   --photo-shade: #292A3099;
+  --scrim: #171A21;
   --sidebar: var(--card);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -86,6 +99,10 @@
 
 :root {
   color-scheme: light;
+  --assistant-trigger-size: 3.5rem;
+  --assistant-edge-gap: clamp(1rem, 2vw, 1.5rem);
+  /* Reserve the fixed control's footprint inside content, never after the shell. */
+  --assistant-content-clearance: calc(var(--assistant-trigger-size) + var(--assistant-edge-gap) + env(safe-area-inset-bottom) + 1rem);
   --background: #F4F0E9;
   --foreground: #292A30;
   --card: #FFFCF7;
@@ -113,30 +130,8 @@
   --chart-5: #71657F;
   --radius: 0.875rem;
   --stone-shadow: 0 18px 50px #292a3010;
-  --regional-border-strength: 22%;
-  --regional-hover-border-strength: 40%;
-  --regional-shadow-strength: 10%;
-  --regional-hover-shadow-strength: 18%;
-  --region-riyadh: #B77B5B;
-  --region-jeddah: #6D9FB0;
-  --region-abha: #748B6A;
-  --region-ahsa: #A7A16D;
-  --region-alula: #B18A91;
-  --region-tabuk: #9C8B78;
-  --region-riyadh-surface: #EAD2C0;
-  --region-jeddah-surface: #CDE3E8;
-  --region-abha-surface: #D5E0CE;
-  --region-ahsa-surface: #E8E5CB;
-  --region-alula-surface: #E7D7DD;
-  --region-tabuk-surface: #DFD8CE;
-  --illustration-sky: #B9C6CE;
-  --illustration-sand: #D6C8B5;
-  --illustration-wall: #E4D3BF;
-  --illustration-window: #A9917E;
-  --illustration-ink: #292A30;
-  --illustration-paper: #FFFCF7;
-  --map-ground: #D7D8C8;
-  --map-green: #B8C6B4;
+  --panel-shadow: 0 2px 8px #292a3008;
+  --floating-shadow: 0 16px 48px #292a3026;
 }
 
 .dark {
@@ -167,32 +162,42 @@
   --chart-4: #B6AB92;
   --chart-5: #B3A4C3;
   --stone-shadow: 0 18px 55px #0003;
-  --regional-border-strength: 16%;
-  --regional-hover-border-strength: 30%;
-  --regional-shadow-strength: 6%;
-  --regional-hover-shadow-strength: 11%;
-  --region-riyadh-surface: color-mix(in srgb, var(--region-riyadh) 24%, var(--card));
-  --region-jeddah-surface: color-mix(in srgb, var(--region-jeddah) 24%, var(--card));
-  --region-abha-surface: color-mix(in srgb, var(--region-abha) 24%, var(--card));
-  --region-ahsa-surface: color-mix(in srgb, var(--region-ahsa) 24%, var(--card));
-  --region-alula-surface: color-mix(in srgb, var(--region-alula) 24%, var(--card));
-  --region-tabuk-surface: color-mix(in srgb, var(--region-tabuk) 24%, var(--card));
-  --illustration-sky: #626D80;
-  --illustration-sand: #857C73;
-  --illustration-wall: #AB9B8B;
-  --illustration-window: #645C59;
-  --map-ground: #383F3D;
-  --map-green: #485547;
+  --panel-shadow: 0 2px 8px #00000014;
+  --floating-shadow: 0 16px 48px #00000052;
 }
 
 @layer base {
   * { @apply border-border; }
-  html { scroll-behavior: smooth; }
+  html { @apply font-sans; scroll-behavior: smooth; scroll-padding-block-start: 7rem; }
   body { @apply bg-background font-sans text-foreground; line-height: 1.65; font-synthesis: none; }
   button, input, select, textarea { font-family: inherit; }
+  :where(h1, h2, h3, h4, h5, h6) { text-wrap: balance; overflow-wrap: break-word; }
+  :where(h1, h2, h3, h4, h5, h6, [data-slot="empty-title"], [data-slot="dialog-title"]):lang(ar) { letter-spacing: normal; }
+  :where(code, kbd, samp, pre) { font-family: var(--font-thmanyah-sans), sans-serif; }
+  :where(button, a, input, select, textarea) { touch-action: manipulation; }
   :focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
   ::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
 }
+
+/* MapLibre ships a Helvetica/Arial shorthand. Keep DOM controls and popups in
+   Thmanyah; vector basemap labels are supplied by the map style, not CSS. */
+.maplibregl-map.maplibregl-map, .maplibregl-map .maplibregl-popup-content, .maplibregl-map .maplibregl-ctrl {
+  font-family: var(--font-thmanyah-sans), sans-serif;
+}
+.maplibregl-map :is(.maplibregl-popup-content, .maplibregl-ctrl-group, .maplibregl-ctrl-attrib) {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--panel-shadow);
+}
+.maplibregl-map .maplibregl-popup-content { border-radius: var(--radius-2xl); }
+.maplibregl-map .maplibregl-ctrl-attrib a { color: inherit; }
+.maplibregl-map .maplibregl-ctrl-group { border: 1px solid var(--border); border-radius: var(--radius-md); }
+.maplibregl-map .maplibregl-ctrl-group button + button { border-top-color: var(--border); }
+.maplibregl-map :is(.maplibregl-popup-anchor-bottom, .maplibregl-popup-anchor-bottom-left, .maplibregl-popup-anchor-bottom-right) .maplibregl-popup-tip { border-top-color: var(--card); }
+.maplibregl-map :is(.maplibregl-popup-anchor-top, .maplibregl-popup-anchor-top-left, .maplibregl-popup-anchor-top-right) .maplibregl-popup-tip { border-bottom-color: var(--card); }
+.maplibregl-map .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--card); }
+.maplibregl-map .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--card); }
+.dark .maplibregl-ctrl-group .maplibregl-ctrl-icon { filter: invert(1); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -1,54 +1,54 @@
 "use client";
-import Image from "next/image";
-import { useState, type CSSProperties } from "react";
 import { useLocale } from "next-intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, House } from "lucide-react";
+import { ArrowUpLeft, Columns3, Heart, LoaderCircle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useLocalUserId } from "@/features/product/local-user";
-import { useSaved, keys } from "@/features/account/api/hooks";
-import { ErrorState } from "@/features/product/shared";
-import { api } from "@/lib/api/endpoints";
+import { useLocalUserId } from "@/features/account/use-local-user-id";
+import { useSaved } from "@/features/account/api/hooks";
+import { ErrorState } from "@/components/shared/error-state";
+import { invalidateUserData } from "@/features/account/api/invalidation";
+import { savedPropertiesApi } from "@/lib/api/saved-properties";
 import type { Property } from "@/lib/api/discovery-contracts";
-import { propertyHref, propertyPrice, safeUrl } from "./format";
-import { propertyRegion } from "@/lib/property-regions";
+import { propertyHref, propertyTypeLabel } from "./format";
+import { PropertyCardView } from "@/components/property/property-card-view";
+import { propertyCardData } from "@/lib/property-card";
+import { rememberPropertyOrigin } from "./property-navigation";
 
-export function PropertyActions({ property }: { property: Property }) {
+export function PropertyActions({ property, compact = false, overlay = false }: { property: Property; compact?: boolean; overlay?: boolean }) {
   const userId = useLocalUserId(); const saved = useSaved(userId); const cache = useQueryClient();
   const existing = saved.data?.find(p => p.externalPropertyId === property.externalId && p.source.toUpperCase() === property.source.toUpperCase());
   const valid = !!property.externalId && !["null", "undefined"].includes(property.externalId);
   const mutation = useMutation({ mutationFn: async () => {
     if (!userId || !valid) return;
-    if (existing?.id) await api.savedProperties.remove(userId, existing.id);
-    else await api.savedProperties.add(userId, { externalPropertyId: property.externalId!, source: property.source, titleSnapshot: property.title?.slice(0, 200) || undefined });
-  }, onSuccess: () => cache.invalidateQueries({ queryKey: keys.saved(userId!) }) });
-  if (!userId) return <Button nativeButton={false} render={<Link href="/login" />} variant="outline"><Heart data-icon="inline-start" />اختر ملفك المحلي للحفظ</Button>;
+    if (existing?.id) await savedPropertiesApi.remove(userId, existing.id);
+    else await savedPropertiesApi.add(userId, { externalPropertyId: property.externalId!, source: property.source, titleSnapshot: property.title?.slice(0, 200) || undefined });
+  }, onSuccess: () => invalidateUserData(cache, userId!), onError: () => { if (overlay) toast.error("تعذّر تحديث المحفوظات. حاول مجددًا."); } });
+  if (overlay) {
+    if (!userId) return <Button nativeButton={false} render={<Link href="/login" />} variant="outline" size="icon" className="size-10 rounded-full bg-card/95 focus-visible:ring-ring" aria-label="اختر ملفك المحلي لحفظ العقار" title="حفظ العقار"><Heart /></Button>;
+    const label = mutation.isPending ? "جارٍ تحديث المحفوظات" : existing ? "إلغاء حفظ العقار" : "حفظ العقار";
+    return <div className="flex gap-2">
+      {saved.isError ? <Button variant="outline" size="icon" className="size-10 rounded-full bg-card/95 focus-visible:ring-ring" aria-label="إعادة تحميل المحفوظات" title="تعذّر تحميل المحفوظات — أعد المحاولة" disabled={saved.isFetching} onClick={() => void saved.refetch()}><RefreshCw /></Button> : <Button variant="outline" size="icon" className="size-10 rounded-full bg-card/95 focus-visible:ring-ring" aria-label={label} title={label} aria-pressed={!!existing} disabled={!valid || saved.isPending || mutation.isPending} onClick={() => mutation.mutate()}>{mutation.isPending ? <LoaderCircle className="motion-safe:animate-spin" /> : <Heart className={existing ? "fill-current" : undefined} />}</Button>}
+      {existing?.id ? <Button nativeButton={false} render={<Link href={`/compare?first=${existing.id}`} />} variant="outline" size="icon" className="size-10 rounded-full bg-card/95 focus-visible:ring-ring" aria-label="قارن مع عقار محفوظ" title="قارن"><Columns3 /></Button> : null}
+      {mutation.isSuccess ? <span role="status" className="sr-only">تم تحديث المحفوظات لدى الخادم.</span> : null}
+    </div>;
+  }
+  if (!userId) return <Button nativeButton={false} render={<Link href="/login" />} variant={compact ? "ghost" : "outline"} size={compact ? "sm" : "default"}><Heart data-icon="inline-start" />{compact ? "حفظ العقار" : "اختر ملفك المحلي للحفظ"}</Button>;
   return <div className="flex w-full flex-col gap-3">
-    <div className="flex flex-wrap gap-2"><Button variant={existing ? "secondary" : "outline"} aria-pressed={!!existing} disabled={!valid || saved.isPending || saved.isError || mutation.isPending} onClick={() => mutation.mutate()}><Heart data-icon="inline-start" className={existing ? "fill-current" : undefined} />{mutation.isPending ? "جارٍ الحفظ…" : existing ? "إزالة من المحفوظات" : "حفظ العقار"}</Button>{existing?.id ? <Button nativeButton={false} render={<Link href={`/compare?first=${existing.id}`} />} variant="outline">قارن مع عقار محفوظ</Button> : null}</div>
+    <div className="flex flex-wrap gap-2"><Button size={compact ? "sm" : "default"} variant={existing ? "secondary" : compact ? "ghost" : "outline"} aria-pressed={!!existing} disabled={!valid || saved.isPending || saved.isError || mutation.isPending} onClick={() => mutation.mutate()}><Heart data-icon="inline-start" className={existing ? "fill-current" : undefined} />{mutation.isPending ? "جارٍ الحفظ…" : existing ? compact ? "إلغاء الحفظ" : "إزالة من المحفوظات" : "حفظ العقار"}</Button>{existing?.id ? <Button size={compact ? "sm" : "default"} nativeButton={false} render={<Link href={`/compare?first=${existing.id}`} />} variant={compact ? "ghost" : "outline"}>{compact ? "قارن" : "قارن مع عقار محفوظ"}</Button> : null}</div>
     {saved.isError ? <ErrorState error={saved.error} retry={() => void saved.refetch()} /> : null}
     {mutation.isError ? <ErrorState error={mutation.error} /> : null}
     {mutation.isSuccess ? <p role="status" className="text-xs text-primary">تم تحديث المحفوظات لدى الخادم.</p> : null}
   </div>;
 }
-export function ListingImage({ src, title, priority = false }: { src: string | null; title: string; priority?: boolean }) {
-  const [failed, setFailed] = useState(false); const image = safeUrl(src);
-  return <div className="relative aspect-[4/3] overflow-hidden bg-secondary">{image && !failed ? <Image src={image} alt={title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" unoptimized preload={priority} onError={() => setFailed(true)} className="object-cover" /> : <div className="flex h-full items-center justify-center gap-2 text-muted-foreground"><House /><span>الصورة غير متاحة</span></div>}</div>;
-}
-export function PropertyCard({ property }: { property: Property }) {
-  const locale = useLocale(); const title = property.title?.trim() || "عقار بدون عنوان";
+export function PropertyCard({ property }: { property: Property; appearance?: "default" | "image" }) {
+  const locale = useLocale(); const ar = locale === "ar";
   const valid = !!property.externalId && !["null", "undefined"].includes(property.externalId);
-  const region = propertyRegion(property.city);
-  return <Card style={region ? { "--property-accent": region.accentColor } as CSSProperties : undefined}
-    className={`min-w-0 pt-0 transition-[box-shadow,border-color,translate] duration-200 motion-reduce:transition-none ${region
-      ? "border-[color:color-mix(in_srgb,var(--property-accent)_var(--regional-border-strength),var(--border))] shadow-[0_12px_32px_color-mix(in_srgb,var(--property-accent)_var(--regional-shadow-strength),transparent)] hover:border-[color:color-mix(in_srgb,var(--property-accent)_var(--regional-hover-border-strength),var(--border))] hover:shadow-[0_18px_40px_color-mix(in_srgb,var(--property-accent)_var(--regional-hover-shadow-strength),transparent)] motion-safe:hover:-translate-y-0.5"
-      : "hover:border-primary/40"}`}>
-    <ListingImage src={property.image || property.images?.[0] || null} title={title} />
-    <CardHeader><CardTitle><h3 className="break-words leading-7"><bdi>{title}</bdi></h3></CardTitle><CardDescription className="break-words"><bdi>{[property.city, property.neighborhood].filter(Boolean).join(" · ") || "الموقع غير متاح"}</bdi></CardDescription>
-      {region ? <p className="flex items-center gap-2 text-xs text-muted-foreground"><span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-(--property-accent) dark:opacity-70" />{locale === "ar" ? region.ar : region.en}</p> : null}
-    </CardHeader>
-    <CardContent className="flex flex-col gap-3"><p className="text-lg font-bold text-primary"><bdi>{propertyPrice(property, locale)}</bdi></p><p className="flex flex-wrap gap-3 text-xs text-muted-foreground"><span>{property.bedrooms ?? "—"} غرف نوم</span><span>{property.bathrooms ?? "—"} حمامات</span><span><bdi>{property.areaSqm ?? "—"} م²</bdi></span></p><p className="text-xs text-muted-foreground">المصدر: {property.sourceName || property.source}</p></CardContent>
-    <CardFooter className="mt-auto flex-col items-stretch gap-3">{valid ? <Button nativeButton={false} render={<Link href={propertyHref(property)} />}>عرض التفاصيل</Button> : <p className="text-xs text-muted-foreground">معرّف الإعلان غير متاح</p>}<PropertyActions property={property} /></CardFooter>
-  </Card>;
+  const href = valid ? propertyHref(property) : undefined;
+  const listing = propertyCardData(property, ar ? "عقار بدون عنوان" : "Untitled property");
+  return <PropertyCardView listing={listing} href={href} onNavigate={href ? () => rememberPropertyOrigin(href) : undefined}
+    overlayActions={<PropertyActions property={property} overlay />}
+    metadata={<details className="text-caption text-muted-foreground"><summary className="cursor-pointer rounded outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">{ar ? "معلومات الإعلان" : "Listing information"}</summary><p className="mt-1 wrap-break-word"><bdi>{property.sourceName || property.source}</bdi>{propertyTypeLabel(property.propertyType) ? ` · ${propertyTypeLabel(property.propertyType)}` : ""}</p></details>}
+    footer={href ? <Button variant="outline" className="w-full justify-between" nativeButton={false} render={<Link href={href} onNavigate={() => rememberPropertyOrigin(href)} />}>{ar ? "عرض العقار" : "View property"}<ArrowUpLeft data-icon="inline-end" className="ltr:-scale-x-100" /></Button> : <p className="text-caption text-muted-foreground">{ar ? "معرّف الإعلان غير متاح" : "Listing reference unavailable"}</p>} />;
 }

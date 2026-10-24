@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, type FormEvent } from "react";
 import { propertyTypes } from "@/lib/api/discovery-contracts";
 import { useLocale, useTranslations } from "next-intl";
 import { Search } from "lucide-react";
@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel, FieldSet, FieldLegend } from "@/components/ui/field";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from "@/components/ui/select";
-import { CitySelector, RegionSelector } from "@/features/properties/region-city-selector";
-import { supportedSearchCity, type RegionId } from "@/lib/property-regions";
+import { CitySelector, NeighborhoodSelector } from "@/features/properties/location-selectors";
+import { useLocationSelection } from "@/features/properties/location-hooks";
 
 export type SearchCriteria = {
   city: string;
@@ -17,6 +17,7 @@ export type SearchCriteria = {
   q: string;
   maxPrice: string;
   type?: string;
+  neighborhoodId?: string;
 };
 
 export function PurposeSelector({ value, onChange }: { value: "rent" | "sale"; onChange: (value: "rent" | "sale") => void }) {
@@ -45,12 +46,11 @@ export function PropertySearchForm({ criteria, onChange, onSearch }: {
   const common = useTranslations("Common");
   const locale = useLocale();
   const id = useId();
-  const [region, setRegion] = useState<RegionId | null>(supportedSearchCity(criteria.city)?.regionId || null);
-  const citySelected = !!region && supportedSearchCity(criteria.city)?.regionId === region;
+  const location = useLocationSelection(criteria.city, criteria.neighborhoodId);
   const update = <K extends keyof SearchCriteria>(key: K, value: SearchCriteria[K]) => onChange({ ...criteria, [key]: value });
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (citySelected) onSearch();
+    if (location.ready) onSearch();
   };
   const types = propertyTypes.map((type) => ({ value: type, label: t(type === "all" ? "allTypes" : type) }));
   const budgets = [
@@ -62,13 +62,12 @@ export function PropertySearchForm({ criteria, onChange, onSearch }: {
 
   return (
     <form onSubmit={submit} className="flex min-w-0 flex-col gap-4 rounded-[1.375rem] border bg-card p-5 shadow-stone sm:p-6">
-      <RegionSelector value={region} onChange={next => {
-        setRegion(next);
-        if (!next || supportedSearchCity(criteria.city)?.regionId !== next) update("city", "");
-      }} />
+      <FieldGroup className="grid gap-4 sm:grid-cols-2">
+        <CitySelector value={criteria.city} onChange={(city) => onChange({ ...criteria, city, neighborhoodId: "" })} />
+        <NeighborhoodSelector city={criteria.city} value={criteria.neighborhoodId || ""} onChange={(value) => update("neighborhoodId", value)} />
+      </FieldGroup>
       <PurposeSelector value={criteria.purpose} onChange={(value) => update("purpose", value)} />
       <FieldGroup className="grid gap-4 sm:grid-cols-2">
-        <CitySelector regionId={region} value={criteria.city} onChange={(value) => update("city", value)} />
         <Field>
           <FieldLabel htmlFor={`${id}-query`}>{t("queryLabel")}</FieldLabel>
           <Input id={`${id}-query`} type="search" name="q" value={criteria.q} onChange={(event) => update("q", event.target.value)} placeholder={t("queryPlaceholder")} dir="auto" />
@@ -90,7 +89,7 @@ export function PropertySearchForm({ criteria, onChange, onSearch }: {
       </FieldGroup>
       <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
         <p id={`${id}-notice`} className="max-w-sm text-xs leading-6 text-muted-foreground">{t("cityHint")}</p>
-        <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={!citySelected} aria-describedby={`${id}-notice`}><Search data-icon="inline-start" />{t("searchButton")}</Button>
+        <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={!location.ready} aria-describedby={`${id}-notice`}><Search data-icon="inline-start" />{t("searchButton")}</Button>
       </div>
     </form>
   );

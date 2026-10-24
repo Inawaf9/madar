@@ -14,6 +14,7 @@ export const searchSchema = z.object({
   minBedrooms: optionalNumber(20), minBathrooms: optionalNumber(20),
   furnished: z.enum(["true", "false"]).optional(), rentFrequency: z.enum(["monthly", "yearly"]).optional(),
   sort: z.enum(sorts).default("newest"), limit: optionalNumber(100, true, 1),
+  lang: z.preprocess(value => typeof value === "string" ? value.toLowerCase() : value, z.enum(["ar", "en"]).optional()),
   cursor: z.string().min(1).max(500).optional(),
 }).superRefine((v, ctx) => {
   for (const [min, max] of [["minPrice", "maxPrice"], ["minArea", "maxArea"]] as const) {
@@ -33,14 +34,10 @@ export function parseSearch(params: URLSearchParams) {
   const parsed = searchSchema.safeParse(raw);
   return parsed.success ? parsed : { success: false as const, message: /[\u0600-\u06ff]/.test(parsed.error.issues[0]?.message || "") ? parsed.error.issues[0].message : "خيارات الرابط غير صحيحة؛ راجع حدود الفلاتر والقيم المقبولة" };
 }
-export function serializeQuery(input: object): string {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(input)) if (value !== undefined && value !== null && value !== "") params.set(key, String(value));
-  return params.toString();
-}
 
 export type Property = {
   externalId: string | null; source: string; sourceName: string | null; title: string | null;
+  originalTitle: string | null; cityName: string | null;
   listingUrl: string | null; city: string | null; neighborhood: string | null;
   propertyType: string | null; listingType: string | null; price: number | null;
   bedrooms: number | null; bathrooms: number | null; areaSqm: number | null;
@@ -57,10 +54,7 @@ export type GooglePlace = { id: string | null; displayName: { text: string | nul
 export type PlacesResponse = { places: (GooglePlace | null)[] | null };
 export type NearbyPlace = { place: GooglePlace; straightLineDistanceMeters: number };
 export type Neighborhood = { homeId: number; location: { latitude: number; longitude: number }; radiusMeters: number; places: GooglePlace[]; categories: { category: string; returnedCount: number; placeIds: string[] }[]; completeInventory: boolean };
-export const interestSchema = z.object({ name: z.string().trim().min(1).max(100), searchTerm: z.string().trim().min(1).max(500), searchMode: z.enum(["TEXT", "CATEGORY"]), priority: z.preprocess(v => v === "" || v == null || (typeof v === "number" && Number.isNaN(v)) ? undefined : Number(v), z.number().int().min(1).max(5).optional()) });
-export type InterestInput = z.infer<typeof interestSchema>;
-export type Interest = Omit<InterestInput, "priority"> & { id: number; priority: number | null };
-export type EssentialResult = { interest: Interest; searchMethod: "NEARBY" | "TEXT"; status: "FOUND" | "NO_MATCH" | "SEARCH_FAILED"; found: boolean; place: GooglePlace | null; straightLineDistanceMeters: number | null };
+export type EssentialResult = { category: string; status: "FOUND" | "NO_MATCH" | "SEARCH_FAILED"; found: boolean; place: GooglePlace | null; straightLineDistanceMeters: number | null };
 export type CommuteReport = { commutes: { placePreferenceId: number; placeName: string; placeType: string; importance: number; visitPerWeek: number; distanceKm: number; durationMinutes: number }[]; totalWeeklyMinutes: number; totalWeeklyHours: number; commuteScore: number };
 export type Checkout = { paymentId: number; serviceType: string; amount: number; currency: string; intentId: string; clientSecret: string; expiresAt: string; givenId: string; metadata: Record<string, string> };
 export type Payment = { id: number; serviceType: string; amount: number; currency: string | null; status: "PENDING" | "PAID" | "FAILED" | "REFUNDED"; createdAt: string; paidAt: string | null; accessExpiresAt: string | null; refundedAmount: number | null };

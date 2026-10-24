@@ -16,6 +16,8 @@
 # next.js
 /.next/
 /out/
+# Generated from the installed package before dev/build; no bundled vendor code.
+/public/maplibre/
 
 # production
 /build

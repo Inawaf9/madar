@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import { ArrowDown, ArrowUpLeft } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { motion, useReducedMotion } from "motion/react";
 import { Link } from "@/i18n/navigation";
 import { buttonVariants } from "@/components/ui/button";
+import { CuratedDisplayText, displayHeadingVariants } from "@/components/typography/display-heading";
 
 const contentReveal = {
   hidden: { opacity: 0, y: 22 },
@@ -15,6 +16,7 @@ const MotionLink = motion.create(Link);
 
 export function HeroSection() {
   const t = useTranslations("Hero");
+  const ar = useLocale() === "ar";
   const reduceMotion = useReducedMotion();
   const title = t("title").split("\n");
 
@@ -30,8 +32,8 @@ export function HeroSection() {
           <motion.p variants={contentReveal} transition={{ duration: reduceMotion ? 0 : 0.5 }} className="mb-5 flex items-center gap-3 text-sm font-medium text-accent-ink">
             <span aria-hidden="true" className="h-px w-10 bg-accent" />{t("eyebrow")}
           </motion.p>
-          <motion.h1 variants={contentReveal} transition={{ duration: reduceMotion ? 0 : 0.65 }} className="font-display text-[clamp(2.25rem,4.3vw,4rem)] font-bold leading-[1.3] text-balance">
-            {title.map((line, index) => <span key={index} className="block">{line}</span>)}
+          <motion.h1 variants={contentReveal} transition={{ duration: reduceMotion ? 0 : 0.65 }} className={displayHeadingVariants({ variant: "hero" })}>
+            {title.map((line, index) => <span key={index} className="block"><CuratedDisplayText text={line} enabled={ar && index === 0} /></span>)}
           </motion.h1>
           <motion.p variants={contentReveal} transition={{ duration: reduceMotion ? 0 : 0.65 }} className="mt-5 max-w-lg text-base leading-8 text-muted-foreground">{t("description")}</motion.p>
           <motion.div variants={contentReveal} transition={{ duration: reduceMotion ? 0 : 0.5 }} className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

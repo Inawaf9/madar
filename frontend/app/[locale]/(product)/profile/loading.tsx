@@ -1,2 +1,2 @@
-import { PageSkeleton } from "@/components/product/page-skeleton";
-export default function Loading() { return <PageSkeleton kind="form" />; }
+import { ProfileSkeleton } from "@/components/product/page-skeleton";
+export default function Loading() { return <ProfileSkeleton />; }
