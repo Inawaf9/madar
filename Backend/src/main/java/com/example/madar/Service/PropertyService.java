@@ -252,6 +252,38 @@ public class PropertyService {
     }
 
 
+    //listings in one side of the city: north, south, east or west (a box next to the city center)
+    public List<PropertyDTO> getInArea(String city, String listingType, String propertyType, String area, Integer maxPrice){
+        propertyType = checkType(propertyType);
+        checkSearch(city, listingType, propertyType);
+        double[] center = cityCenter(city);
+        if(center == null){
+            throw new ApiException("Areas are available for riyadh, jeddah, dammam, khobar, makkah and madinah only");
+        }
+        double lat = center[0];
+        double lng = center[1];
+        double near = 0.04; //about 4 km from the center
+        double far = 0.30;  //about 30 km from the center
+        double side = 0.08; //how wide the area is
+        double west, south, east, north;
+        if(area.equalsIgnoreCase("north")){
+            west = lng - side; east = lng + side; south = lat + near; north = lat + far;
+        }else if(area.equalsIgnoreCase("south")){
+            west = lng - side; east = lng + side; south = lat - far; north = lat - near;
+        }else if(area.equalsIgnoreCase("east")){
+            west = lng + near; east = lng + far; south = lat - side; north = lat + side;
+        }else if(area.equalsIgnoreCase("west")){
+            west = lng - far; east = lng - near; south = lat - side; north = lat + side;
+        }else{
+            throw new ApiException("Area must be north, south, east or west");
+        }
+        String bbox = String.format(Locale.US, "%.5f,%.5f,%.5f,%.5f", west, south, east, north);
+        if(maxPrice == null){
+            return convertAll(kiteClient.searchInBox(city.toLowerCase(), listingType.toLowerCase(), propertyType, bbox));
+        }
+        return convertAll(kiteClient.searchInBoxWithPrice(city.toLowerCase(), listingType.toLowerCase(), propertyType, 0, maxPrice, bbox));
+    }
+
 
 
     //properties within my budget in the whole city (from my housing preference)
@@ -607,6 +639,12 @@ public class PropertyService {
 
         if(listing.getPrice() != null){
             property.setPrice(listing.getPrice().getYearlySar());
+            //yearly_sar is a yearly price for rent; for sale it is the total price
+            if("rent".equals(listing.getListingType())){
+                property.setPricePeriod("yearly");
+            }else if("sale".equals(listing.getListingType())){
+                property.setPricePeriod("total");
+            }
         }
         if(listing.getSource() != null){
             property.setSourceName(listing.getSource().getName());
@@ -948,7 +986,9 @@ public class PropertyService {
             }
 
             if(property.getBedrooms() != null){
-                if(property.getBedrooms() == 1){
+                if(property.getBedrooms() == 0) {
+                    title += " استوديو";
+                }else if(property.getBedrooms() == 1){
                     title += " غرفة وحدة";
                 }else{
                     title += " " + property.getBedrooms() + " غرف";
@@ -966,8 +1006,13 @@ public class PropertyService {
         }
 
         String title = type.isEmpty() ? "property" : type;
+
         if(property.getBedrooms() != null){
-            title = property.getBedrooms() + "-bedroom " + title;
+            if(property.getBedrooms() == 0){
+                title = "studio " + title;
+            }else{
+                title = property.getBedrooms() + "-bedroom " + title;
+            }
         }
         if("rent".equalsIgnoreCase(property.getListingType())){
             title += " for rent";
@@ -978,5 +1023,29 @@ public class PropertyService {
             title += " in " + place;
         }
         return title.substring(0, 1).toUpperCase() + title.substring(1);
+    }
+
+    //the center of the main cities (latitude, longitude)
+    private double[] cityCenter(String city){
+        String code = city.toLowerCase();
+        if(code.equals("riyadh")){
+            return new double[]{24.7136, 46.6753};
+        }
+        if(code.equals("jeddah")){
+            return new double[]{21.5433, 39.1728};
+        }
+        if(code.equals("dammam")){
+            return new double[]{26.4207, 50.0888};
+        }
+        if(code.equals("khobar")){
+            return new double[]{26.2172, 50.1971};
+        }
+        if(code.equals("makkah")){
+            return new double[]{21.3891, 39.8579};
+        }
+        if(code.equals("madinah")){
+            return new double[]{24.5247, 39.5692};
+        }
+        return null;
     }
 }

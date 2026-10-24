@@ -13,6 +13,7 @@ import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 //tools the chatbot can call, one object per user message
 public class PropertyTools {
@@ -262,13 +263,72 @@ public class PropertyTools {
                 }
             }
             System.out.println("nearLocation called: city=" + city + ", radius=" + radiusKm + ", max=" + maxPrice);
-            return remember(propertyService.getNearLocationWithPrice(city, listingType, propertyType, latitude, longitude, radiusKm, maxPrice));
+            List<PropertyDTO> found = remember(propertyService.getNearLocationWithPrice(city, listingType, propertyType, latitude, longitude, radiusKm, maxPrice));
+
+            //no budget used: the code checks the prices and tells the AI if it should offer the budget filter
+            if(maxPrice == null){
+                HousingPreference preference = housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+                if(preference != null && preference.getMaxBudget() != null){
+                    int budget = preference.getMaxBudget().intValue();
+                    boolean aboveBudget = false;
+                    for(PropertyDTO property : found){
+                        if(property.getPrice() != null && property.getPrice() > budget){
+                            aboveBudget = true;
+                            break;
+                        }
+                    }
+                    usedData += "ميزانية المستخدم: " + budget + " ريال\n";
+                    String note;
+                    if(aboveBudget){
+                        note = "Some listings are above the user's budget (" + budget + "). End the reply by asking: تبي أعرض لك اللي ضمن ميزانيتك بس؟";
+                    }else{
+                        note = "All listings are within the user's budget (" + budget + "). Do not ask about the budget.";
+                    }
+                    return Map.of("note", note, "listings", found);
+                }
+            }
+            return found;
         }catch (ApiException e){
             return "Error: " + e.getMessage();
         }catch (Exception e){
             return UNEXPECTED_ERROR;
         }
     }
+
+
+
+
+    @Tool(description = "Listings in one side of a city: north, south, east or west. Use it when the user says شمال الرياض, جنوب, شرق, غرب or north of the city. City, listing type and property type are optional, the user's preference is used if they are empty")
+    public Object areaListings(@ToolParam(description = "city in English lowercase, like riyadh or jeddah", required = false) String city,
+                               @ToolParam(description = "rent or sale", required = false) String listingType,
+                               @ToolParam(description = "apartment, villa, floor, duplex, building or all", required = false) String propertyType,
+                               @ToolParam(description = "north, south, east or west") String area,
+                               @ToolParam(description = "maximum yearly price in SAR. Leave it EMPTY to use the user's saved budget", required = false) Integer maxPrice){
+        try{
+            city = orPreference(city, "city");
+            listingType = orPreference(listingType, "listingType");
+            propertyType = orPreference(propertyType, "propertyType");
+            //no price from the user: use the budget from the housing preference
+            if(maxPrice == null){
+                HousingPreference preference = housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+                if(preference != null && preference.getMaxBudget() != null){
+                    maxPrice = preference.getMaxBudget().intValue();
+                    usedData += "ميزانية المستخدم: " + maxPrice + " ريال\n";
+                }
+            }
+            System.out.println("areaListings called: city=" + city + ", area=" + area + ", max=" + maxPrice);
+            List<PropertyDTO> found = remember(propertyService.getInArea(city, listingType, propertyType, area, maxPrice));
+            if(found.isEmpty()){
+                return track("لا توجد إعلانات في " + area + " " + city + " ضمن هذا السعر حالياً.");
+            }
+            return found;
+        }catch (ApiException e){
+            return "Error: " + e.getMessage();
+        }catch (Exception e){
+            return UNEXPECTED_ERROR;
+        }
+    }
+
 
 
     @Tool(description = "Distance in km between one card from the previous answer and one of the user's important places (like work). ALWAYS use this for any distance question, never calculate or guess a distance yourself")

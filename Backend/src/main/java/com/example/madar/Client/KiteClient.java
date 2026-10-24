@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.concurrent.ConcurrentHashMap;
 
 import java.util.Map;
 
@@ -20,6 +21,14 @@ import java.util.Map;
 public class KiteClient {
 
     private final RestClient restClient;
+
+    //cache: the same Kite request is answered from memory for a while, so we use the Kite key less
+    private final Map<String, Object> cache = new ConcurrentHashMap<>();
+    private final Map<String, Long> cacheTime = new ConcurrentHashMap<>();
+    private static final long CACHE_MINUTES = 60;
+    //how many real requests went to Kite since the server started
+    private int kiteCalls = 0;
+    private static final long NEIGHBORHOODS_CACHE_MINUTES = 24 * 60;
 
     public KiteClient(
             RestClient.Builder builder,
@@ -31,6 +40,36 @@ public class KiteClient {
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .build();
     }
+
+
+
+    //get from Kite, or from the cache if we asked the same thing recently
+    private <T> T cachedGet(String url, Class<T> type){
+        Long savedAt = cacheTime.get(url);
+        //district names do not change, so keep them for a day
+        long minutes = url.contains("/neighborhoods") ? NEIGHBORHOODS_CACHE_MINUTES : CACHE_MINUTES;
+        if(savedAt != null && System.currentTimeMillis() - savedAt < minutes * 60 * 1000){
+            System.out.println("Kite cache: " + url);
+            return type.cast(cache.get(url));
+        }
+        //too many saved answers: start again so the memory does not grow forever
+        if(cache.size() > 500){
+            cache.clear();
+            cacheTime.clear();
+        }
+        kiteCalls++;
+        System.out.println("Kite API call #" + kiteCalls + ": " + url);
+        T body = restClient.get().uri(url).retrieve().body(type);
+        if(body != null){
+            cache.put(url, body);
+            cacheTime.put(url, System.currentTimeMillis());
+        }
+        return body;
+    }
+
+
+
+    
     public KiteLocationsDTO.CitiesResponse getLocationCities() {
         return getLocationReference("/cities", KiteLocationsDTO.CitiesResponse.class);
     }
@@ -96,7 +135,7 @@ public class KiteClient {
         String url = "/listings?city=" + city + "&listing_type=" + listingType + "&limit=20";
         url = addFilters(url, propertyType, minPrice, maxPrice);
         try{
-            return restClient.get().uri(url).retrieve().body(KiteDTO.ListResponse.class);
+            return cachedGet(url,KiteDTO.ListResponse.class);
         }catch (HttpClientErrorException e){
             throw new ApiException(getErrorMessage(e.getStatusCode().value()));
         }catch (RestClientException e){
@@ -109,7 +148,7 @@ public class KiteClient {
         String url = "/listings/count?city=" + city + "&listing_type=" + listingType;
         url = addFilters(url, propertyType, minPrice, maxPrice);
         try{
-            return restClient.get().uri(url).retrieve().body(KiteDTO.CountResponse.class);
+            return cachedGet(url,KiteDTO.CountResponse.class);
         }catch (HttpClientErrorException e){
             throw new ApiException(getErrorMessage(e.getStatusCode().value()));
         }catch (RestClientException e){
@@ -120,7 +159,7 @@ public class KiteClient {
     //get one listing
     public KiteDTO.SingleResponse getListing(String externalId){
         try{
-            return restClient.get().uri("/listings/" + externalId).retrieve().body(KiteDTO.SingleResponse.class);
+            return cachedGet("/listings/" + externalId, KiteDTO.SingleResponse.class);
         }catch (HttpClientErrorException e){
             throw new ApiException(getErrorMessage(e.getStatusCode().value()));
         }catch (RestClientException e){
@@ -162,7 +201,7 @@ public class KiteClient {
         String url = "/listings?city=" + city + "&listing_type=" + listingType + "&sort=price_asc&limit=1";
         url = addFilters(url, propertyType, null, maxPrice);
         try{
-            return restClient.get().uri(url).retrieve().body(KiteDTO.ListResponse.class);
+            return cachedGet(url,KiteDTO.ListResponse.class);
         }catch (HttpClientErrorException e){
             throw new ApiException(getErrorMessage(e.getStatusCode().value()));
         }catch (RestClientException e){
@@ -173,7 +212,7 @@ public class KiteClient {
     //neighborhoods of a city
     public KiteDTO.NeighborhoodsResponse getNeighborhoods(String city){
         try{
-            return restClient.get().uri("/cities/" + city + "/neighborhoods").retrieve().body(KiteDTO.NeighborhoodsResponse.class);
+            return cachedGet("/cities/" + city + "/neighborhoods", KiteDTO.NeighborhoodsResponse.class);
         }catch (HttpClientErrorException e){
             throw new ApiException(getErrorMessage(e.getStatusCode().value()));
         }catch (RestClientException e){
@@ -186,7 +225,7 @@ public class KiteClient {
         String url = "/listings/count?city=" + city + "&listing_type=" + listingType + "&neighborhood_id=" + neighborhoodId;
         url = addFilters(url, propertyType, null, maxPrice);
         try{
-            return restClient.get().uri(url).retrieve().body(KiteDTO.CountResponse.class);
+            return cachedGet(url,KiteDTO.CountResponse.class);
         }catch (HttpClientErrorException e){
             throw new ApiException(getErrorMessage(e.getStatusCode().value()));
         }catch (RestClientException e){
@@ -199,7 +238,7 @@ public class KiteClient {
         String url = "/listings?city=" + city + "&listing_type=" + listingType + "&limit=20&neighborhood_id=" + neighborhoodId;
         url = addFilters(url, propertyType, null, maxPrice);
         try{
-            return restClient.get().uri(url).retrieve().body(KiteDTO.ListResponse.class);
+            return cachedGet(url,KiteDTO.ListResponse.class);
         }catch (HttpClientErrorException e){
             throw new ApiException(getErrorMessage(e.getStatusCode().value()));
         }catch (RestClientException e){
@@ -238,7 +277,7 @@ public class KiteClient {
     //shared call for listing searches
     private KiteDTO.ListResponse callListings(String url){
         try{
-            return restClient.get().uri(url).retrieve().body(KiteDTO.ListResponse.class);
+            return cachedGet(url,KiteDTO.ListResponse.class);
         }catch (HttpClientErrorException e){
             throw new ApiException(getErrorMessage(e.getStatusCode().value()));
         }catch (RestClientException e){

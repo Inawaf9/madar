@@ -69,10 +69,10 @@ public class User {
     @JsonIgnore
     private Set<Payment> payments;
 
-    @OneToMany(mappedBy = "user")
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<PropertyComparison> propertyComparisons;
-
 
 
     @PrePersist
