@@ -226,9 +226,9 @@ public class PropertyComparisonService {
     // Calculate suitability and prepare a comparison item
     private ComparedPropertyDTO calculateComparedProperty(Integer userId, PropertyDTO property, Integer savedPropertyId) {
 
-        PropertyMatchResponseDTO score = recommendationService.calculateMatchWithoutPlaces(userId, property);
+        PropertyMatchResponseDTO score = recommendationService.calculatePropertyMatch(userId, property.getSource(), property.getExternalId(), null);
 
-        return new ComparedPropertyDTO(savedPropertyId, property.getExternalId(), property.getSource(), property.getTitle(), property.getNeighborhood(), property.getPrice(), property.getBedrooms(), property.getAreaSqm(), property.getImage(), property.getListingUrl(), score.matchScore(), score.housingScore(), score.commuteScore());
+        return new ComparedPropertyDTO(savedPropertyId, property.getExternalId(), property.getSource(), property.getTitle(), property.getNeighborhood(), property.getPrice(), property.getBedrooms(), property.getAreaSqm(), property.getImage(), property.getListingUrl(), score.matchScore(), score.housingScore(), score.commuteScore(), score.servicesScore());
     }
 
 

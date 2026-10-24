@@ -56,14 +56,12 @@ public class HousingPreference {
     @Column(columnDefinition = "varchar(10) not null")
     private String listingType;
 
+    @Column(nullable = false)
+    private Boolean includeNearbyServices = true;
 
-    // Interests are stored in a separate table without creating an Interest entity.
-    // Supported nearby-service category identifiers, managed with the housing preference.
-    @ElementCollection
-    @CollectionTable(name = "housing_interests", joinColumns = @JoinColumn(name = "housing_preference_id"),
-            uniqueConstraints = @UniqueConstraint(columnNames = {"housing_preference_id", "interest"}))
-    @Column(name = "interest", nullable = false)
-    private Set<String> interests = new HashSet<>();
+
+    @OneToMany(mappedBy = "housingPreference", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<LifestyleInterest> lifestyleInterests = new HashSet<>();
 
     @OneToOne
     @JoinColumn(name = "user_id", unique = true, nullable = false)

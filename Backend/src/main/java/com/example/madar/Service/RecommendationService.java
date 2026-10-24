@@ -11,14 +11,17 @@ import com.example.madar.DTO.Out.Recommendation.*;
 import com.example.madar.Model.HousingPreference;
 import com.example.madar.Repository.HousingPreferenceRepository;
 import com.example.madar.Repository.PlacePreferenceRepository;
-import com.example.madar.Util.PlaceCategories;
+import com.example.madar.Model.LifestyleInterest;
+import com.example.madar.Repository.LifestyleInterestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RecommendationService {
@@ -28,6 +31,7 @@ public class RecommendationService {
     private final HousingPreferenceRepository housingPreferenceRepository;
     private final RecommendationAI recommendationAI;
     private final PlacePreferenceRepository placePreferenceRepository;
+    private final LifestyleInterestRepository lifestyleInterestRepository;
 
 
 
@@ -42,10 +46,9 @@ public class RecommendationService {
 
         PropertyDTO property = propertyService.getPropertyById(source, externalId);
 
-        // Track Google Places availability for this request
-        boolean[] placesAvailable = {true};
 
-        return calculateScore(userId, property, preference, weights, placesAvailable);
+
+        return calculateScore(userId, property, preference, weights, true, null);
     }
 
 
@@ -84,15 +87,59 @@ public class RecommendationService {
             throw new ApiException("No properties have sufficient data for matching");
         }
 
-        // Disable Places during bulk ranking to protect the API quota
-        boolean[] skipPlaces = {false};
+        // Calculate services consistently for all candidates
+        Map<String, Double> servicesScores = new HashMap<>();
 
-        // Calculate housing and commute scores for all candidates
+        boolean servicesEvaluated =
+                !Boolean.FALSE.equals(preference.getIncludeNearbyServices());
+
+        if (servicesEvaluated) {
+
+            for (PropertyDTO property : selected) {
+
+                Double score = calculateNeighborhoodServicesScore(
+                        property.getLatitude(),
+                        property.getLongitude(),
+                        preference
+                );
+
+                if (score == null) {
+                    servicesEvaluated = false;
+                    servicesScores.clear();
+
+                    log.warn(
+                            "Services evaluation unavailable. Ranking all properties without services."
+                    );
+                    break;
+                }
+
+                servicesScores.put(property.getExternalId(), score);
+            }
+        }
+
+// Use the same scoring factors for every property
+        final boolean useServices = servicesEvaluated;
+
         List<PropertyMatchResponseDTO> ranked = selected.stream()
-                .map(property -> calculateScore(userId, property, preference, weights, skipPlaces))
-                .sorted(Comparator.comparing(PropertyMatchResponseDTO::matchScore).reversed())
+                .map(property -> calculateScore(
+                        userId,
+                        property,
+                        preference,
+                        weights,
+                        false,
+                        useServices
+                                ? servicesScores.get(property.getExternalId())
+                                : null
+                ))
+                .sorted(Comparator.comparing(
+                        PropertyMatchResponseDTO::matchScore
+                ).reversed())
                 .limit(10)
                 .toList();
+
+
+
+
 
         // Build a lookup map without fetching property details again
         Map<String, PropertyDTO> propertyMap = selected.stream()
@@ -101,29 +148,7 @@ public class RecommendationService {
                         Function.identity(),
                         (first, second) -> first));
 
-        // Fetch nearby services only for the highest-ranked property
-        if (!ranked.isEmpty()) {
 
-            PropertyMatchResponseDTO topScore = ranked.get(0);
-            PropertyDTO topProperty = propertyMap.get(topScore.propertyId());
-
-            if (topProperty == null) {
-                throw new ApiException("Top ranked property not found");
-            }
-
-            boolean[] placesAvailable = {true};
-
-            PropertyMatchResponseDTO verifiedTopScore = calculateScore(userId, topProperty, preference, weights, placesAvailable);
-
-            // Keep ranking based on the same criteria for all properties
-            // Services are displayed as additional verified information
-            PropertyMatchResponseDTO finalTopScore = new PropertyMatchResponseDTO(topScore.propertyId(), topScore.source(), topScore.title(), topScore.matchScore(), topScore.housingScore(), topScore.commuteScore(), verifiedTopScore.servicesScore());
-
-            List<PropertyMatchResponseDTO> updatedRanked = new ArrayList<>(ranked);
-
-            updatedRanked.set(0, finalTopScore);
-            ranked = updatedRanked;
-        }
 
         // Generate AI explanations using the final ranked properties
         Map<String, RecommendationAI.PropertyExplanation> explanations = recommendationAI.explainRecommendations(ranked, selected, preference,language);
@@ -171,11 +196,9 @@ public class RecommendationService {
             throw new ApiException("Housing preferences not found");
         }
 
-        boolean[] skipPlaces = {false};
 
-        return calculateScore(userId, property, preference, null, skipPlaces);
+        return calculateScore(userId, property, preference, null, false, null);
     }
-
 
 
     // Evaluate neighborhood suitability using commutes and nearby services
@@ -202,8 +225,16 @@ public class RecommendationService {
             commuteScore = commute.commuteScore();
         }
 
-        // Nearby services are evaluated independently of commute availability.
-        Double servicesScore = calculateNeighborhoodServicesScore(latitude, longitude, preference);
+        Double servicesScore = null;
+
+        if (!Boolean.FALSE.equals(preference.getIncludeNearbyServices())) {
+            servicesScore = calculateNeighborhoodServicesScore(
+                    latitude,
+                    longitude,
+                    preference
+            );
+        }
+
 
         double neighborhoodScore;
 
@@ -264,46 +295,173 @@ public class RecommendationService {
     // Calculate nearby services suitability based on user interests
     private Double calculateNeighborhoodServicesScore(Double latitude, Double longitude, HousingPreference preference) {
 
-        Set<String> serviceTypes = new LinkedHashSet<>();
+        Map<String, ServiceTarget> nearbyTypes = new LinkedHashMap<>();
 
-        serviceTypes.add("supermarket");
-        serviceTypes.add("pharmacy");
-        serviceTypes.add("hospital");
+        // Basic services
+        nearbyTypes.put("supermarket", new ServiceTarget("supermarket", 1500.0));
+        nearbyTypes.put("pharmacy", new ServiceTarget("pharmacy", 2000.0));
+        nearbyTypes.put("hospital", new ServiceTarget("hospital", 5000.0));
 
-        serviceTypes.addAll(PlaceCategories.normalize(preference.getInterests()));
+        List<LifestyleInterest> textInterests = new ArrayList<>();
 
-        try {
-            int availableCategories = 0;
+        List<LifestyleInterest> interests =
+                lifestyleInterestRepository.findByHousingPreference_Id(
+                        preference.getId()
+                );
 
-            for (String type : serviceTypes) {
-                GooglePlacesResponseDTO nearby = placePreferenceService.getNearbyServices(latitude, longitude, type, 2000.0);
+        for (LifestyleInterest interest : interests) {
 
-                if (nearby == null) {
-                    throw new IllegalStateException("Nearby services response is unavailable");
+            if (!Boolean.TRUE.equals(interest.getActive())) {
+                continue;
+            }
+
+            if (interest.getSearchType() == LifestyleInterest.SearchType.NEARBY) {
+
+                String type = interest.getGooglePlaceType();
+
+                if (type == null || type.isBlank()) {
+                    continue;
                 }
 
-                boolean found = nearby.places() != null && nearby.places().stream().anyMatch(place -> type.equals(place.primaryType()) || (place.types() != null && place.types().contains(type)));
+                nearbyTypes.putIfAbsent(type, new ServiceTarget(type, getServiceRadius(type)));
 
-                if (found) {
-                    availableCategories++;
+            } else if (interest.getSearchType() == LifestyleInterest.SearchType.TEXT) {
+                textInterests.add(interest);
+            }
+        }
+
+        try {
+            int available = 0;
+            int total = nearbyTypes.size() + textInterests.size();
+
+            if (!nearbyTypes.isEmpty()) {
+
+                double maxRadius = nearbyTypes.values().stream()
+                        .mapToDouble(ServiceTarget::radius)
+                        .max()
+                        .orElse(2000.0);
+
+                GooglePlacesResponseDTO batch =
+                        placePreferenceService.getNearbyServicesBatch(
+                                latitude,
+                                longitude,
+                                new ArrayList<>(nearbyTypes.keySet()),
+                                maxRadius
+                        );
+
+                if (batch == null || batch.places() == null) {
+                    return null;
+                }
+
+                for (ServiceTarget target : nearbyTypes.values()) {
+
+                    boolean found = batch.places().stream()
+                            .anyMatch(place ->
+                                    matchesType(place, target.type()) &&
+                                            place.location() != null &&
+                                            place.location().latitude() != null &&
+                                            place.location().longitude() != null &&
+                                            propertyService.calculateDistanceKm(
+                                                    latitude,
+                                                    longitude,
+                                                    place.location().latitude(),
+                                                    place.location().longitude()
+                                            ) * 1000 <= target.radius()
+                            );
+
+
+
+                    // Verify a missing type separately
+                    if (!found) {
+
+                        GooglePlacesResponseDTO individual = placePreferenceService.getNearbyServices(latitude, longitude, target.type(), target.radius());
+
+                        if (individual == null || individual.places() == null) {
+                            return null;
+                        }
+
+                        found = individual.places().stream().anyMatch(place -> matchesType(place, target.type()));
+                    }
+
+                    if (found) {
+                        available++;
+                    }
                 }
             }
 
-            double score = availableCategories *
-                    (100.0 / serviceTypes.size());
+            // Text searches are only made for selected text interests
+            for (LifestyleInterest interest : textInterests) {
 
-            return Math.round(score * 100.0) / 100.0;
+                double radius = getInterestRadius(interest.getCategory());
+
+                GooglePlacesResponseDTO response = placePreferenceService.getNearbyServicesForInterest(latitude, longitude, interest, radius);
+
+                if (response == null || response.places() == null) {
+                    return null;
+                }
+
+                if (!response.places().isEmpty()) {
+                    available++;
+                }
+            }
+
+            if (total == 0) {
+                return null;
+            }
+
+            return Math.round(
+                    (available * 100.0 / total) * 100.0
+            ) / 100.0;
 
         } catch (RuntimeException e) {
-            // Continue with commute data if the places provider fails
+            log.warn("Nearby services calculation failed: {}", e.getMessage());
             return null;
         }
     }
 
 
+    private record ServiceTarget(String type, Double radius) { }
+
+    private boolean matchesType(GooglePlacesResponseDTO.Place place, String type) {
+
+        return type.equals(place.primaryType()) || (place.types() != null && place.types().contains(type));
+    }
+
+    private double getServiceRadius(String type) {
+
+        return switch (type) {
+
+            case "supermarket", "cafe", "bakery",
+                 "atm", "laundry" -> 1500.0;
+
+            case "pharmacy", "gym", "park",
+                 "restaurant", "bank", "bus_station",
+                 "playground" -> 2000.0;
+
+            case "hospital", "university",
+                 "secondary_school", "primary_school",
+                 "preschool", "school",
+                 "subway_station" -> 5000.0;
+
+            default -> 3000.0;
+        };
+    }
+
+    private double getInterestRadius(String category) {
+
+        if (category == null) {
+            return 3000.0;
+        }
+
+        return switch (category.toUpperCase(Locale.ROOT)) {
+            case "EDUCATION", "HEALTH", "TRANSPORT" -> 5000.0;
+            case "SHOPPING", "SERVICES", "FOOD", "NATURE" -> 2000.0;
+            default -> 3000.0;};
+    }
 
     // Calculate scores using existing property data
-    private PropertyMatchResponseDTO calculateScore(Integer userId, PropertyDTO property, HousingPreference preference, RecommendationWeightsDTO weights, boolean[] placesAvailable) {
+    private PropertyMatchResponseDTO calculateScore(Integer userId, PropertyDTO property, HousingPreference preference, RecommendationWeightsDTO weights, boolean includePlaces, Double precomputedServicesScore) {
+
 
         if (property == null || property.getLatitude() == null ||
                 property.getLongitude() == null || property.getPrice() == null || property.getPrice() <= 0) {
@@ -360,16 +518,28 @@ public class RecommendationService {
             housingScore += 5;
         }
         // Adjust housing suitability based on household size and bedrooms
+// Evaluate bedroom suitability based on household size
         Integer occupantsCount = preference.getOccupantsCount();
         Integer bedrooms = property.getBedrooms();
 
-        if (occupantsCount != null && occupantsCount > 0 && bedrooms != null && bedrooms > 0) {
+        if (occupantsCount != null && occupantsCount > 0
+                && bedrooms != null && bedrooms > 0) {
 
-            int recommendedBedrooms = (int) Math.ceil(occupantsCount / 2.0);
+            int minimumBedrooms = (int) Math.ceil(occupantsCount / 2.0);
 
-            if (bedrooms < recommendedBedrooms) {
-                housingScore = Math.max(0, housingScore - 10);
+            if (bedrooms < minimumBedrooms) {
+                int missingBedrooms = minimumBedrooms - bedrooms;
+                housingScore -= Math.min(15, missingBedrooms * 5);
+            } else {
+                int extraBedrooms = bedrooms - minimumBedrooms;
+
+                // Extra rooms are not necessarily a disadvantage
+                if (extraBedrooms > 2) {
+                    housingScore -= Math.min(6, (extraBedrooms - 2) * 2);
+                }
             }
+
+            housingScore = Math.max(0, housingScore);
         }
 
         // Commute analysis is optional when the user has no important locations.
@@ -381,44 +551,15 @@ public class RecommendationService {
             commuteScore = commute.commuteScore();
         }
 
-        // Basic service categories
-        Set<String> serviceTypes = new LinkedHashSet<>();
-        serviceTypes.add("supermarket");
-        serviceTypes.add("pharmacy");
-        serviceTypes.add("hospital");
+        // Use precomputed services when available
+        Double servicesScore = precomputedServicesScore;
 
-        // Housing interests already use the supported Google Places category identifiers.
-        serviceTypes.addAll(PlaceCategories.normalize(preference.getInterests()));
+        if (servicesScore == null && includePlaces && !Boolean.FALSE.equals(preference.getIncludeNearbyServices())) {
 
-        // Null means nearby services could not be verified
-        Double servicesScore = null;
-
-        if (placesAvailable[0]) {
-            try {
-                int availableCategories = 0;
-
-                for (String type : serviceTypes) {
-                    GooglePlacesResponseDTO nearby = placePreferenceService.getNearbyServices(property.getLatitude(), property.getLongitude(), type, 2000.0);
-
-                    if (nearby == null || nearby.places() == null) {
-                        throw new IllegalStateException("Nearby services response is unavailable");
-                    }
-
-                    boolean found = nearby.places().stream().anyMatch(place -> type.equals(place.primaryType()) || (place.types() != null && place.types().contains(type)));
-
-                    if (found) {
-                        availableCategories++;
-                    }
-                }
-
-                servicesScore = availableCategories * (100.0 / serviceTypes.size());
-
-            } catch (RuntimeException e) {
-                // Do not stop recommendations if Google Places fails
-                placesAvailable[0] = false;
-                servicesScore = null;
-            }
+            servicesScore = calculateNeighborhoodServicesScore(property.getLatitude(), property.getLongitude(), preference);
         }
+
+
 
         // Redistribute weights across available factors only.
         double weightedSum = housingScore * housingWeight;

@@ -13,7 +13,9 @@ public record GooglePlacesResponseDTO(
             String formattedAddress,
             Location location,
             String primaryType,
-            List<String> types
+            List<String> types,
+            Double distanceKm
+
     ) {}
 
     public record DisplayName(String text) {}

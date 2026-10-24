@@ -40,13 +40,8 @@ public class CurrentHome {
 
     private LocalDate movedInAt;
 
-    @Column(nullable = false, updatable = false)
     private LocalDateTime confirmedByUserAt;
 
-    @PrePersist
-    public void onCreate() {
-        this.confirmedByUserAt = LocalDateTime.now();
-    }
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false, unique = true)

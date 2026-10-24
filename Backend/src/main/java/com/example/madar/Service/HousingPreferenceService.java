@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -47,14 +48,6 @@ public class HousingPreferenceService {
         return preference;
     }
 
-    // Materialize the collection inside the transaction, before external API calls.
-    @Transactional(readOnly = true)
-    public Set<String> getInterestsByUserId(Integer userId) {
-        if (userId == null || userId <= 0) {
-            throw new ApiException("Invalid user ID");
-        }
-        return PlaceCategories.normalize(getHousingPreferenceByUserId(userId).getInterests());
-    }
 
     // ADD
     public void addHousingPreference(Integer userId, HousingPreference housingPreference) {
@@ -70,8 +63,12 @@ public class HousingPreferenceService {
             throw new ApiException("User already has housing preferences");
         }
 
-        housingPreference.setInterests(PlaceCategories.normalize(housingPreference.getInterests()));
+        housingPreference.setLifestyleInterests(new HashSet<>());
         housingPreference.setUser(user);
+
+        if (housingPreference.getIncludeNearbyServices() == null) {
+            housingPreference.setIncludeNearbyServices(true);
+        }
         housingPreferenceRepository.save(housingPreference);
     }
 
@@ -94,8 +91,7 @@ public class HousingPreferenceService {
             throw new ApiException("This housing preference does not belong to the user");
         }
 
-        Set<String> interests = PlaceCategories.normalize(updatedPreference.getInterests() == null
-                ? preference.getInterests() : updatedPreference.getInterests());
+
 
         preference.setRegion(updatedPreference.getRegion());
         preference.setCity(updatedPreference.getCity());
@@ -103,9 +99,10 @@ public class HousingPreferenceService {
         preference.setMaxBudget(updatedPreference.getMaxBudget());
         preference.setPropertyType(updatedPreference.getPropertyType());
         preference.setListingType(updatedPreference.getListingType());
-
-        preference.setInterests(interests);
         preference.setOccupantsCount(updatedPreference.getOccupantsCount());
+        if (updatedPreference.getIncludeNearbyServices() != null) {
+            preference.setIncludeNearbyServices(updatedPreference.getIncludeNearbyServices());
+        }
 
         housingPreferenceRepository.save(preference);
     }

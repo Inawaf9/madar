@@ -5,32 +5,41 @@ import com.example.madar.Client.GooglePlacesClient;
 import com.example.madar.DTO.Out.Commute.CommuteSummaryResponseDTO;
 import com.example.madar.DTO.Out.GooglePlaces.GooglePlacesResponseDTO;
 import com.example.madar.DTO.Out.PlacePreference.PlacePreferenceSummaryDTO;
+import com.example.madar.Model.LifestyleInterest;
 import com.example.madar.Model.PlacePreference;
 import com.example.madar.Model.User;
 import com.example.madar.Repository.PlacePreferenceRepository;
 import com.example.madar.Repository.UserRepository;
-import com.example.madar.Util.PlaceCategories;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import com.example.madar.Client.GoogleRoutesClient;
 import com.example.madar.DTO.Out.Commute.CommuteResponseDTO;
 import com.example.madar.DTO.Out.GoogleRoutes.GoogleRouteResponseDTO;
-import java.util.ArrayList;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class PlacePreferenceService {
-    public static final Set<String> SUPPORTED_PLACE_TYPES = PlaceCategories.SUPPORTED_TYPES;
+
+    public static final Set<String> SUPPORTED_PLACE_TYPES = Set.of(
+            "supermarket", "pharmacy", "hospital",
+            "school", "preschool", "primary_school",
+            "secondary_school", "university",
+            "gym", "dentist", "park", "playground",
+            "restaurant", "cafe", "bakery",
+            "shopping_mall", "furniture_store",
+            "subway_station", "bus_station",
+            "bank", "atm", "laundry", "gas_station"
+    );
     private final PlacePreferenceRepository placePreferenceRepository;
     private final UserRepository userRepository;
     private final GoogleRoutesClient googleRoutesClient;
     private final GooglePlacesClient googlePlacesClient;
+    private final PropertyService propertyService;
 
 
     //get Places for User
@@ -170,27 +179,18 @@ public List<PlacePreference>getMyPlaces(Integer userId){
 
 
 
-    // Search for nearby services around a selected location
+    // Search one Google place type with verified distances
     public GooglePlacesResponseDTO getNearbyServices(Double latitude, Double longitude, String placeType, Double radiusMeters) {
 
-        // Validate location coordinates
-        if (latitude == null || longitude == null || !Double.isFinite(latitude) || !Double.isFinite(longitude) ||
-                latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-            throw new ApiException("Invalid location coordinates");
-        }
+        validateSearchLocation(latitude, longitude, radiusMeters);
 
-        // Validate search radius
-        if (radiusMeters == null || !Double.isFinite(radiusMeters) || radiusMeters <= 0 || radiusMeters > 50000) {
-            throw new ApiException("Invalid search radius");
-        }
-
-        // Validate supported service categories
         if (placeType == null || !SUPPORTED_PLACE_TYPES.contains(placeType)) {
-            throw new ApiException("Unsupported place type");
+            throw new ApiException("Unsupported Google place type");
         }
 
-        // Fetch nearby services using Google Places API
-        return googlePlacesClient.searchNearbyPlaces(latitude, longitude, placeType, radiusMeters);
+        GooglePlacesResponseDTO response = googlePlacesClient.searchNearbyPlaces(latitude, longitude, placeType, radiusMeters);
+
+        return filterPlacesByDistance(response, latitude, longitude, radiusMeters);
     }
 
 
@@ -210,8 +210,127 @@ public List<PlacePreference>getMyPlaces(Integer userId){
     }
 
 
+    // Search several Google place types in one request
+    public GooglePlacesResponseDTO getNearbyServicesBatch(Double latitude, Double longitude, List<String> placeTypes, Double radiusMeters) {
+
+        validateSearchLocation(latitude, longitude, radiusMeters);
+
+        if (placeTypes == null || placeTypes.isEmpty()) {
+            return new GooglePlacesResponseDTO(List.of());
+        }
+
+        List<String> types = new LinkedHashSet<>(placeTypes)
+                .stream()
+                .toList();
+
+        if (types.stream().anyMatch(type -> type == null || !SUPPORTED_PLACE_TYPES.contains(type))) {
+            throw new ApiException("Unsupported Google place type");
+        }
+
+        if (types.size() > 50) {
+            throw new ApiException("Maximum 50 place types are allowed");
+        }
+
+        GooglePlacesResponseDTO response = googlePlacesClient.searchNearbyPlacesBatch(latitude, longitude, types, radiusMeters);
+
+        return filterPlacesByDistance(response, latitude, longitude, radiusMeters);
+    }
+
+
+    // Search using the user's configured lifestyle interest
+    public GooglePlacesResponseDTO getNearbyServicesForInterest(Double latitude, Double longitude, LifestyleInterest interest, Double radiusMeters) {
+
+        validateSearchLocation(latitude, longitude, radiusMeters);
+
+        if (interest == null || !Boolean.TRUE.equals(interest.getActive())) {
+            throw new ApiException("Invalid lifestyle interest");
+        }
+
+        if (interest.getSearchType() == null) {
+            throw new ApiException("Interest search type is required");
+        }
+
+        if (interest.getSearchType() == LifestyleInterest.SearchType.NEARBY) {
+
+            return getNearbyServices(latitude, longitude, interest.getGooglePlaceType(), radiusMeters);
+        }
+
+        if (interest.getSearchType() == LifestyleInterest.SearchType.TEXT) {
+
+            if (interest.getSearchQuery() == null || interest.getSearchQuery().isBlank()) {
+                throw new ApiException("Interest search query is required");
+            }
+
+            GooglePlacesResponseDTO response = googlePlacesClient.searchPlacesByText(latitude, longitude, interest.getSearchQuery(), radiusMeters);
+
+            return filterPlacesByDistance(response, latitude, longitude, radiusMeters);
+        }
+
+        throw new ApiException("Unsupported interest search type");
+    }
+
+
+
+
+
 
     //Helper Method
+
+    private void validateSearchLocation(Double latitude, Double longitude, Double radiusMeters) {
+
+        if (latitude == null || longitude == null ||
+                !Double.isFinite(latitude) || !Double.isFinite(longitude) ||
+                latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+
+            throw new ApiException("Invalid location coordinates");
+        }
+
+        if (radiusMeters == null || !Double.isFinite(radiusMeters) || radiusMeters <= 0 || radiusMeters > 50000) {
+
+            throw new ApiException("Invalid search radius");
+        }
+    }
+
+
+    private GooglePlacesResponseDTO filterPlacesByDistance(GooglePlacesResponseDTO response, Double latitude, Double longitude, Double radiusMeters) {
+
+        if (response == null || response.places() == null) {
+            return new GooglePlacesResponseDTO(List.of());
+        }
+
+        List<GooglePlacesResponseDTO.Place> places =
+                response.places().stream()
+                        .filter(Objects::nonNull)
+                        .filter(place ->
+                                place.location() != null &&
+                                        place.location().latitude() != null &&
+                                        place.location().longitude() != null &&
+                                        Double.isFinite(place.location().latitude()) &&
+                                        Double.isFinite(place.location().longitude())
+                        )
+                        .map(place -> {
+
+                            double distanceKm = propertyService.calculateDistanceKm(latitude, longitude, place.location().latitude(), place.location().longitude());
+
+                            if (distanceKm * 1000 > radiusMeters) {
+                                return null;
+                            }
+
+                            return new GooglePlacesResponseDTO.Place(
+                                    place.id(),
+                                    place.displayName(),
+                                    place.formattedAddress(),
+                                    place.location(),
+                                    place.primaryType(),
+                                    place.types(),
+                                    Math.round(distanceKm * 100.0) / 100.0
+                            );
+                        })
+                        .filter(Objects::nonNull)
+                        .toList();
+
+        return new GooglePlacesResponseDTO(places);
+    }
 
     // Calculate driving distance and duration from a property to user's places
     private List<CommuteResponseDTO> calculateCommutes(Integer userId, Double propertyLat, Double propertyLng) {

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -71,7 +72,15 @@ public class CurrentHomeService {
             throw new ApiException("User already has a current home");
         }
 
+        if (!validCoordinates(currentHome.getLatitude(), currentHome.getLongitude())) {
+            throw new ApiException("Invalid current home coordinates");
+        }
+
+        currentHome.setId(null);
+        currentHome.setMovedInAt(null);
+        currentHome.setConfirmedByUserAt(null);
         currentHome.setUser(user);
+
         currentHomeRepository.save(currentHome);
     }
 
@@ -92,11 +101,20 @@ public class CurrentHomeService {
             throw new ApiException("This home does not belong to the user");
         }
 
+
+
+        if (!validCoordinates(updatedHome.getLatitude(), updatedHome.getLongitude())) {
+            throw new ApiException("Invalid current home coordinates");
+        }
+
         currentHome.setLatitude(updatedHome.getLatitude());
         currentHome.setLongitude(updatedHome.getLongitude());
         currentHome.setExternalPropertyId(updatedHome.getExternalPropertyId());
         currentHome.setSource(updatedHome.getSource());
-        currentHome.setMovedInAt(updatedHome.getMovedInAt());
+
+        // A new home does not inherit the previous move confirmation
+        currentHome.setMovedInAt(null);
+        currentHome.setConfirmedByUserAt(null);
 
         currentHomeRepository.save(currentHome);
     }
@@ -136,37 +154,89 @@ public class CurrentHomeService {
         }
         if (home.getMovedInAt() == null) {
             home.setMovedInAt(LocalDate.now());
+            home.setConfirmedByUserAt(LocalDateTime.now());
             currentHomeRepository.save(home);
         }
     }
 
     public NeighborhoodResponseDTO getNeighborhood(Integer userId) {
-        CurrentHome home = getConfirmedHome(userId);
-        Map<String, GooglePlacesResponseDTO.Place> places = new LinkedHashMap<>();
+
+        CurrentHome home = getValidHome(userId);
+
+        List<String> types = List.of(
+                "supermarket",
+                "pharmacy",
+                "hospital"
+        );
+
+        GooglePlacesResponseDTO response =
+                placePreferenceService.getNearbyServicesBatch(
+                        home.getLatitude(),
+                        home.getLongitude(),
+                        types,
+                        5000.0
+                );
+
+        Map<String, GooglePlacesResponseDTO.Place> places =
+                new LinkedHashMap<>();
+
         List<NeighborhoodResponseDTO.CategorySummary> categories = new ArrayList<>();
 
-        // Use the existing discovery categories; these are not an essential-services policy.
-        for (String category : PlacePreferenceService.SUPPORTED_PLACE_TYPES.stream().sorted().toList()) {
-            GooglePlacesResponseDTO response = placePreferenceService.getNearbyServices(
-                    home.getLatitude(), home.getLongitude(), category, 2000.0);
+        for (String type : types) {
+
             List<String> ids = new ArrayList<>();
+
+            double radius = switch (type) {
+                case "supermarket" -> 1500.0;
+                case "pharmacy" -> 2000.0;
+                default -> 5000.0;
+            };
+
             if (response.places() != null) {
+
                 for (GooglePlacesResponseDTO.Place place : response.places()) {
-                    if (place != null && place.id() != null && !ids.contains(place.id())) {
+
+                    if (place == null || place.id() == null
+                            || place.location() == null
+                            || !validCoordinates(
+                            place.location().latitude(),
+                            place.location().longitude())) {
+                        continue;
+                    }
+
+                    boolean matches = type.equals(place.primaryType())
+                            || (place.types() != null
+                            && place.types().contains(type));
+
+                    double distanceMeters =
+                            propertyService.calculateDistanceKm(
+                                    home.getLatitude(),
+                                    home.getLongitude(),
+                                    place.location().latitude(),
+                                    place.location().longitude()
+                            ) * 1000;
+
+                    if (matches && distanceMeters <= radius) {
                         places.putIfAbsent(place.id(), place);
-                        ids.add(place.id());
+
+                        if (!ids.contains(place.id())) {
+                            ids.add(place.id());
+                        }
                     }
                 }
             }
-            categories.add(new NeighborhoodResponseDTO.CategorySummary(category, ids.size(), ids));
+
+            categories.add(new NeighborhoodResponseDTO.CategorySummary(type, ids.size(), ids));
         }
-        return new NeighborhoodResponseDTO(home.getId(),
+
+        return new NeighborhoodResponseDTO(
+                home.getId(),
                 new GooglePlacesResponseDTO.Location(home.getLatitude(), home.getLongitude()),
-                2000, new ArrayList<>(places.values()), categories, false);
+                5000, new ArrayList<>(places.values()), categories, false);
     }
 
     public GooglePlacesResponseDTO getNearbyByCategory(Integer userId, String category, Double radius) {
-        CurrentHome home = getConfirmedHome(userId);
+        CurrentHome home = getValidHome(userId);
         return placePreferenceService.getNearbyServices(home.getLatitude(), home.getLongitude(), category, radius);
     }
 
@@ -175,17 +245,14 @@ public class CurrentHomeService {
     }
 
     public List<NearbyInterestResponseDTO> getNearestEssential(Integer userId, Double radius) {
-        nearbyInterestService.validateRadius(radius);
-        Set<String> interests = housingPreferenceService.getInterestsByUserId(userId);
-        if (interests.isEmpty()) {
-            return List.of();
-        }
-        CurrentHome home = getConfirmedHome(userId);
-        return nearbyInterestService.analyze(home.getLatitude(), home.getLongitude(), interests, radius);
+
+        CurrentHome home = getValidHome(userId);
+
+        return nearbyInterestService.analyzeCurrentHome(userId, home.getLatitude(), home.getLongitude(), radius);
     }
 
     public List<NearbyPlaceResponseDTO> searchNearby(Integer userId, String query, Double radius) {
-        CurrentHome home = getConfirmedHome(userId);
+        CurrentHome home = getValidHome(userId);
         if (query == null || query.isBlank()) {
             throw new ApiException("Search query is required");
         }
@@ -227,7 +294,7 @@ public class CurrentHomeService {
         }
 
         if (currentHome.getMovedInAt() == null) {
-            return new CurrentHomeStatusDTO("PENDING_MOVE", currentHome.getId(), null);
+            return new CurrentHomeStatusDTO("HOME_SET", currentHome.getId(), null);
         }
 
         return new CurrentHomeStatusDTO("MOVED_IN", currentHome.getId(), currentHome.getMovedInAt());
@@ -236,14 +303,14 @@ public class CurrentHomeService {
 
 
     //helper methods
-    private CurrentHome getConfirmedHome(Integer userId) {
+    private CurrentHome getValidHome(Integer userId) {
+
         CurrentHome home = getCurrentHomeByUserId(userId);
-        if (home.getMovedInAt() == null) {
-            throw new ApiException("Please confirm your move first");
-        }
+
         if (!validCoordinates(home.getLatitude(), home.getLongitude())) {
             throw new ApiException("Invalid current home coordinates");
         }
+
         return home;
     }
 
@@ -252,20 +319,6 @@ public class CurrentHomeService {
                 && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
     }
 
-    //extra endpoints
 
-    //if there is  no use for it it will be delete
-    public void isConfirmed(Integer userId){
-
-        User user = userRepository.findUserById(userId);
-        if (user == null) {
-            throw new ApiException("User not found");
-        }
-
-        CurrentHome currentHome = currentHomeRepository.findCurrentHomeByUser_Id(userId);
-        if(currentHome == null){
-            throw new ApiException("Current home not found");
-        }
-    }
 
 }

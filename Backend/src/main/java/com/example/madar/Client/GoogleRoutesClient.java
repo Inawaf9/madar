@@ -33,6 +33,13 @@ public class GoogleRoutesClient {
 
     // Calculate driving distance and duration between two locations
     public GoogleRouteResponseDTO.Route computeRoute(Double originLat, Double originLng, Double destinationLat, Double destinationLng) {
+        // No travel is needed when origin and destination are identical
+        if (originLat != null && originLng != null &&
+                originLat.equals(destinationLat) &&
+                originLng.equals(destinationLng)) {
+
+            return new GoogleRouteResponseDTO.Route(0, "0s");
+        }
 
         // Set origin and destination coordinates
         Map<String, Object> origin = Map.of(
@@ -76,8 +83,17 @@ public class GoogleRoutesClient {
                 throw new ApiException("No route found");
             }
 
-            return response.routes().get(0);
+            GoogleRouteResponseDTO.Route route = response.routes().get(0);
 
+            if (route == null ||
+                    route.distanceMeters() == null ||
+                    route.duration() == null ||
+                    route.duration().isBlank()) {
+
+                throw new ApiException("Google Routes returned incomplete distance or duration data");
+            }
+
+            return route;
         } catch (RestClientException e) {
             throw new ApiException("Failed to calculate route: " + e.getMessage());
         }

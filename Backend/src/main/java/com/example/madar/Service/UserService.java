@@ -23,6 +23,7 @@ public class UserService {
     private final PlacePreferenceRepository placePreferenceRepository;
     private final SavedPropertyRepository savedPropertyRepository;
     private final CurrentHomeRepository currentHomeRepository;
+    private final LifestyleInterestRepository lifestyleInterestRepository;
 
 
     //get all users Todo:(admin)
@@ -139,7 +140,11 @@ public class UserService {
 
         boolean placesCompleted = !placePreferenceRepository.findPlacePreferencesByUser_Id(userId).isEmpty();
 
-        boolean interestsCompleted = preference != null && preference.getInterests() != null && !preference.getInterests().isEmpty();
+        boolean interestsCompleted = preference != null
+                && lifestyleInterestRepository
+                .findByHousingPreference_Id(preference.getId())
+                .stream()
+                .anyMatch(interest -> Boolean.TRUE.equals(interest.getActive()));
 
         List<ProfileCompletionDTO.MissingFeature> missingFeatures = new ArrayList<>();
 
@@ -185,7 +190,7 @@ public class UserService {
         String homeStatus = home == null
                 ? "NO_HOME"
                 : home.getMovedInAt() == null
-                ? "PENDING_MOVE"
+                ? "HOME_SET"
                 : "MOVED_IN";
 
         return new UserDashboardSummaryDTO(userId, housingCompleted, savedCount, placesCount, homeStatus);

@@ -1,7 +1,5 @@
 package com.example.madar.DTO.Out.Recommendation;
 
-
-
 public record ComparedPropertyDTO(
         Integer savedPropertyId,
         String externalPropertyId,
@@ -15,7 +13,8 @@ public record ComparedPropertyDTO(
         String listingUrl,
         Double matchScore,
         Double housingScore,
-        Double commuteScore
+        Double commuteScore,
+        Double servicesScore
 ) {
 }
 

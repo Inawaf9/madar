@@ -81,4 +81,74 @@ public class GooglePlacesClient {
             throw new ApiException("Failed to search places by text");
         }
     }
+
+
+
+
+    // Search multiple nearby service types in one Google request
+    public GooglePlacesResponseDTO searchNearbyPlacesBatch(Double latitude, Double longitude, List<String> placeTypes, Double radiusMeters) {
+
+        if (latitude == null || longitude == null ||
+                !Double.isFinite(latitude) || !Double.isFinite(longitude) ||
+                latitude < -90 || latitude > 90 ||
+                longitude < -180 || longitude > 180) {
+            throw new ApiException("Invalid coordinates");
+        }
+
+        if (radiusMeters == null || !Double.isFinite(radiusMeters) || radiusMeters <= 0 || radiusMeters > 50000) {
+            throw new ApiException("Invalid search radius");
+        }
+
+        if (placeTypes == null || placeTypes.isEmpty()) {
+            return new GooglePlacesResponseDTO(List.of());
+        }
+
+        List<String> types = placeTypes.stream()
+                .filter(type -> type != null && !type.isBlank())
+                .distinct()
+                .toList();
+
+        if (types.isEmpty()) {
+            return new GooglePlacesResponseDTO(List.of());
+        }
+
+        if (types.size() > 50) {
+            throw new ApiException("Maximum 50 place types are allowed");
+        }
+
+        Map<String, Object> request = Map.of(
+                "includedTypes", types,
+                "maxResultCount", 20,
+                "rankPreference", "DISTANCE",
+                "locationRestriction", Map.of(
+                        "circle", Map.of(
+                                "center", Map.of(
+                                        "latitude", latitude,
+                                        "longitude", longitude
+                                ),
+                                "radius", radiusMeters
+                        )
+                )
+        );
+
+        try {
+            GooglePlacesResponseDTO response = restClient.post()
+                    .uri("/v1/places:searchNearby")
+                    .header(
+                            "X-Goog-FieldMask",
+                            "places.id,places.displayName,places.formattedAddress,"
+                                    + "places.location,places.primaryType,places.types"
+                    )
+                    .body(request)
+                    .retrieve()
+                    .body(GooglePlacesResponseDTO.class);
+
+            return response == null || response.places() == null
+                    ? new GooglePlacesResponseDTO(List.of())
+                    : response;
+
+        } catch (RestClientException e) {
+            throw new ApiException("Failed to search nearby service types");
+        }
+    }
 }
