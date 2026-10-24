@@ -31,6 +31,10 @@ public class SavedProperty {
 
     @Column(length = 200)
     private String titleSnapshot;
+    @Column(length = 200)
+    private String titleSnapshotAr;
+    @Column(length = 200)
+    private String titleSnapshotEn;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime savedAt;

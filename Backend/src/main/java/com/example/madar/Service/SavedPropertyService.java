@@ -1,6 +1,8 @@
 package com.example.madar.Service;
 
 import com.example.madar.Api.ApiException;
+import com.example.madar.DTO.Out.Property.PropertyDTO;
+import com.example.madar.DTO.Out.SavedProperty.SavedPropertyDetailDTO;
 import com.example.madar.DTO.Out.SavedProperty.SavedPropertySummaryDTO;
 import com.example.madar.Model.SavedProperty;
 import com.example.madar.Model.User;
@@ -9,6 +11,7 @@ import com.example.madar.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,17 +21,34 @@ import java.util.stream.Collectors;
 public class SavedPropertyService {
 private final UserRepository userRepository;
 private final SavedPropertyRepository savedPropertyRepository;
+private final PropertyService propertyService;
 
-//get for user
- public List<SavedProperty>getMySavedProperty(Integer userId){
-  User user =userRepository.findUserById(userId);
-  if(user==null){
-      throw new ApiException("User not found");
-  }
-  List<SavedProperty>userList=savedPropertyRepository.findSavedPropertiesByUser_Id(userId);
 
-  return userList;
- }
+
+
+
+    //get for user: saved list with live data from Kite in both languages
+    public List<SavedPropertyDetailDTO> getMySavedProperty(Integer userId, String lang){
+        User user = userRepository.findUserById(userId);
+        if(user == null){
+            throw new ApiException("User not found");
+        }
+        List<SavedPropertyDetailDTO> result = new ArrayList<>();
+        for(SavedProperty saved : savedPropertyRepository.findSavedPropertiesByUser_Id(userId)){
+            PropertyDTO property = null;
+            boolean available = true;
+            try{
+                property = propertyService.localizeOne(propertyService.getPropertyById(saved.getSource(), saved.getExternalPropertyId()), lang);
+            }catch (Exception e){
+                //the listing was removed from Kite: keep it so the user can delete it
+                available = false;
+            }
+            result.add(new SavedPropertyDetailDTO(saved.getId(), saved.getExternalPropertyId(), saved.getSource(),
+                    saved.getTitleSnapshot(), saved.getTitleSnapshotAr(), saved.getTitleSnapshotEn(),
+                    saved.getSavedAt(), available, property));
+        }
+        return result;
+    }
 
 
 
@@ -43,6 +63,15 @@ private final SavedPropertyRepository savedPropertyRepository;
      if(exist){
          throw new ApiException("This property is already in your saved list");
      }
+        //get the property from Kite: make sure it exists and save its title in both languages
+        PropertyDTO property;
+        try{
+            property = propertyService.getPropertyById(savedProperty.getSource(), savedProperty.getExternalPropertyId());
+        }catch (Exception e){
+            throw new ApiException("Property not found");
+        }
+        savedProperty.setTitleSnapshotAr(propertyService.localizeOne(property, "ar").getTitle());
+        savedProperty.setTitleSnapshotEn(propertyService.localizeOne(property, "en").getTitle());
         savedProperty.setId(null);
         savedProperty.setUser(user);
         savedPropertyRepository.save(savedProperty);

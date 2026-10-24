@@ -392,11 +392,7 @@ public class PropertyService {
         listingType = listingType.toLowerCase();
         propertyType = propertyType.toLowerCase();
 
-        Integer total=0;
-        KiteDTO.CountResponse countResponse=kiteClient.countListings(city, listingType, propertyType, null, null);
-        if(countResponse != null&& countResponse.getData()!=null&&countResponse.getData().getTotal() != null){
-            total = countResponse.getData().getTotal();
-        }
+        Integer total = getTotal(kiteClient.countListings(city, listingType, propertyType, null, null));
         Integer minPrice = getFirstPrice(kiteClient.searchSorted(city, listingType, propertyType, null, "price_asc", 1));
         Integer maxPrice = getFirstPrice(kiteClient.searchSorted(city, listingType, propertyType, null, "price_desc", 1));
 
@@ -407,15 +403,10 @@ public class PropertyService {
 
 
 
-
     //results count
     public Integer getResultsCount(String city, String listingType){
         checkSearch(city, listingType, null);
-        KiteDTO.CountResponse response = kiteClient.countListings(city.toLowerCase(), listingType.toLowerCase(), null, null, null);
-        if(response == null || response.getData() == null || response.getData().getTotal() == null){
-            return 0;
-        }
-        return response.getData().getTotal();
+        return getTotal(kiteClient.countListings(city.toLowerCase(), listingType.toLowerCase(), null, null, null));
     }
 
 
@@ -426,27 +417,19 @@ public class PropertyService {
     //match summary for my housing preference
     public MatchSummaryDTO getMatchSummary(Integer userId){
         HousingPreference preference = getPreference(userId);
-        int budget=preference.getMaxBudget().intValue();
-        String city=preference.getCity().toLowerCase();
-        String listingType=preference.getListingType().toLowerCase();
-        String propertyType=preference.getPropertyType().toLowerCase();
+        int budget = preference.getMaxBudget().intValue();
+        String city = preference.getCity().toLowerCase();
+        String listingType = preference.getListingType().toLowerCase();
+        String propertyType = preference.getPropertyType().toLowerCase();
 
-        // count in my district
+        //count in my district (only if the user chose a district)
         Integer inMyDistrict = null;
         if(preference.getDistrict() != null && !preference.getDistrict().isEmpty()){
             Integer neighborhoodId = findNeighborhoodId(city, preference.getDistrict());
-            KiteDTO.CountResponse districtResponse = kiteClient.countInNeighborhood(city, listingType, propertyType, budget, neighborhoodId);
-            inMyDistrict = 0;
-            if(districtResponse != null && districtResponse.getData() != null && districtResponse.getData().getTotal() != null){
-                inMyDistrict = districtResponse.getData().getTotal();
-            }
+            inMyDistrict = getTotal(kiteClient.countInNeighborhood(city, listingType, propertyType, budget, neighborhoodId));
         }
-        // total in the market
-        KiteDTO.CountResponse countResponse = kiteClient.countListings(city, listingType, propertyType, null, budget);
-        Integer total = 0;
-        if(countResponse != null && countResponse.getData() != null && countResponse.getData().getTotal() != null){
-            total = countResponse.getData().getTotal();
-        }
+        //total in the market
+        Integer total = getTotal(kiteClient.countListings(city, listingType, propertyType, null, budget));
         //real cheapest in the market
         Integer cheapest = getFirstPrice(kiteClient.getCheapestListing(city, listingType, propertyType, budget));
         return new MatchSummaryDTO(budget, total, inMyDistrict, cheapest);
@@ -679,6 +662,14 @@ public class PropertyService {
         return convert(response.getData().get(0)).getPrice();
     }
 
+    //read the total from a Kite count response: total = 0 means no listings, null means Kite did not answer correctly
+    private Integer getTotal(KiteDTO.CountResponse response){
+        if(response == null || response.getData() == null || response.getData().getTotal() == null){
+            throw new ApiException("Service is unavailable right now, try again later");
+        }
+        return response.getData().getTotal();
+    }
+
     //districts in a city whose name contains the text (Arabic or English)
     public List<String> searchDistricts(String city, String text){
         KiteDTO.NeighborhoodsResponse response = kiteClient.getNeighborhoods(city.toLowerCase());
@@ -778,9 +769,38 @@ public class PropertyService {
         }else{
             copy.setDescription(property.getDescription());
         }
-        copy.setNeighborhood(neighborhoodName(property, lang));
-        copy.setCityName(cityName(property.getCity(), lang));
-        copy.setTitle(buildTitle(copy, lang));
+        //Arabic version
+        copy.setNeighborhoodAr(neighborhoodName(property, "ar"));
+        copy.setCityNameAr(cityName(property.getCity(), "ar"));
+        copy.setNeighborhood(copy.getNeighborhoodAr());
+        copy.setCityName(copy.getCityNameAr());
+        copy.setTitleAr(buildTitle(copy, "ar"));
+
+        //English version
+        copy.setNeighborhoodNameEn(neighborhoodName(property, "en"));
+        copy.setCityNameEn(cityName(property.getCity(), "en"));
+        copy.setNeighborhood(copy.getNeighborhoodNameEn());
+        copy.setCityName(copy.getCityNameEn());
+        copy.setTitleEn(buildTitle(copy, "en"));
+
+        //description in both languages (English falls back to the owner's text)
+        copy.setDescriptionAr(property.getDescription());
+        if(property.getDescriptionEn() != null && !property.getDescriptionEn().isBlank()){
+            copy.setDescriptionTextEn(property.getDescriptionEn());
+        }else{
+            copy.setDescriptionTextEn(property.getDescription());
+        }
+
+        //the main fields stay in the requested language (the frontend already uses them)
+        if(lang.equals("en")){
+            copy.setNeighborhood(copy.getNeighborhoodNameEn());
+            copy.setCityName(copy.getCityNameEn());
+            copy.setTitle(copy.getTitleEn());
+        }else{
+            copy.setNeighborhood(copy.getNeighborhoodAr());
+            copy.setCityName(copy.getCityNameAr());
+            copy.setTitle(copy.getTitleAr());
+        }
         return copy;
     }
 
