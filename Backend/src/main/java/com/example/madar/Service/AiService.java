@@ -45,11 +45,18 @@ public class AiService {
     private static final String CHAT_RULES = """
             You are the assistant of Madar, a housing platform in Saudi Arabia.
 
+            Respect (check this before anything else):
+            - If the message is rude, insulting, vulgar, sexual, threatening, or offensive in any way, even if the words are misspelled, mixed with other words or written in a dialect: do not call any tools and reply with exactly one word: BLOCKED
+            - If the message is racist or offensive about a tribe, family origin, nationality, race, skin color, religion, sect, gender or disability: reply with exactly one word: BLOCKED
+            - If the user asks for a district or listings based on who lives there (no foreigners, no certain nationality, only a certain tribe or sect, and similar), reply with exactly one word: BLOCKED
+            - Normal questions about districts, prices, families, schools or mosques are fine, do not block them. Names like عبدالله are normal.
+
             General rules (most important):
             - You have tools that return the user's real data. Always use them before you reply.
             - Even if you already mentioned listings or numbers earlier in the chat, call the tool again before you mention any listing or number.
             - Never mention a price, count, distance or district unless it came from a tool result. Never guess.
-            - Never ask the user for the city, property type, or rent/sale. Leave these values empty in the tool, the system fills them from the user's preference.
+            - Never ask the user for the city, property type, rent/sale, or budget. Leave these values empty in the tool, the system fills them from the user's preference.
+            - If the user says "على ميزانيتي", "ضمن ميزانيتي", "بميزانيتي", "my budget" or "within my budget" without a district or place, call withinMyBudget right away.
             - If the user mentions a city other than their own (like جدة), pass it to the tool in English (jeddah), do not leave it empty.
             - If the user mentions a property type (فيلا، دور، دوبلكس), pass it to the tool in English.
             - Cities are in English lowercase, like riyadh and jeddah.
@@ -75,6 +82,8 @@ public class AiService {
             - If the user asks about prices in a city without a property type, use the type from their preference, do not ask.
             - We do not have an average price, a price per meter, or price predictions. If asked, say it is not available, and give the cheapest price, the highest price and the number of listings from priceStats if it fits.
             - If the numbers come from a sample, say "حسب آخر الإعلانات" once in the reply.
+            - If the user wants listings without the budget ("مو بميزانيتي", "بشكل عام", "أي سعر", "any price"), call anyPriceListings right away. Do not ask for a price and do not mention a maximum price.
+            - Prices are yearly. Never ask the user for a monthly price.
 
             Places and distance:
             - Any question with "دوامي", "جامعتي", "بيت أهلي" or "قريب من": always call myPlaces first, then nearLocation with the place's coordinates.
@@ -178,6 +187,11 @@ public class AiService {
         //first try
         PropertyTools tools = newTools(userId, message);
         String reply = openRouterClient.chat(rules, message, tools, "user-" + userId);
+        //the AI found the message offensive, rude or racist
+        if(reply != null && reply.trim().toUpperCase().startsWith("BLOCKED")){
+            System.out.println("Blocked by AI, user " + userId + ": " + message);
+            return new ChatReplyDTO(respectWarning(lang), new ArrayList<>());
+        }
 
         //the AI asked, or said "not found", without calling any tool: try again
         if(tools.getUsedData().isEmpty() && (asksForKnownInfo(reply) || claimsWithoutSearch(reply))){
@@ -222,6 +236,14 @@ public class AiService {
         }
         openRouterClient.clearChat("user-" + userId);
         lastCardsByUser.remove(userId);
+    }
+
+    //polite reply when a message is blocked, in the user's language
+    private String respectWarning(String lang){
+        if(lang.equals("en")){
+            return "Let's keep it respectful 🙏 Madar is for everyone. I'm here to help you find your home, what would you like me to search for?";
+        }
+        return "خلّنا نحافظ على أسلوب محترم 🙏 مدار للجميع، وأنا هنا أساعدك تلقى سكنك. وش تحب أدوّر لك؟";
     }
 
 
@@ -387,7 +409,9 @@ public class AiService {
         return reply.contains("نوع العقار") || reply.contains("شقة أو فيلا") || reply.contains("للإيجار أو للبيع")
                 || reply.contains("إيجار أو بيع") || reply.contains("أي مدينة") || reply.contains("حد أدنى")
                 || reply.contains("تبغى تشوف") || reply.contains("تبي تشوف") || reply.contains("تقصد")
-                || lower.contains("which city") || lower.contains("what type") || lower.contains("rent or buy") || lower.contains("rent or sale");
+                || reply.contains("كم ميزانيتك") || reply.contains("ميزانيتك كم") || reply.contains("أعرف ميزانيتك")
+                || lower.contains("which city") || lower.contains("what type") || lower.contains("rent or buy") || lower.contains("rent or sale")
+                || lower.contains("your budget?") || lower.contains("what is your budget") || lower.contains("what's your budget");
     }
 
 
@@ -420,6 +444,7 @@ public class AiService {
         PropertyTools tools = new PropertyTools(propertyService, housingPreferenceRepository, placePreferenceRepository, userId);
         tools.setCityFromMessage(detectCity(message));
         tools.setPreviousCards(lastCardsByUser.get(userId));
+        tools.setMessageHasNumber(message.matches("(?s).*[0-9٠-٩].*"));
         return tools;
     }
 

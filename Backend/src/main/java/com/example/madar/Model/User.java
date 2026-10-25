@@ -87,6 +87,10 @@ public class User {
     @JsonIgnore
     private Set<Notification> notifications = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<MovingTask> movingTasks;
+
 
     @PrePersist
     public void onCreate() {

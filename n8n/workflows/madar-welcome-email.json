@@ -1,0 +1,73 @@
+{
+  "name": "madar - welcome Email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "madar-welcome",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "cb7322bb-c947-4252-a294-54fba8aa80dc",
+      "name": "Webhook",
+      "webhookId": "ee8b6b51-bcc0-470a-a571-000cc1153094"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  sender: { name: \"Madar | مدار\", email: \"madarplatform@aol.com\" },\n  to: [{ email: $json.body.email, name: $json.body.fullName }],\n  subject: \"أهلًا بك في مدار\",\n  htmlContent: `<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#F3F0EB;\" dir=\"rtl\"><tr><td align=\"center\" style=\"padding:32px 12px;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;background-color:#FFFFFF;border-radius:16px;\" dir=\"rtl\">\n<tr><td align=\"center\" style=\"background-color:#FFFFFF;border-radius:16px 16px 0 0;border-bottom:3px solid #BA9077;padding:28px 24px;\">\n<img src=\"https://res.cloudinary.com/tadyisak/image/upload/f_auto,q_auto/madar-logo\" alt=\"مدار\" width=\"120\" style=\"display:block;width:120px;max-width:120px;height:auto;border:0;margin:0 auto 12px;\">\n<p style=\"margin:0;font-family:Tahoma,Arial,sans-serif;font-size:20px;font-weight:bold;color:#414C6B;\">مدار</p>\n<p style=\"margin:6px 0 0;font-family:Tahoma,Arial,sans-serif;font-size:13px;color:#BA9077;\">السكن، من منظور أوسع</p>\n</td></tr>\n<tr><td style=\"padding:32px 28px 8px;font-family:Tahoma,Arial,sans-serif;text-align:right;\">\n<p style=\"margin:0 0 14px;font-size:22px;font-weight:bold;color:#29292E;\">أهلًا ${String($json.body.fullName || \"\").replace(/[<>]/g, \"\")} 👋</p>\n<p style=\"margin:0 0 20px;font-size:15px;line-height:1.9;color:#29292E;\">حيّاك في مدار! سعداء إنك معنا.<br>مدار يساعدك تلقى بيت يناسب حياتك: قريب من دوامك، ضمن ميزانيتك، وفي الحي اللي يناسبك.</p>\n<p style=\"margin:0 0 10px;font-size:15px;font-weight:bold;color:#414C6B;\">ابدأ بثلاث خطوات:</p>\n</td></tr>\n<tr><td style=\"padding:0 28px;\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" dir=\"rtl\">\n<tr><td width=\"32\" valign=\"top\" style=\"font-family:Tahoma,Arial,sans-serif;font-size:15px;font-weight:bold;color:#BA9077;padding:6px 0;\">١</td><td style=\"font-family:Tahoma,Arial,sans-serif;font-size:14px;color:#29292E;padding:6px 0;text-align:right;\">حدّد تفضيلاتك وميزانيتك</td></tr>\n<tr><td width=\"32\" valign=\"top\" style=\"font-family:Tahoma,Arial,sans-serif;font-size:15px;font-weight:bold;color:#BA9077;padding:6px 0;\">٢</td><td style=\"font-family:Tahoma,Arial,sans-serif;font-size:14px;color:#29292E;padding:6px 0;text-align:right;\">أضف أماكنك المهمة مثل الدوام أو الجامعة</td></tr>\n<tr><td width=\"32\" valign=\"top\" style=\"font-family:Tahoma,Arial,sans-serif;font-size:15px;font-weight:bold;color:#BA9077;padding:6px 0;\">٣</td><td style=\"font-family:Tahoma,Arial,sans-serif;font-size:14px;color:#29292E;padding:6px 0;text-align:right;\">اسأل مساعد مدار عن أي حي أو عقار</td></tr>\n</table></td></tr>\n<tr><td align=\"center\" style=\"padding:28px 28px 32px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\" style=\"background-color:#414C6B;border-radius:10px;\">\n<a href=\"http://localhost:3000/ar\" style=\"display:inline-block;padding:13px 32px;font-family:Tahoma,Arial,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;\">ابدأ رحلتك</a>\n</td></tr></table></td></tr>\n<tr><td align=\"center\" style=\"border-top:1px solid #F3F0EB;padding:18px 24px 22px;font-family:Tahoma,Arial,sans-serif;\">\n<p style=\"margin:0 0 4px;font-size:13px;font-weight:bold;color:#414C6B;\">مدار</p>\n<p style=\"margin:0;font-size:12px;line-height:1.7;color:#74747C;\">وصلك هذا الإيميل لأنك سجّلت حساب جديد في مدار.</p>\n</td></tr>\n</table></td></tr></table>`\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "8fcbe87a-c72d-4ec7-8092-991771784956",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "kw5DghmTFLwZDjqb",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "870cae29-63d2-46e4-8c75-16eaf3b0d33a",
+  "meta": {
+    "instanceId": "252446e56ce0ab548cd4c6788ae31564ccd66e6735eb685b6ee6bdd4a8c8a258"
+  },
+  "nodeGroups": [],
+  "id": "VrOpwAuoiwyb4kxQ",
+  "tags": []
+}

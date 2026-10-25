@@ -1,0 +1,106 @@
+{
+  "name": "Madar - Price Alerts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9b5b80fd-7b7e-4be9-93c4-a33641c13c24",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8080/api/v1/n8n/price-changes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "57613dd4-9321-435a-8567-de04f24a1e11",
+      "name": "Get price changes"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  sender: { name: \"Madar | مدار\", email: \"madarplatform@aol.com\" },\n  to: [{ email: $json.email, name: $json.fullName }],\n  subject: \"مدار | تحديث على سعر عقار محفوظ\",\n  htmlContent: `<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#F3F0EB;\" dir=\"rtl\"><tr><td align=\"center\" style=\"padding:32px 12px;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;background-color:#FFFFFF;border-radius:16px;\" dir=\"rtl\">\n<tr><td align=\"center\" style=\"background-color:#FFFFFF;border-radius:16px 16px 0 0;border-bottom:3px solid #BA9077;padding:28px 24px;\">\n<img src=\"https://res.cloudinary.com/tadyisak/image/upload/f_auto,q_auto/madar-logo\" alt=\"مدار\" width=\"120\" style=\"display:block;width:120px;max-width:120px;height:auto;border:0;margin:0 auto 12px;\">\n<p style=\"margin:0;font-family:Tahoma,Arial,sans-serif;font-size:20px;font-weight:bold;color:#414C6B;\">مدار</p>\n<p style=\"margin:6px 0 0;font-family:Tahoma,Arial,sans-serif;font-size:13px;color:#BA9077;\">السكن، من منظور أوسع</p>\n</td></tr>\n<tr><td style=\"padding:32px 28px 8px;font-family:Tahoma,Arial,sans-serif;text-align:right;\">\n<p style=\"margin:0 0 10px;font-size:22px;font-weight:bold;color:#29292E;\">أهلًا ${String($json.fullName || \"\").replace(/[<>]/g, \"\")} 👋</p>\n<p style=\"margin:0 0 20px;font-size:15px;line-height:1.9;color:#29292E;\">${$json.changes.length === 1 ? \"تغيّر سعر عقار من العقارات اللي حفظتها:\" : \"تغيّرت أسعار \" + $json.changes.length + \" عقارات من العقارات اللي حفظتها:\"}</p>\n</td></tr>\n<tr><td style=\"padding:0 28px;\">\n${$json.changes.map(c => `<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#F3F0EB;border-radius:12px;margin:0 0 12px;\" dir=\"rtl\"><tr><td style=\"padding:16px 18px;font-family:Tahoma,Arial,sans-serif;text-align:right;\">\n<p style=\"margin:0 0 8px;font-size:15px;font-weight:bold;color:#29292E;\">${String(c.title || \"\").replace(/[<>]/g, \"\")}</p>\n<p style=\"margin:0 0 6px;font-size:14px;color:#74747C;\"><span style=\"text-decoration:line-through;\">${Number(c.oldPrice).toLocaleString(\"en-US\")} ريال</span> &nbsp;←&nbsp; <span style=\"font-size:16px;font-weight:bold;color:#414C6B;\">${Number(c.newPrice).toLocaleString(\"en-US\")} ريال</span></p>\n<p style=\"margin:0 0 12px;font-size:13px;font-weight:bold;color:#BA9077;\">${c.direction === \"DOWN\" ? \"📉 نزل \" : \"📈 ارتفع \"}${Math.abs(c.oldPrice - c.newPrice).toLocaleString(\"en-US\")} ريال</p>\n<a href=\"${(\"http://localhost:3000/ar\" + c.propertyUrl).replace(/\\s/g, \"\")}\" style=\"font-size:13px;font-weight:bold;color:#414C6B;text-decoration:none;\">شوف العقار ←</a>\n</td></tr></table>`).join(\"\")}\n</td></tr>\n<tr><td align=\"center\" style=\"padding:20px 28px 32px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\" style=\"background-color:#414C6B;border-radius:10px;\">\n<a href=\"${\"http://localhost:3000/ar\".replace(/\\s/g, \"\")}\" style=\"display:inline-block;padding:13px 32px;font-family:Tahoma,Arial,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;\">افتح مدار</a>\n</td></tr></table></td></tr>\n<tr><td align=\"center\" style=\"border-top:1px solid #F3F0EB;padding:18px 24px 22px;font-family:Tahoma,Arial,sans-serif;\">\n<p style=\"margin:0 0 4px;font-size:13px;font-weight:bold;color:#414C6B;\">مدار</p>\n<p style=\"margin:0;font-size:12px;line-height:1.7;color:#74747C;\">وصلك هذا الإيميل لأنك حفظت هذه العقارات وفعّلت الإشعارات في مدار.</p>\n</td></tr>\n</table></td></tr></table>`\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "ea6bd760-9dd4-45ce-bddb-673d93dc5f40",
+      "name": "Send price email",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "kw5DghmTFLwZDjqb",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get price changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get price changes": {
+      "main": [
+        [
+          {
+            "node": "Send price email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Riyadh",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "68e159a4-6977-420a-b4e7-1d36d90c88ee",
+  "meta": {
+    "instanceId": "252446e56ce0ab548cd4c6788ae31564ccd66e6735eb685b6ee6bdd4a8c8a258"
+  },
+  "nodeGroups": [],
+  "id": "RoMgnj6RVjefZTf6",
+  "tags": []
+}
