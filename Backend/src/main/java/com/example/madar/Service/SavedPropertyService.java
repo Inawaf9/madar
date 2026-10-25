@@ -72,6 +72,7 @@ private final PropertyService propertyService;
         }
         savedProperty.setTitleSnapshotAr(propertyService.localizeOne(property, "ar").getTitle());
         savedProperty.setTitleSnapshotEn(propertyService.localizeOne(property, "en").getTitle());
+        savedProperty.setLastKnownPrice(property.getPrice());
         savedProperty.setId(null);
         savedProperty.setUser(user);
         savedPropertyRepository.save(savedProperty);

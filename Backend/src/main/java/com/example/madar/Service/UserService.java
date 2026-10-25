@@ -2,6 +2,7 @@
 package com.example.madar.Service;
 
 import com.example.madar.Api.ApiException;
+import com.example.madar.Client.N8nClient;
 import com.example.madar.DTO.Out.User.ProfileCompletionDTO;
 import com.example.madar.DTO.Out.User.UserDashboardSummaryDTO;
 import com.example.madar.Model.CurrentHome;
@@ -26,6 +27,7 @@ public class UserService {
     private final CurrentHomeRepository currentHomeRepository;
     private final LifestyleInterestRepository lifestyleInterestRepository;
     private final PaymentRepository paymentRepository;
+    private final N8nClient n8nClient;
 
 
 
@@ -48,6 +50,8 @@ public class UserService {
 
         //Todo : encode password with BCrypt when Spring Security is added
         userRepository.save(user);
+        //welcome email from n8n
+        n8nClient.sendWelcome(user.getFullName(), user.getEmail());
     }
 
     //get my account

@@ -35,6 +35,8 @@ public class SavedProperty {
     private String titleSnapshotAr;
     @Column(length = 200)
     private String titleSnapshotEn;
+    //the last price we saw from Kite, to find price changes (n8n checks it every day)
+    private Integer lastKnownPrice;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime savedAt;
