@@ -1,5 +1,8 @@
 package com.example.madar.Controller;
 
+import com.example.madar.Security.CurrentUserAccess;
+import com.example.madar.Security.ResourceOwnershipAccess;
+
 import com.example.madar.Api.ApiResponse;
 import com.example.madar.DTO.In.Payment.CheckoutRequestDTO;
 import com.example.madar.DTO.In.Payment.MoyasarWebhookDTO;
@@ -13,17 +16,24 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
 public class PaymentController {
+    private final CurrentUserAccess currentUserAccess;
+    private final ResourceOwnershipAccess resourceOwnershipAccess;
     private final PaymentService paymentService;
 
-    @PostMapping("/{userId}/checkout")
-    public ResponseEntity<?> checkout(@PathVariable Integer userId, @RequestBody @Valid CheckoutRequestDTO request,
+    @PostMapping("/me/checkout")
+    public ResponseEntity<?> checkout(@RequestBody @Valid CheckoutRequestDTO request,
                                       @RequestHeader("Idempotency-Key") String checkoutKey) {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(201).header("Cache-Control", "no-store")
                 .body(paymentService.checkout(userId, request.getServiceType(), checkoutKey));
     }
 
-    @GetMapping("/{userId}/{paymentId}/verify")
-    public ResponseEntity<?> verify(@PathVariable Integer userId, @PathVariable Integer paymentId) {
+    @GetMapping("/me/{paymentId}/verify")
+    public ResponseEntity<?> verify(@PathVariable Integer paymentId) {
+        Integer userId = currentUserAccess.getCurrentUserId();
+        resourceOwnershipAccess.requirePayment(paymentId);
+
         return ResponseEntity.status(200).body(paymentService.verify(userId, paymentId));
     }
 
@@ -33,13 +43,17 @@ public class PaymentController {
         return ResponseEntity.status(200).body(new ApiResponse("Payment notification processed successfully"));
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<?> getHistory(@PathVariable Integer userId, @RequestParam(required = false) String status) {
+    @GetMapping("/me")
+    public ResponseEntity<?> getHistory(@RequestParam(required = false) String status) {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(200).body(paymentService.getHistory(userId, status));
     }
 
-    @GetMapping("/{userId}/access/{serviceType}")
-    public ResponseEntity<?> getAccess(@PathVariable Integer userId, @PathVariable String serviceType) {
+    @GetMapping("/me/access/{serviceType}")
+    public ResponseEntity<?> getAccess(@PathVariable String serviceType) {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(200).body(paymentService.getAccess(userId, serviceType));
     }
 }

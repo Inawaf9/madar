@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Lock;
 import jakarta.persistence.LockModeType;
 
+import java.util.Optional;
+
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
 
@@ -22,4 +24,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     User findUserByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM User u WHERE u.id = :userId")
+    Optional<User> findByIdForUpdate(
+            @Param("userId") Integer userId
+    );
 }

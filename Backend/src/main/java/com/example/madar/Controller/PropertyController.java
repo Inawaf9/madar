@@ -1,5 +1,7 @@
 package com.example.madar.Controller;
 
+import com.example.madar.Security.CurrentUserAccess;
+
 import com.example.madar.DTO.Out.Property.PropertyAffordabilityDTO;
 import com.example.madar.Service.PropertyService;
 import com.example.madar.Service.NearbyInterestService;
@@ -15,13 +17,16 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class PropertyController {
 
+    private final CurrentUserAccess currentUserAccess;
     private final PropertyService propertyService;
     private final NearbyInterestService nearbyInterestService;
 
-    @GetMapping("/nearby-interests/{userId}/{source}/{externalId}")
-    public ResponseEntity<?> getNearbyInterests(@PathVariable Integer userId, @PathVariable String source,
+    @GetMapping("/me/nearby-interests/{source}/{externalId}")
+    public ResponseEntity<?> getNearbyInterests(@PathVariable String source,
                                                @PathVariable String externalId,
                                                @RequestParam(defaultValue = "2000") Double radius) {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(200).body(nearbyInterestService.analyzeProperty(userId, source, externalId, radius));
     }
 
@@ -44,8 +49,10 @@ public class PropertyController {
     }
 
     //properties that match my housing preference inside my district only
-    @GetMapping("/by-preference-in-my-district/{userId}")
-    public ResponseEntity<?> getByPreferenceInMyDistrict(@PathVariable Integer userId, @RequestParam(defaultValue = "ar") String lang){
+    @GetMapping("/me/by-preference-in-my-district")
+    public ResponseEntity<?> getByPreferenceInMyDistrict(@RequestParam(defaultValue = "ar") String lang){
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(200).body(propertyService.localize(propertyService.getByPreferenceInMyDistrict(userId), lang));
     }
 
@@ -56,14 +63,18 @@ public class PropertyController {
     }
 
     //properties within my budget in the whole city
-    @GetMapping("/within-budget/{userId}")
-    public ResponseEntity<?> getWithinBudget(@PathVariable Integer userId, @RequestParam(defaultValue = "ar") String lang){
+    @GetMapping("/me/within-budget")
+    public ResponseEntity<?> getWithinBudget(@RequestParam(defaultValue = "ar") String lang){
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(200).body(propertyService.localize(propertyService.getWithinBudget(userId), lang));
     }
 
     //properties cheaper than my budget by a margin
-    @GetMapping("/under-budget-margin/{userId}/{margin}")
-    public ResponseEntity<?> getUnderBudgetMargin(@PathVariable Integer userId, @PathVariable Integer margin, @RequestParam(defaultValue = "ar") String lang){
+    @GetMapping("/me/under-budget-margin/{margin}")
+    public ResponseEntity<?> getUnderBudgetMargin(@PathVariable Integer margin, @RequestParam(defaultValue = "ar") String lang){
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(200).body(propertyService.localize(propertyService.getUnderBudgetMargin(userId, margin), lang));
     }
 
@@ -103,13 +114,17 @@ public class PropertyController {
         return ResponseEntity.status(200).body(propertyService.localize(propertyService.getSimilar(source, externalId), lang));
     }
 
-    @GetMapping("/match-summary/{userId}")
-    public ResponseEntity<?> getMatchSummary(@PathVariable Integer userId) {
+    @GetMapping("/me/match-summary")
+    public ResponseEntity<?> getMatchSummary() {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(200).body(propertyService.getMatchSummary(userId));
     }
 
-    @GetMapping("/affordability/{userId}")
-    public ResponseEntity<PropertyAffordabilityDTO> analyzeAffordability(@PathVariable Integer userId, @RequestParam String source, @RequestParam String externalId) {
+    @GetMapping("/me/affordability")
+    public ResponseEntity<PropertyAffordabilityDTO> analyzeAffordability(@RequestParam String source, @RequestParam String externalId) {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
 
         return ResponseEntity.status(200).body(propertyService.analyzeAffordability(userId, source, externalId));
     }

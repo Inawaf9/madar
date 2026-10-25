@@ -1,5 +1,9 @@
 package com.example.madar.Controller;
 
+import com.example.madar.Security.CurrentUserAccess;
+import com.example.madar.Security.ResourceOwnershipAccess;
+import com.example.madar.DTO.In.LifestyleInterest.LifestyleInterestRequestDTO;
+
 import com.example.madar.Api.ApiResponse;
 import com.example.madar.Model.LifestyleInterest;
 import com.example.madar.Service.LifestyleInterestService;
@@ -15,35 +19,46 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LifestyleInterestController {
 
+    private final CurrentUserAccess currentUserAccess;
+    private final ResourceOwnershipAccess resourceOwnershipAccess;
     private final LifestyleInterestService lifestyleInterestService;
 
     // GET USER INTERESTS
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<LifestyleInterest>> getUserLifestyleInterests(@PathVariable Integer userId) {
+    @GetMapping("/me")
+    public ResponseEntity<List<LifestyleInterest>> getUserLifestyleInterests() {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
 
         return ResponseEntity.status(200).body(lifestyleInterestService.getUserLifestyleInterests(userId));
     }
 
     // ADD INTEREST
-    @PostMapping("/add/{userId}")
-    public ResponseEntity<ApiResponse> addLifestyleInterest(@PathVariable Integer userId, @Valid @RequestBody LifestyleInterest interest) {
+    @PostMapping("/me")
+    public ResponseEntity<ApiResponse> addLifestyleInterest(@Valid @RequestBody LifestyleInterestRequestDTO interest) {
+        Integer userId = currentUserAccess.getCurrentUserId();
 
-        lifestyleInterestService.addLifestyleInterest(userId, interest);
+        lifestyleInterestService.addLifestyleInterest(userId, interest.toEntity());
         return ResponseEntity.status(200).body(new ApiResponse("Lifestyle interest added successfully"));
     }
 
     // UPDATE INTEREST
-    @PutMapping("/update/{userId}/{interestId}")
-    public ResponseEntity<ApiResponse> updateLifestyleInterest(@PathVariable Integer userId, @PathVariable Integer interestId, @Valid @RequestBody LifestyleInterest updatedInterest) {
+    @PutMapping("/me/{interestId}")
+    public ResponseEntity<ApiResponse> updateLifestyleInterest(@PathVariable Integer interestId, @Valid @RequestBody LifestyleInterestRequestDTO updatedInterest) {
+        Integer userId = currentUserAccess.getCurrentUserId();
+        resourceOwnershipAccess.requireInterest(interestId);
 
-        lifestyleInterestService.updateLifestyleInterest(userId, interestId, updatedInterest);
+
+        lifestyleInterestService.updateLifestyleInterest(userId, interestId, updatedInterest.toEntity());
 
         return ResponseEntity.status(200).body(new ApiResponse("Lifestyle interest updated successfully"));
     }
 
     // DELETE INTEREST
-    @DeleteMapping("/delete/{userId}/{interestId}")
-    public ResponseEntity<ApiResponse> deleteLifestyleInterest(@PathVariable Integer userId, @PathVariable Integer interestId) {
+    @DeleteMapping("/me/{interestId}")
+    public ResponseEntity<ApiResponse> deleteLifestyleInterest(@PathVariable Integer interestId) {
+        Integer userId = currentUserAccess.getCurrentUserId();
+        resourceOwnershipAccess.requireInterest(interestId);
+
 
         lifestyleInterestService.deleteLifestyleInterest(userId, interestId);
         return ResponseEntity.status(200).body(new ApiResponse("Lifestyle interest deleted successfully"));
