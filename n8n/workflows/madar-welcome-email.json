@@ -5,6 +5,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "madar-welcome",
+        "authentication": "headerAuth",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -13,9 +14,15 @@
         0,
         0
       ],
-      "id": "cb7322bb-c947-4252-a294-54fba8aa80dc",
+      "id": "20358ef3-f9c5-4918-8f74-83778691cc75",
       "name": "Webhook",
-      "webhookId": "ee8b6b51-bcc0-470a-a571-000cc1153094"
+      "webhookId": "ee8b6b51-bcc0-470a-a571-000cc1153094",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HzfMYvpOSVAE1cvM",
+          "name": "Header Auth account 3"
+        }
+      }
     },
     {
       "parameters": {
@@ -34,11 +41,11 @@
         224,
         0
       ],
-      "id": "8fcbe87a-c72d-4ec7-8092-991771784956",
+      "id": "6ec21d56-4081-4fb8-bb24-db6f28a6f3fa",
       "name": "HTTP Request",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "kw5DghmTFLwZDjqb",
+          "id": "H2pQWBKisWTxDzgR",
           "name": "Header Auth account"
         }
       }
@@ -63,11 +70,12 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "870cae29-63d2-46e4-8c75-16eaf3b0d33a",
+  "versionId": "5f275c38-be0d-435d-81de-350244a3bd5b",
   "meta": {
-    "instanceId": "252446e56ce0ab548cd4c6788ae31564ccd66e6735eb685b6ee6bdd4a8c8a258"
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fe092880e0c78ddca9fd2f6750fd324a7822e75bac5151e4e9b6e939798af9e6"
   },
   "nodeGroups": [],
-  "id": "VrOpwAuoiwyb4kxQ",
+  "id": "fuOwpcWz7HXx9xVP",
   "tags": []
 }

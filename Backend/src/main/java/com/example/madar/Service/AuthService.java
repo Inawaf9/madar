@@ -10,6 +10,7 @@ import com.example.madar.Security.OpaqueTokenHash;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
+import com.example.madar.Client.N8nClient;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,6 +39,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordResetService passwordResetService;
     private final RefreshTokenService refreshTokenService;
+    private final N8nClient n8nClient;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -73,6 +75,19 @@ public class AuthService {
         user.setNotificationsEnabled(false);
 
         User savedUser = userRepository.save(user);
+
+        org.springframework.transaction.support.TransactionSynchronizationManager
+                .registerSynchronization(
+                        new org.springframework.transaction.support.TransactionSynchronization() {
+                            @Override
+                            public void afterCommit() {
+                                n8nClient.sendWelcome(
+                                        savedUser.getFullName(),
+                                        savedUser.getEmail()
+                                );
+                            }
+                        }
+                );
 
         return createAuthResponse(savedUser);
     }

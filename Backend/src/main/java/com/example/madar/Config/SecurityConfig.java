@@ -73,6 +73,17 @@ public class SecurityConfig {
                                 "/api/v1/user/admin/update/{adminId}/{userId}",
                                 "/api/v1/user/reactivate/{userId}"
                         ).denyAll()
+                        // n8n internal endpoints
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/n8n/weekly-report/recipients"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/n8n/weekly-report/recommendations/{userId}",
+                                "/api/v1/n8n/price-changes"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/login",

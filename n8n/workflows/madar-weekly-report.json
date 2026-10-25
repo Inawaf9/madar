@@ -1,0 +1,372 @@
+{
+  "name": "Madar - Weekly Report",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -16
+      ],
+      "id": "8bcfddb2-9d39-41c3-9fac-406aa13cc4f7",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'http://localhost:8080/api/v1/n8n/weekly-report/recommendations/' + $json.userId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept-Language",
+              "value": "ar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        512,
+        -64
+      ],
+      "id": "1e01d4cc-a9b6-4cc7-bea7-ba3f0950fc03",
+      "name": "Get Madar Recommendations",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GjAAIAknPfu6Hc6E",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.brevoPayload }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1728,
+        0
+      ],
+      "id": "82036660-8317-4dc1-a2e3-ee63f468911c",
+      "name": "Brevo - Send Weekly Email",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "H2pQWBKisWTxDzgR",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst data = $input.first().json;\n\nconst recommendations = Array.isArray(data.recommendations)\n  ? data.recommendations\n  : [];\n\nconst top3 = recommendations\n  .filter(p => p && p.propertyId && p.listingUrl)\n  .sort((a, b) =>\n    Number(b.matchScore || 0) - Number(a.matchScore || 0)\n  )\n  .slice(0, 3);\n\nreturn [{\n  json: {\n    recipient: {\n      userId: data.userId,\n      fullName: data.fullName,\n      email: data.email\n    },\n    properties: top3,\n    propertiesCount: top3.length\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        0
+      ],
+      "id": "10829451-0761-4701-bce3-26c3ff282053",
+      "name": "Top 3 Recommendations"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n/*\n * MADAR - Weekly Recommendations Email\n * n8n Code Node\n * Mode: Run Once for All Items\n * Language: JavaScript\n */\n\n// ================================\n// 1. BRAND SETTINGS\n// ================================\n\nconst BRAND = {\n  name: \"مدار\",\n  tagline: \"السكن، من منظور أوسع\",\n  logo: \"https://res.cloudinary.com/tadyisak/image/upload/f_auto,q_auto/madar-logo\",\n  navy: \"#414C6B\",\n  ivory: \"#F3F0EB\",\n  copper: \"#BA9077\",\n  charcoal: \"#29292E\",\n  white: \"#FFFFFF\",\n  muted: \"#74747C\",\n  border: \"#E8E4DE\"\n};\n\n// Change this to your personal test email.\nconst recipient = $input.first().json.recipient;\nconst TEST_EMAIL = recipient.email;\n\nif (!recipient.userId || !TEST_EMAIL) {\n  throw new Error(\"Missing weekly report recipient\");\n}\n// Verified sender in Brevo.\nconst SENDER_EMAIL = \"madarplatform@aol.com\";\n\n// ================================\n// 2. HELPER FUNCTIONS\n// ================================\n\nfunction escapeHtml(value) {\n  return String(value ?? \"\").replace(\n    /[&<>\"']/g,\n    char => ({\n      \"&\": \"&amp;\",\n      \"<\": \"&lt;\",\n      \">\": \"&gt;\",\n      '\"': \"&quot;\",\n      \"'\": \"&#39;\"\n    })[char]\n  );\n}\n\nfunction formatNumber(value) {\n  return new Intl.NumberFormat(\"ar-SA\", {\n    numberingSystem: \"latn\",\n    maximumFractionDigits: 0\n  }).format(Number(value) || 0);\n}\n\nfunction formatScore(value) {\n  const score = Number(value);\n  return Number.isFinite(score) ? score.toFixed(1) : \"0.0\";\n}\n\nfunction safeUrl(value) {\n  const url = String(value || \"\").trim();\n  return /^https:\\/\\//i.test(url) ? escapeHtml(url) : \"\";\n}\n\n// ================================\n// 3. GET TOP 3 PROPERTIES\n// ================================\n\nconst input = $input.first().json.properties || [];\nconst properties = input\n  .filter(p => p && p.propertyId && p.listingUrl)\n  .sort((a, b) =>\n    Number(b.matchScore || 0) -\n    Number(a.matchScore || 0)\n  )\n  .slice(0, 3);\n\nif (properties.length === 0) {\n  throw new Error(\n    \"No valid property recommendations available.\"\n  );\n}\n\n// ================================\n// 4. PROPERTY CARDS\n// ================================\n\nconst propertyCards = properties.map((p, index) => {\n  const neighborhood = escapeHtml(p.neighborhood || \"غير محدد\");\n  const city = escapeHtml(p.city || \"السعودية\");\n  const price = formatNumber(p.price);\n  const bedrooms = formatNumber(p.bedrooms);\n  const area = formatNumber(p.areaSqm);\n  const score = formatScore(p.matchScore);\n\n  const image = safeUrl(p.image);\n  const listingUrl = safeUrl(p.listingUrl);\n\n  const reason = escapeHtml(\n    p.aiReason || \"عقار يتناسب مع بعض تفضيلاتك السكنية.\"\n  );\n\n  const tradeOff = p.aiTradeOff\n    ? escapeHtml(p.aiTradeOff)\n    : \"\";\n\n  return `\n  <tr>\n    <td style=\"padding:0 0 20px 0;\">\n\n      <table role=\"presentation\" width=\"100%\"\n        cellpadding=\"0\" cellspacing=\"0\"\n        style=\"background:${BRAND.white};\n        border:1px solid ${BRAND.border};\n        border-collapse:separate;\n        border-radius:14px;\">\n\n        ${image ? `\n        <tr>\n          <td align=\"center\" style=\"padding:12px 12px 0;\">\n            <img src=\"${image}\"\n              alt=\"عقار في حي ${neighborhood}\"\n              width=\"520\"\n              style=\"display:block;width:100%;\n              max-width:520px;height:auto;\n              border-radius:9px;border:0;\">\n          </td>\n        </tr>\n        ` : \"\"}\n\n        <tr>\n          <td dir=\"rtl\"\n            style=\"padding:24px;\n            text-align:right;\n            font-family:Tahoma,Arial,sans-serif;\">\n\n            <table role=\"presentation\" width=\"100%\"\n              cellpadding=\"0\" cellspacing=\"0\">\n              <tr>\n                <td align=\"right\"\n                  style=\"color:${BRAND.muted};\n                  font-size:12px;padding-bottom:12px;\">\n                  الاختيار ${index + 1}\n                </td>\n                <td align=\"left\" dir=\"ltr\"\n                  style=\"padding-bottom:12px;\">\n                  <span style=\"\n                    background:${BRAND.ivory};\n                    color:${BRAND.navy};\n                    font-size:12px;\n                    font-weight:bold;\n                    padding:7px 10px;\n                    border-radius:20px;\">\n                    توافق ${score}%\n                  </span>\n                </td>\n              </tr>\n            </table>\n\n            <h2 style=\"\n              margin:0 0 8px;\n              font-size:21px;\n              line-height:1.6;\n              color:${BRAND.charcoal};\">\n              عقار في حي ${neighborhood}\n            </h2>\n\n            <p style=\"\n              margin:0 0 16px;\n              font-size:13px;\n              color:${BRAND.muted};\">\n              ${city}\n            </p>\n\n            <p style=\"\n              margin:0 0 16px;\n              color:${BRAND.navy};\n              font-size:25px;\n              font-weight:bold;\">\n              ${price}\n              <span style=\"font-size:14px;\">\n                ر.س\n              </span>\n            </p>\n\n            <p style=\"\n              margin:0 0 20px;\n              padding:12px;\n              background:#F8F7F5;\n              border-radius:8px;\n              color:${BRAND.charcoal};\n              font-size:13px;\">\n              ${bedrooms} غرف نوم\n              &nbsp; | &nbsp;\n              ${area} م²\n            </p>\n\n            <p style=\"\n              margin:0 0 7px;\n              color:${BRAND.copper};\n              font-size:13px;\n              font-weight:bold;\">\n              لماذا اخترنا لك هذا العقار؟\n            </p>\n\n            <p style=\"\n              margin:0 0 16px;\n              color:${BRAND.charcoal};\n              line-height:1.9;\n              font-size:14px;\">\n              ${reason}\n            </p>\n\n            ${tradeOff ? `\n            <p style=\"\n              margin:0 0 20px;\n              color:${BRAND.muted};\n              font-size:12px;\n              line-height:1.9;\">\n              <strong>نقطة للمقارنة:</strong>\n              ${tradeOff}\n            </p>\n            ` : \"\"}\n\n            <table role=\"presentation\"\n              cellpadding=\"0\" cellspacing=\"0\">\n              <tr>\n                <td bgcolor=\"${BRAND.navy}\"\n                  style=\"border-radius:8px;\n                  text-align:center;\">\n                  <a href=\"${listingUrl}\"\n                    target=\"_blank\"\n                    style=\"display:inline-block;\n                    padding:13px 28px;\n                    background:${BRAND.navy};\n                    color:#FFFFFF;\n                    text-decoration:none;\n                    font-size:14px;\n                    font-weight:bold;\n                    border-radius:8px;\">\n                    عرض تفاصيل العقار\n                  </a>\n                </td>\n              </tr>\n            </table>\n\n          </td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n  `;\n}).join(\"\");\n\n// ================================\n// 5. EMAIL HTML\n// ================================\n\nconst htmlContent = `\n<!DOCTYPE html>\n<html lang=\"ar\" dir=\"rtl\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\"\n    content=\"width=device-width, initial-scale=1.0\">\n  <title>تقرير مدار الأسبوعي</title>\n</head>\n\n<body dir=\"rtl\" style=\"\n  margin:0;\n  padding:0;\n  background:${BRAND.ivory};\n  font-family:Tahoma,Arial,sans-serif;\">\n\n  <div style=\"display:none;\n    max-height:0;overflow:hidden;opacity:0;\">\n    خيارات سكن تناسب تفضيلاتك، اخترناها لك من مدار.\n  </div>\n\n  <table role=\"presentation\" width=\"100%\"\n    cellpadding=\"0\" cellspacing=\"0\"\n    style=\"background:${BRAND.ivory};\">\n\n    <tr>\n      <td align=\"center\" style=\"padding:30px 12px;\">\n\n        <table role=\"presentation\" width=\"100%\"\n          cellpadding=\"0\" cellspacing=\"0\"\n          style=\"max-width:600px;\">\n\n          <!-- HEADER -->\n\n          <tr>\n            <td align=\"center\"\n              style=\"background:${BRAND.white};\n              border-radius:18px 18px 0 0;\n              padding:28px 20px 24px;\n              border-bottom:1px solid ${BRAND.border};\">\n\n              <img src=\"${BRAND.logo}\"\n                alt=\"شعار مدار\"\n                width=\"90\"\n                style=\"display:block;width:90px;\n                height:auto;margin:0 auto 12px;\n                border:0;\">\n\n              <h1 style=\"\n                margin:0;\n                font-size:27px;\n                color:${BRAND.charcoal};\n                font-weight:bold;\">\n                ${BRAND.name}\n              </h1>\n\n              <p style=\"\n                margin:6px 0 0;\n                color:${BRAND.muted};\n                font-size:12px;\">\n                ${BRAND.tagline}\n              </p>\n\n            </td>\n          </tr>\n\n          <!-- INTRODUCTION -->\n\n          <tr>\n            <td dir=\"rtl\"\n              style=\"background:${BRAND.white};\n              padding:30px 28px 18px;\n              text-align:right;\">\n\n              <p style=\"\n                margin:0 0 12px;\n                color:${BRAND.copper};\n                font-size:12px;\n                font-weight:bold;\">\n                من مدار، إليك\n              </p>\n\n              <h2 style=\"\n                margin:0 0 15px;\n                color:${BRAND.charcoal};\n                font-size:27px;\n                line-height:1.5;\">\n                تقريرك الأسبوعي\n              </h2>\n\n              <p style=\"\n                margin:0;\n                color:${BRAND.muted};\n                font-size:15px;\n                line-height:2;\">\n                السكن المناسب ما يعتمد على السعر\n                فقط، بل على تفاصيل حياتك اليومية.\n\n                اخترنا لك أبرز ${properties.length}\n                عقارات بناءً على تفضيلاتك السكنية،\n                وميزانيتك، وتنقلاتك، والخدمات\n                المهمة بالنسبة لك.\n              </p>\n\n            </td>\n          </tr>\n\n          <!-- SECTION LABEL -->\n\n          <tr>\n            <td dir=\"rtl\" style=\"\n              background:${BRAND.white};\n              padding:15px 28px 0;\">\n\n              <p style=\"\n                margin:0 0 18px;\n                font-weight:bold;\n                font-size:17px;\n                color:${BRAND.navy};\">\n                خيارات تستحق اهتمامك\n              </p>\n\n            </td>\n          </tr>\n\n          <!-- PROPERTY CARDS -->\n\n          <tr>\n            <td style=\"\n              background:${BRAND.white};\n              padding:0 20px 16px;\">\n\n              <table role=\"presentation\" width=\"100%\"\n                cellpadding=\"0\" cellspacing=\"0\">\n                ${propertyCards}\n              </table>\n\n            </td>\n          </tr>\n\n          <!-- CLOSING -->\n\n          <tr>\n            <td dir=\"rtl\"\n              style=\"background:${BRAND.white};\n              padding:12px 28px 32px;\n              text-align:center;\">\n\n              <p style=\"\n                margin:0;\n                font-size:14px;\n                color:${BRAND.charcoal};\n                line-height:1.9;\">\n                خيارات أكثر، وقرار سكن أوضح.\n              </p>\n\n              <p style=\"\n                margin:12px 0 0;\n                font-size:12px;\n                color:${BRAND.muted};\n                line-height:1.9;\">\n                تعتمد هذه التوصيات على المعلومات\n                المتاحة وقت إعداد التقرير.\n                قد تختلف الأسعار أو حالة توفر العقارات.\n              </p>\n\n            </td>\n          </tr>\n\n          <!-- FOOTER -->\n\n          <tr>\n            <td align=\"center\"\n              style=\"background:#E8E6E2;\n              padding:25px 18px;\n              border-radius:0 0 18px 18px;\">\n\n              <p style=\"\n                margin:0 0 6px;\n                color:${BRAND.navy};\n                font-size:16px;\n                font-weight:bold;\">\n                مدار\n              </p>\n\n              <p style=\"\n                margin:0 0 12px;\n                color:${BRAND.muted};\n                font-size:12px;\">\n                السكن، من منظور أوسع\n              </p>\n\n              <p style=\"\n                margin:0;\n                color:${BRAND.muted};\n                font-size:11px;\n                line-height:1.8;\">\n                أُرسلت هذه الرسالة من منصة مدار\n                كجزء من خدمة التوصيات السكنية.\n              </p>\n\n            </td>\n          </tr>\n\n        </table>\n      </td>\n    </tr>\n  </table>\n\n</body>\n</html>\n`;\n\n// ================================\n// 6. BREVO EMAIL PAYLOAD\n// ================================\n\nconst subject = \"مدار | تقريرك الأسبوعي للسكن\";\n\nconst brevoPayload = {\n  sender: {\n    name: \"Madar | مدار\",\n    email: SENDER_EMAIL\n  },\n  to: [\n    {\n      email: TEST_EMAIL\n    }\n  ],\n  subject: subject,\n  htmlContent: htmlContent\n};\n\n// Exactly one output = one email.\nreturn [{\n  json: {\n    subject,\n    htmlContent,\n    propertiesCount: properties.length,\n    brevoPayload\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -64
+      ],
+      "id": "47323f8d-b4db-42d6-b795-88672637adca",
+      "name": "Build Weekly Email"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8080/api/v1/n8n/weekly-report/recipients",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        48,
+        0
+      ],
+      "id": "671e0599-e43e-42bf-8cc1-aed95a962e50",
+      "name": "Get Weekly Report Recipients",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GjAAIAknPfu6Hc6E",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        256,
+        32
+      ],
+      "id": "c5d6dd0a-8095-4690-876e-e98132a685f7",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        816,
+        -32
+      ],
+      "id": "685b6f6f-7847-44bc-8c1c-f2c01b5ba371",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "0df3cbe4-ce67-4c42-89e4-dc9888c7c005",
+              "leftValue": "={{ $json.propertiesCount }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1296,
+        0
+      ],
+      "id": "2975111e-1a92-4686-863a-97a293a4bf2b",
+      "name": "Has Recommendations"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1632,
+        272
+      ],
+      "id": "30883a79-04ca-4ba9-8180-3bca21b4e51e",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -16,
+        -288
+      ],
+      "id": "0570f984-d988-42c9-ae18-6f8f5a4c470d",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Report Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Madar Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Top 3 Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Has Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Weekly Email": {
+      "main": [
+        [
+          {
+            "node": "Brevo - Send Weekly Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Report Recipients": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get Madar Recommendations",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Top 3 Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Build Weekly Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brevo - Send Weekly Email": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Report Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Riyadh",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1,
+    "availableInMCP": false
+  },
+  "versionId": "b5e42dca-7322-4a5c-bf55-c3d6e3b67b7f",
+  "meta": {
+    "instanceId": "fe092880e0c78ddca9fd2f6750fd324a7822e75bac5151e4e9b6e939798af9e6"
+  },
+  "nodeGroups": [],
+  "id": "6wQnPdJHSyCr03Up",
+  "tags": []
+}

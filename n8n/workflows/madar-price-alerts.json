@@ -17,13 +17,15 @@
         0,
         0
       ],
-      "id": "9b5b80fd-7b7e-4be9-93c4-a33641c13c24",
+      "id": "62f7e12c-65a7-42e9-9346-8e9829f7740f",
       "name": "Schedule Trigger"
     },
     {
       "parameters": {
         "method": "POST",
         "url": "http://localhost:8080/api/v1/n8n/price-changes",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -32,8 +34,14 @@
         224,
         0
       ],
-      "id": "57613dd4-9321-435a-8567-de04f24a1e11",
-      "name": "Get price changes"
+      "id": "b7a9c401-6861-4f20-9ed0-30e08a5face4",
+      "name": "Get price changes",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GjAAIAknPfu6Hc6E",
+          "name": "Header Auth account 2"
+        }
+      }
     },
     {
       "parameters": {
@@ -52,11 +60,11 @@
         448,
         0
       ],
-      "id": "ea6bd760-9dd4-45ce-bddb-673d93dc5f40",
+      "id": "aabb7ef8-111d-4f5d-a1fd-04b633828090",
       "name": "Send price email",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "kw5DghmTFLwZDjqb",
+          "id": "H2pQWBKisWTxDzgR",
           "name": "Header Auth account"
         }
       }
@@ -96,11 +104,11 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "68e159a4-6977-420a-b4e7-1d36d90c88ee",
+  "versionId": "bd2c1c5a-2753-4eb7-9cbb-1a9f1d17297f",
   "meta": {
-    "instanceId": "252446e56ce0ab548cd4c6788ae31564ccd66e6735eb685b6ee6bdd4a8c8a258"
+    "instanceId": "fe092880e0c78ddca9fd2f6750fd324a7822e75bac5151e4e9b6e939798af9e6"
   },
   "nodeGroups": [],
-  "id": "RoMgnj6RVjefZTf6",
+  "id": "6iCUOfnOH9gge6uC",
   "tags": []
 }

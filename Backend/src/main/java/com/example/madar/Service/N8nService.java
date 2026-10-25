@@ -9,6 +9,12 @@ import com.example.madar.Repository.SavedPropertyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import com.example.madar.DTO.Out.Recommendation.SmartRecommendationResponseDTO;
+import com.example.madar.DTO.Out.User.WeeklyReportRecipientDTO;
+import com.example.madar.Repository.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,6 +27,8 @@ public class N8nService {
     private final SavedPropertyRepository savedPropertyRepository;
     private final PropertyService propertyService;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
+    private final RecommendationService recommendationService;
 
     //check the price of every saved property, and return one alert per user with all the changes (one email per user)
     public List<UserPriceAlertDTO> checkSavedPrices(){
@@ -84,4 +92,41 @@ public class N8nService {
         }
         return new ArrayList<>(alerts.values());
     }
+
+
+
+    // Weekly Report: Get eligible recipients
+    public List<WeeklyReportRecipientDTO> getWeeklyReportRecipients() {
+
+        return userRepository.findWeeklyReportRecipients()
+                .stream()
+                .map(user -> new WeeklyReportRecipientDTO(
+                        user.getId(),
+                        user.getFullName(),
+                        user.getEmail()
+                ))
+                .toList();
+    }
+
+    // Weekly Report: Get personalized recommendations
+    public SmartRecommendationResponseDTO getWeeklyRecommendations(Integer userId, String language) {
+
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID is required");
+        }
+
+        boolean eligible = userRepository.findWeeklyReportRecipients()
+                .stream()
+                .anyMatch(user -> user.getId().equals(userId));
+
+        if (!eligible) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Eligible recipient not found");
+        }
+
+        return recommendationService.getSmartRecommendations(userId, null, language);
+    }
+
+
+
+
 }
