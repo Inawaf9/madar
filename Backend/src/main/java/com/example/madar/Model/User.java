@@ -40,6 +40,15 @@ public class User {
     @Column(columnDefinition = "varchar(255) not null")
     private String password;
 
+    @Column(nullable = false)
+    private Boolean active = true;
+
+    @Column(nullable = false)
+    private Boolean suspendedByAdmin = false;
+
+    @Column(nullable = false)
+    private Boolean notificationsEnabled = false;
+
 
     @JsonIgnore
     @Pattern(regexp = "^(ADMIN|USER)$", message = "Role must be ADMIN or USER")
@@ -73,6 +82,10 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<PropertyComparison> propertyComparisons;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<Notification> notifications = new HashSet<>();
 
 
     @PrePersist

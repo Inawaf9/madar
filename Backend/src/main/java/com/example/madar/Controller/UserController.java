@@ -1,3 +1,4 @@
+
 package com.example.madar.Controller;
 
 import com.example.madar.Api.ApiResponse;
@@ -15,6 +16,10 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+
+
+
+    //USER
 
     //register
     @PostMapping("/register")
@@ -43,6 +48,42 @@ public class UserController {
         return ResponseEntity.status(200).body(new ApiResponse("Account deleted successfully"));
     }
 
+    //deactivate my account
+    @PutMapping("/deactivate/{userId}")
+    public ResponseEntity<?> deactivateMyAccount(@PathVariable Integer userId){
+        userService.deactivateMyAccount(userId);
+        return ResponseEntity.status(200).body(new ApiResponse("Account deactivated successfully"));
+    }
+
+    //reactivate my account
+    @PutMapping("/reactivate/{userId}")
+    public ResponseEntity<?> reactivateMyAccount(@PathVariable Integer userId){
+        userService.reactivateMyAccount(userId);
+        return ResponseEntity.status(200).body(new ApiResponse("Account reactivated successfully"));
+    }
+
+    @GetMapping("/profile-completion/{userId}")
+    public ResponseEntity<?> getProfileCompletion(@PathVariable Integer userId) {
+        return ResponseEntity.status(200).body(userService.getProfileCompletion(userId));
+    }
+
+    @GetMapping("/dashboard-summary/{userId}")
+    public ResponseEntity<UserDashboardSummaryDTO> getDashboardSummary(@PathVariable Integer userId) {
+        return ResponseEntity.status(200).body(userService.getDashboardSummary(userId));
+    }
+
+    //enable or disable notifications
+    @PutMapping("/notifications/{userId}")
+    public ResponseEntity<?> updateNotificationsSetting(@PathVariable Integer userId, @RequestParam Boolean enabled) {
+
+        userService.updateNotificationsSetting(userId, enabled);
+
+        return ResponseEntity.status(200).body(new ApiResponse("Notification setting updated successfully"));
+    }
+
+
+    //ADMIN
+
     //admin get all users
     @GetMapping("/admin/get-all/{adminId}")
     public ResponseEntity<?> getAllUsers(@PathVariable Integer adminId){
@@ -63,14 +104,17 @@ public class UserController {
         return ResponseEntity.status(200).body(new ApiResponse("User deleted by admin successfully"));
     }
 
-    @GetMapping("/profile-completion/{userId}")
-    public ResponseEntity<?> getProfileCompletion(@PathVariable Integer userId) {
-        return ResponseEntity.status(200).body(userService.getProfileCompletion(userId));
+    //admin suspend user
+    @PutMapping("/admin/suspend/{adminId}/{userId}")
+    public ResponseEntity<?> adminSuspendUser(@PathVariable Integer adminId, @PathVariable Integer userId){
+        userService.adminSuspendUser(adminId, userId);
+        return ResponseEntity.status(200).body(new ApiResponse("User suspended successfully"));
     }
 
-    @GetMapping("/dashboard-summary/{userId}")
-    public ResponseEntity<UserDashboardSummaryDTO> getDashboardSummary(@PathVariable Integer userId) {
-
-        return ResponseEntity.status(200).body(userService.getDashboardSummary(userId));
+    //admin unsuspend user
+    @PutMapping("/admin/unsuspend/{adminId}/{userId}")
+    public ResponseEntity<?> adminUnsuspendUser(@PathVariable Integer adminId, @PathVariable Integer userId){
+        userService.adminUnsuspendUser(adminId, userId);
+        return ResponseEntity.status(200).body(new ApiResponse("User suspension removed successfully"));
     }
 }

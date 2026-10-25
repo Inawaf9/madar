@@ -3,6 +3,7 @@ package com.example.madar.AI;
 
 import com.example.madar.DTO.Out.Recommendation.ComparedPropertyDTO;
 import com.example.madar.DTO.Out.Recommendation.ComparisonExplanationDTO;
+import com.example.madar.DTO.Out.Recommendation.NeighborhoodSuggestionsResponseDTO;
 import com.example.madar.DTO.Out.Recommendation.PropertyMatchResponseDTO;
 import com.example.madar.DTO.Out.Property.PropertyDTO;
 import com.example.madar.Model.HousingPreference;
@@ -540,6 +541,152 @@ public class RecommendationAI {
 
         return explanation == null ? "" : explanation.trim();
     }
+
+
+
+    public String explainNeighborhoodSuggestions(List<NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood> neighborhoods, HousingPreference preference, String language) {
+
+        if (neighborhoods == null || neighborhoods.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder details = new StringBuilder();
+
+        details.append("USER PREFERENCES\n")
+                .append("City: ").append(preference.getCity()).append("\n")
+                .append("Preferred district: ").append(preference.getDistrict()).append("\n")
+                .append("Maximum budget: ").append(preference.getMaxBudget()).append(" SAR\n")
+                .append("Occupants count: ").append(preference.getOccupantsCount()).append("\n")
+                .append("Property type: ").append(preference.getPropertyType()).append("\n")
+                .append("Lifestyle interests: ").append(getActiveInterests(preference)).append("\n")
+                .append("Nearby Services Enabled: ")
+                .append(!Boolean.FALSE.equals(preference.getIncludeNearbyServices()))
+                .append("\n\n");
+
+        details.append("RANKED NEIGHBORHOOD CANDIDATES\n");
+
+
+        for (var item : neighborhoods) {
+            details.append("""
+            
+            Rank: %d
+            District: %s
+            Overall Match Score: %s
+            Housing Score: %s
+            Commute Score: %s
+            Services Score: %s
+            Lowest Price in Sample: %s SAR
+            Sampled Properties: %d
+            
+            """.formatted(
+                    item.rank(),
+                    item.district(),
+                    item.matchScore(),
+                    item.housingScore(),
+                    item.suitability().commuteScore() == null
+                            ? "UNAVAILABLE"
+                            : item.suitability().commuteScore(),
+                    item.suitability().servicesScore() == null
+                            ? "UNAVAILABLE"
+                            : item.suitability().servicesScore(),
+                    item.lowestSampledPrice(),
+                    item.sampledPropertyCount()
+            ));
+        }
+
+
+        String responseLanguage = language != null
+                && language.toLowerCase(Locale.ROOT).startsWith("en")
+                ? "English"
+                : "Saudi Arabic";
+
+        String explanation = chatClient.prompt()
+                .system(system -> system
+                        .text("""
+                            You are MADAR's Saudi neighborhood recommendation advisor.
+
+                            Your job is to explain why the ranked neighborhood
+                            candidates may suit the user's daily life.
+
+                            LANGUAGE:
+                            - Respond only in {responseLanguage}.
+                            - For Saudi Arabic, use natural, clear Saudi Arabic.
+                            - For English, use clear professional English.
+                            - Keep the answer friendly, concise, and useful.
+
+                            IMPORTANT RULES:
+                            - MADAR has already calculated and ranked the neighborhoods.
+                            - Never change the ranking or any scores.
+                            - Explain why the first neighborhood ranks highest.
+                            - Compare the strongest meaningful differences
+                              between the ranked candidates.
+                            - Use only supplied data and calculated scores.
+                            - Commute Score is a suitability rating,
+                              not verified commute duration.
+                            - Services Score represents checked service-category coverage,
+                              not the exact number or distance of businesses.
+                            - Do not invent facilities, travel times,
+                              safety ratings, or neighborhood features.
+                            - Do not assume that more sampled listings means
+                              a neighborhood is objectively better.
+                            - Lowest Price in Sample is not the lowest
+                              market price in the neighborhood.
+                            - These are candidate neighborhoods selected
+                              from available KITE property samples,
+                              not an exhaustive citywide ranking.
+                            - The candidate coordinates are listing locations,
+                              not official neighborhood centers.
+                            - If Nearby Services Enabled is false,
+                              services were excluded by user choice.
+                            - If Services Score is UNAVAILABLE,
+                              do not claim that services are missing.
+                            - Only discuss lifestyle interests when supported
+                              by the supplied services evaluation.
+                            - Never claim that a specific gym, park,
+                              school, or business exists without its data.
+                            - Highlight one practical trade-off
+                              between the top candidates when supported.
+                            - If there is only one candidate,
+                              explain it without inventing comparisons.
+                                
+                            - Overall Match Score determines the neighborhood ranking.
+                            - Housing Score reflects housing suitability and budget compatibility.
+                            - Explain how housing preferences, commutes, and services affect suitability.
+                            - Important locations are weighted by their importance and weekly visit frequency.
+                            - Do not treat all important locations as equally important.
+                            - Never change MADAR's calculated scores or ranking.
+                            - A Services Score of 100 does not mean all services are available.
+                            - Lowest sampled listing price is not the neighborhood's market minimum price.
+                            - Do not claim that a higher housing score necessarily means a cheaper property.
+                                
+
+                            OUTPUT:
+                            - Write one short paragraph, about 3 to 5 sentences.
+                            - Mention the leading district by name.
+                            - Explain the ranking using commute, services,
+                              and available sampled-price information.
+                            - Do not use greetings or bullet points.
+                            """)
+                        .param("responseLanguage", responseLanguage))
+                .user(details.toString())
+                .call()
+                .content();
+
+        return explanation == null ? "" : explanation.trim();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    //helper method
 
     private List<String> getActiveInterests(HousingPreference preference) {
 

@@ -53,137 +53,25 @@ public class RecommendationService {
 
 
 
-    // Rank matching properties and generate AI explanations
-    public SmartRecommendationResponseDTO getSmartRecommendations(Integer userId, RecommendationWeightsDTO weights,String language) {
 
-        HousingPreference preference =
-                housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+    public SmartRecommendationResponseDTO getSmartRecommendations(Integer userId, RecommendationWeightsDTO weights, String language) {
+
+        return buildSmartRecommendations(userId, weights, language, null);
+    }
+
+    public SmartRecommendationResponseDTO getSelectedNeighborhoodRecommendations(Integer userId, RecommendationWeightsDTO weights, String language) {
+
+        HousingPreference preference = housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
 
         if (preference == null) {
             throw new ApiException("Housing preferences not found");
         }
 
-        if (preference.getMaxBudget() == null || preference.getMaxBudget().doubleValue() <= 0) {
-            throw new ApiException("Housing budget is invalid");
+        if (preference.getDistrict() == null || preference.getDistrict().isBlank()) {
+            throw new ApiException("Please select a neighborhood first");
         }
 
-        // Fetch properties using the existing property search
-        List<PropertyDTO> candidates = propertyService.search(preference.getCity(), preference.getListingType(), preference.getPropertyType(), preference.getMaxBudget().intValue());
-
-        if (candidates == null || candidates.isEmpty()) {
-            throw new ApiException("No properties found for recommendation");
-        }
-
-        // Select up to 15 properties with sufficient data
-        List<PropertyDTO> selected = candidates.stream()
-                .filter(property -> property != null &&
-                                property.getExternalId() != null && property.getSource() != null &&
-                                property.getLatitude() != null && property.getLongitude() != null &&
-                                property.getPrice() != null && property.getPrice() > 0)
-                .limit(15)
-                .toList();
-
-        if (selected.isEmpty()) {
-            throw new ApiException("No properties have sufficient data for matching");
-        }
-
-        // Calculate services consistently for all candidates
-        Map<String, Double> servicesScores = new HashMap<>();
-
-        boolean servicesEvaluated =
-                !Boolean.FALSE.equals(preference.getIncludeNearbyServices());
-
-        if (servicesEvaluated) {
-
-            for (PropertyDTO property : selected) {
-
-                Double score = calculateNeighborhoodServicesScore(
-                        property.getLatitude(),
-                        property.getLongitude(),
-                        preference
-                );
-
-                if (score == null) {
-                    servicesEvaluated = false;
-                    servicesScores.clear();
-
-                    log.warn(
-                            "Services evaluation unavailable. Ranking all properties without services."
-                    );
-                    break;
-                }
-
-                servicesScores.put(property.getExternalId(), score);
-            }
-        }
-
-// Use the same scoring factors for every property
-        final boolean useServices = servicesEvaluated;
-
-        List<PropertyMatchResponseDTO> ranked = selected.stream()
-                .map(property -> calculateScore(
-                        userId,
-                        property,
-                        preference,
-                        weights,
-                        false,
-                        useServices
-                                ? servicesScores.get(property.getExternalId())
-                                : null
-                ))
-                .sorted(Comparator.comparing(
-                        PropertyMatchResponseDTO::matchScore
-                ).reversed())
-                .limit(10)
-                .toList();
-
-
-
-
-
-        // Build a lookup map without fetching property details again
-        Map<String, PropertyDTO> propertyMap = selected.stream()
-                .collect(Collectors.toMap(
-                        PropertyDTO::getExternalId,
-                        Function.identity(),
-                        (first, second) -> first));
-
-
-
-        // Generate AI explanations using the final ranked properties
-        Map<String, RecommendationAI.PropertyExplanation> explanations = recommendationAI.explainRecommendations(ranked, selected, preference,language);
-
-        // Keep the list effectively final for the lambda
-        final List<PropertyMatchResponseDTO> finalRanked = ranked;
-
-        List<RecommendedPropertyDTO> recommendations = java.util.stream.IntStream.range(0, finalRanked.size())
-                        .mapToObj(index -> {
-
-                            PropertyMatchResponseDTO score =
-                                    finalRanked.get(index);
-
-                            PropertyDTO property =
-                                    propertyMap.get(score.propertyId());
-
-                            RecommendationAI.PropertyExplanation explanation =
-                                    explanations.get(score.propertyId());
-
-                            String reason = explanation != null &&
-                                    explanation.reason() != null &&
-                                    !explanation.reason().isBlank()
-                                    ? explanation.reason()
-                                    : language != null && language.toLowerCase(Locale.ROOT).startsWith("en")
-                                    ? "An analysis is currently unavailable for this property."
-                                    : "ما توفر تحليل لهذا العقار حاليًا.";
-                            String tradeOff = explanation != null &&
-                                    explanation.tradeOff() != null &&
-                                    !explanation.tradeOff().isBlank()
-                                    ? explanation.tradeOff()
-                                    : null;
-
-                            return new RecommendedPropertyDTO(index + 1, score.propertyId(), score.source(), property.getTitle(), property.getCity(), property.getNeighborhood(), property.getPrice(), property.getBedrooms(), property.getAreaSqm(), property.getImage(), property.getListingUrl(), score.matchScore(), score.housingScore(), score.commuteScore(), score.servicesScore(), reason, tradeOff);}).toList();
-
-        return new SmartRecommendationResponseDTO(recommendations);
+        return buildSmartRecommendations(userId, weights, language, preference.getDistrict());
     }
 
 
@@ -286,11 +174,369 @@ public class RecommendationService {
 
 
 
+    public NeighborhoodSuggestionsResponseDTO suggestNeighborhoods(Integer userId, String language) {
+        return suggestNeighborhoods(userId, language, null);
+    }
 
+    public NeighborhoodSuggestionsResponseDTO suggestNeighborhoods(Integer userId, String language, RecommendationWeightsDTO weights) {
+
+
+        HousingPreference preference =
+                housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+
+        if (preference == null) {
+            throw new ApiException("Housing preferences not found");
+        }
+
+        if (preference.getMaxBudget() == null
+                || preference.getMaxBudget().signum() <= 0) {
+            throw new ApiException("Housing budget is invalid");
+        }
+
+        // Find available properties matching the user's housing preferences
+        List<PropertyDTO> properties = propertyService.search(
+                preference.getCity(),
+                preference.getListingType(),
+                preference.getPropertyType(),
+                preference.getMaxBudget().intValue()
+        );
+
+        if (properties == null || properties.isEmpty()) {
+            throw new ApiException("No matching properties found");
+        }
+
+        // Group valid properties by neighborhood
+        Map<String, List<PropertyDTO>> neighborhoods = new LinkedHashMap<>();
+
+        for (PropertyDTO property : properties) {
+
+            if (property == null
+                    || property.getNeighborhood() == null
+                    || property.getNeighborhood().isBlank()
+                    || property.getLatitude() == null
+                    || property.getLongitude() == null
+                    || !Double.isFinite(property.getLatitude())
+                    || !Double.isFinite(property.getLongitude())
+                    || Math.abs(property.getLatitude()) > 90
+                    || Math.abs(property.getLongitude()) > 180
+                    || property.getPrice() == null
+                    || property.getPrice() <= 0
+                    || property.getPrice() > preference.getMaxBudget().doubleValue()) {
+                continue;
+            }
+
+            String district = property.getNeighborhood().trim();
+
+            neighborhoods.computeIfAbsent(
+                    district, key -> new ArrayList<>()
+            ).add(property);
+        }
+
+        if (neighborhoods.isEmpty()) {
+            throw new ApiException("No neighborhoods with valid property locations");
+        }
+
+        // Evaluate up to 5 candidate neighborhoods
+        List<List<PropertyDTO>> candidates = neighborhoods.values()
+                .stream()
+                .sorted(Comparator.comparingInt(
+                        (List<PropertyDTO> group) -> group.size()
+                ).reversed())
+                .limit(5)
+                .toList();
+
+        List<NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood> evaluated =
+                new ArrayList<>();
+
+        for (List<PropertyDTO> group : candidates) {
+
+            // Select a representative actual listing location
+            List<Double> latitudes = group.stream()
+                    .map(PropertyDTO::getLatitude)
+                    .sorted()
+                    .toList();
+
+            List<Double> longitudes = group.stream()
+                    .map(PropertyDTO::getLongitude)
+                    .sorted()
+                    .toList();
+
+            double middleLatitude = latitudes.get(latitudes.size() / 2);
+            double middleLongitude = longitudes.get(longitudes.size() / 2);
+
+            PropertyDTO representative = group.stream()
+                    .min(Comparator.comparingDouble(property ->
+                            Math.pow(property.getLatitude() - middleLatitude, 2)
+                                    + Math.pow(
+                                    (property.getLongitude() - middleLongitude)
+                                            * Math.cos(Math.toRadians(middleLatitude)),
+                                    2
+                            )
+                    ))
+                    .orElseThrow();
+
+            Integer lowestPrice = group.stream()
+                    .map(PropertyDTO::getPrice)
+                    .min(Integer::compareTo)
+                    .orElse(null);
+
+            // Reuse our existing neighborhood scoring and AI explanation
+            try {
+                NeighborhoodSuitabilityDTO suitability =
+                        getNeighborhoodSuitability(
+                                userId,
+                                representative.getLatitude(),
+                                representative.getLongitude(),
+                                representative.getNeighborhood(),
+                                language
+                        );
+
+
+                PropertyMatchResponseDTO match = calculateScore(
+                        userId,
+                        representative,
+                        preference,
+                        weights,
+                        false,
+                        suitability.servicesScore()
+                );
+
+
+
+                evaluated.add(
+                        new NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood(
+                                0,
+                                representative.getNeighborhood(),
+                                representative.getLatitude(),
+                                representative.getLongitude(),
+                                group.size(),
+                                lowestPrice,
+                                match.housingScore(),
+                                match.matchScore(),
+                                suitability
+                        )
+                );
+
+
+            } catch (ApiException e) {
+                // Skip a candidate only if its suitability cannot be evaluated
+                log.warn(
+                        "Neighborhood {} could not be evaluated: {}",
+                        representative.getNeighborhood(),
+                        e.getMessage()
+                );
+            }
+        }
+
+        if (evaluated.isEmpty()) {
+            throw new ApiException("Neighborhood suggestions are unavailable");
+        }
+
+
+        evaluated.sort(Comparator.comparingDouble((NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood item) -> item.matchScore()).reversed());
+
+
+        List<NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood> top =
+                new ArrayList<>();
+
+        for (int i = 0; i < Math.min(3, evaluated.size()); i++) {
+
+            var item = evaluated.get(i);
+
+
+            top.add(
+                    new NeighborhoodSuggestionsResponseDTO.SuggestedNeighborhood(
+                            i + 1,
+                            item.district(),
+                            item.latitude(),
+                            item.longitude(),
+                            item.sampledPropertyCount(),
+                            item.lowestSampledPrice(),
+                            item.housingScore(),
+                            item.matchScore(),
+                            item.suitability()
+                    )
+            );
+
+        }
+
+        String aiAnalysis = recommendationAI.explainNeighborhoodSuggestions(top, preference, language);
+
+        return new NeighborhoodSuggestionsResponseDTO(
+                preference.getCity(),
+                "Suggestions are based on available Kite property samples, "
+                        + "not every neighborhood in the city. "
+                        + "Coordinates represent actual sampled listings.",
+                top, aiAnalysis);
+
+    }
+
+
+
+    public void selectNeighborhood(Integer userId, String district) {
+
+        HousingPreference preference = housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+
+        if (preference == null) {
+            throw new ApiException("Housing preferences not found");
+        }
+
+        if (district == null || district.isBlank()) {
+            throw new ApiException("Neighborhood is required");
+        }
+
+        district = district.trim();
+
+        if (district.length() > 100) {
+            throw new ApiException("Neighborhood name is too long");
+        }
+
+        preference.setDistrict(district);
+        housingPreferenceRepository.save(preference);
+    }
 
 
 
     //helper method
+
+    private SmartRecommendationResponseDTO buildSmartRecommendations(Integer userId, RecommendationWeightsDTO weights, String language, String selectedDistrict) {
+
+
+        HousingPreference preference = housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
+
+        if (preference == null) {
+            throw new ApiException("Housing preferences not found");
+        }
+
+        if (preference.getMaxBudget() == null || preference.getMaxBudget().doubleValue() <= 0) {
+            throw new ApiException("Housing budget is invalid");
+        }
+
+        // Fetch properties using the existing property search
+        List<PropertyDTO> candidates = propertyService.search(preference.getCity(), preference.getListingType(), preference.getPropertyType(), preference.getMaxBudget().intValue());
+
+        if (candidates == null || candidates.isEmpty()) {
+            throw new ApiException("No properties found for recommendation");
+        }
+
+        // Select up to 15 properties with sufficient data
+
+        List<PropertyDTO> selected = candidates.stream()
+                .filter(property -> property != null
+                        && property.getExternalId() != null
+                        && property.getSource() != null
+                        && property.getLatitude() != null
+                        && property.getLongitude() != null
+                        && property.getPrice() != null
+                        && property.getPrice() > 0)
+                .filter(property -> selectedDistrict == null
+                        || (property.getNeighborhood() != null
+                        && property.getNeighborhood().trim()
+                        .equalsIgnoreCase(selectedDistrict.trim())))
+                .limit(15)
+                .toList();
+
+
+        if (selected.isEmpty()) {
+            throw new ApiException("No properties have sufficient data for matching");
+        }
+
+        // Calculate services consistently for all candidates
+        Map<String, Double> servicesScores = new HashMap<>();
+
+        boolean servicesEvaluated =
+                !Boolean.FALSE.equals(preference.getIncludeNearbyServices());
+
+        if (servicesEvaluated) {
+
+            for (PropertyDTO property : selected) {
+
+                Double score = calculateNeighborhoodServicesScore(
+                        property.getLatitude(),
+                        property.getLongitude(),
+                        preference
+                );
+
+                if (score == null) {
+                    servicesEvaluated = false;
+                    servicesScores.clear();
+
+                    log.warn(
+                            "Services evaluation unavailable. Ranking all properties without services."
+                    );
+                    break;
+                }
+
+                servicesScores.put(property.getExternalId(), score);
+            }
+        }
+
+        // Use the same scoring factors for every property
+        final boolean useServices = servicesEvaluated;
+
+        List<PropertyMatchResponseDTO> ranked = selected.stream()
+                .map(property -> calculateScore(
+                        userId,
+                        property,
+                        preference,
+                        weights,
+                        false,
+                        useServices
+                                ? servicesScores.get(property.getExternalId())
+                                : null
+                ))
+                .sorted(Comparator.comparing(
+                        PropertyMatchResponseDTO::matchScore
+                ).reversed())
+                .limit(10)
+                .toList();
+
+
+
+        // Build a lookup map without fetching property details again
+        Map<String, PropertyDTO> propertyMap = selected.stream()
+                .collect(Collectors.toMap(
+                        PropertyDTO::getExternalId,
+                        Function.identity(),
+                        (first, second) -> first));
+
+
+
+        // Generate AI explanations using the final ranked properties
+        Map<String, RecommendationAI.PropertyExplanation> explanations = recommendationAI.explainRecommendations(ranked, selected, preference,language);
+
+        // Keep the list effectively final for the lambda
+        final List<PropertyMatchResponseDTO> finalRanked = ranked;
+
+        List<RecommendedPropertyDTO> recommendations = java.util.stream.IntStream.range(0, finalRanked.size())
+                .mapToObj(index -> {
+
+                    PropertyMatchResponseDTO score =
+                            finalRanked.get(index);
+
+                    PropertyDTO property =
+                            propertyMap.get(score.propertyId());
+
+                    RecommendationAI.PropertyExplanation explanation =
+                            explanations.get(score.propertyId());
+
+                    String reason = explanation != null &&
+                            explanation.reason() != null &&
+                            !explanation.reason().isBlank()
+                            ? explanation.reason()
+                            : language != null && language.toLowerCase(Locale.ROOT).startsWith("en")
+                            ? "An analysis is currently unavailable for this property."
+                            : "ما توفر تحليل لهذا العقار حاليًا.";
+                    String tradeOff = explanation != null &&
+                            explanation.tradeOff() != null &&
+                            !explanation.tradeOff().isBlank()
+                            ? explanation.tradeOff()
+                            : null;
+
+                    return new RecommendedPropertyDTO(index + 1, score.propertyId(), score.source(), property.getTitle(), property.getCity(), property.getNeighborhood(), property.getPrice(), property.getBedrooms(), property.getAreaSqm(), property.getImage(), property.getListingUrl(), score.matchScore(), score.housingScore(), score.commuteScore(), score.servicesScore(), reason, tradeOff);}).toList();
+
+        return new SmartRecommendationResponseDTO(recommendations);
+    }
 
     // Calculate nearby services suitability based on user interests
     private Double calculateNeighborhoodServicesScore(Double latitude, Double longitude, HousingPreference preference) {
@@ -518,7 +764,7 @@ public class RecommendationService {
             housingScore += 5;
         }
         // Adjust housing suitability based on household size and bedrooms
-// Evaluate bedroom suitability based on household size
+        // Evaluate bedroom suitability based on household size
         Integer occupantsCount = preference.getOccupantsCount();
         Integer bedrooms = property.getBedrooms();
 
