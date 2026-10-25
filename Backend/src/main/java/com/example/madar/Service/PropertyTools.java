@@ -26,6 +26,7 @@ public class PropertyTools {
     private List<PropertyDTO> previousCards = new ArrayList<>();
     private String usedData = "";
     private String cityFromMessage;
+    private boolean messageHasNumber;
     private static final String UNEXPECTED_ERROR = "Error: something went wrong while searching, try again";
 
 
@@ -52,6 +53,11 @@ public class PropertyTools {
 
     public void setCityFromMessage(String cityFromMessage){
         this.cityFromMessage = cityFromMessage;
+    }
+
+
+    public void setMessageHasNumber(boolean messageHasNumber){
+        this.messageHasNumber = messageHasNumber;
     }
 
 
@@ -203,6 +209,11 @@ public class PropertyTools {
             city = orPreference(city, "city");
             listingType = orPreference(listingType, "listingType");
             propertyType = orPreference(propertyType, "propertyType");
+            //the user did not write a number: ignore any price the AI made up, use the saved budget
+            if(!messageHasNumber){
+                maxPrice = null;
+                minPrice = null;
+            }
             if(minPrice == null){
                 minPrice = 0;
             }
@@ -239,6 +250,41 @@ public class PropertyTools {
     }
 
 
+    @Tool(description = "Listings at any price, not limited by the user's budget. Use it when the user says مو بميزانيتي, بشكل عام, أي سعر or any price. City, listing type and property type are optional, the user's preference is used if they are empty")
+    public Object anyPriceListings(@ToolParam(description = "city in English lowercase, like riyadh or jeddah", required = false) String city,
+                                   @ToolParam(description = "rent or sale", required = false) String listingType,
+                                   @ToolParam(description = "apartment, villa, floor, duplex, building or all", required = false) String propertyType,
+                                   @ToolParam(description = "Arabic district names separated by comma, like النرجس. Only if the user mentioned a district", required = false) String districts){
+        try{
+            city = orPreference(city, "city");
+            listingType = orPreference(listingType, "listingType");
+            propertyType = orPreference(propertyType, "propertyType");
+            //no maximum price: a very big number so the budget is not used
+            Integer maxPrice = 100000000;
+            usedData += "بدون حد للسعر\n";
+            System.out.println("anyPriceListings called: city=" + city + ", type=" + propertyType + ", districts=" + districts);
+
+            //the user asked for a district: search only inside it
+            if(districts != null && !districts.isBlank()){
+                List<PropertyDTO> inDistricts = remember(propertyService.getByDistrictsAndPrice(city, listingType, propertyType, districts, 0, maxPrice));
+                if(inDistricts.isEmpty()){
+                    return track("لا توجد إعلانات في " + districts + " حالياً");
+                }
+                return inDistricts;
+            }
+
+            List<PropertyDTO> found = remember(propertyService.getByPriceRange(city, listingType, propertyType, 0, maxPrice));
+            if(found.isEmpty()){
+                return track("لا توجد إعلانات " + propertyType + " في " + city + " حالياً");
+            }
+            return found;
+        }catch (ApiException e){
+            return "Error: " + e.getMessage();
+        }catch (Exception e){
+            return UNEXPECTED_ERROR;
+        }
+    }
+
 
     @Tool(description = "Listings near a point (latitude, longitude) within a radius in km, nearest first. Use coordinates from myPlaces, never guess them. If the user also says my budget or within my budget, set withinMyBudget to true. City, listing type and property type are optional, the user's preference is used if they are empty")
     public Object nearLocation(@ToolParam(description = "city in English lowercase, like riyadh or jeddah", required = false) String city,
@@ -253,6 +299,10 @@ public class PropertyTools {
             city = orPreference(city, "city");
             listingType = orPreference(listingType, "listingType");
             propertyType = orPreference(propertyType, "propertyType");
+            //the user did not write a number: ignore any price the AI made up
+            if(!messageHasNumber){
+                maxPrice = null;
+            }
 
             //"within my budget": take the budget from the housing preference
             if(maxPrice == null && Boolean.TRUE.equals(withinMyBudget)){
@@ -308,6 +358,10 @@ public class PropertyTools {
             city = orPreference(city, "city");
             listingType = orPreference(listingType, "listingType");
             propertyType = orPreference(propertyType, "propertyType");
+            //the user did not write a number: ignore any price the AI made up, use the saved budget
+            if(!messageHasNumber){
+                maxPrice = null;
+            }
             //no price from the user: use the budget from the housing preference
             if(maxPrice == null){
                 HousingPreference preference = housingPreferenceRepository.findHousingPreferenceByUser_Id(userId);
