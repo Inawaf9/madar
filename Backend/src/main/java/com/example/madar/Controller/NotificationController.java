@@ -1,5 +1,8 @@
 package com.example.madar.Controller;
 
+import com.example.madar.Security.CurrentUserAccess;
+import com.example.madar.Security.ResourceOwnershipAccess;
+
 
 import com.example.madar.Api.ApiResponse;
 import com.example.madar.Service.NotificationService;
@@ -14,33 +17,44 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NotificationController {
 
+    private final CurrentUserAccess currentUserAccess;
+    private final ResourceOwnershipAccess resourceOwnershipAccess;
     private final NotificationService notificationService;
 
 
     //get all my notifications
-    @GetMapping("/get-all/{userId}")
-    public ResponseEntity<?> getMyNotifications(@PathVariable Integer userId) {
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyNotifications() {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(200).body(notificationService.getMyNotifications(userId));
     }
 
 
     //get unread notifications
-    @GetMapping("/unread/{userId}")
-    public ResponseEntity<?> getUnreadNotifications(@PathVariable Integer userId) {
+    @GetMapping("/me/unread")
+    public ResponseEntity<?> getUnreadNotifications() {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(200).body(notificationService.getUnreadNotifications(userId));
     }
 
 
     //count unread notifications
-    @GetMapping("/unread-count/{userId}")
-    public ResponseEntity<?> countUnreadNotifications(@PathVariable Integer userId) {
+    @GetMapping("/me/unread-count")
+    public ResponseEntity<?> countUnreadNotifications() {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
         return ResponseEntity.status(200).body(Map.of("unreadCount", notificationService.countUnreadNotifications(userId)));
     }
 
 
     //mark notification as read
-    @PutMapping("/mark-read/{userId}/{notificationId}")
-    public ResponseEntity<?> markAsRead(@PathVariable Integer userId, @PathVariable Integer notificationId) {
+    @PutMapping("/me/{notificationId}/read")
+    public ResponseEntity<?> markAsRead(@PathVariable Integer notificationId) {
+        Integer userId = currentUserAccess.getCurrentUserId();
+        resourceOwnershipAccess.requireNotification(notificationId);
+
 
         notificationService.markAsRead(userId, notificationId);
 
@@ -49,8 +63,10 @@ public class NotificationController {
 
 
     //mark all notifications as read
-    @PutMapping("/mark-all-read/{userId}")
-    public ResponseEntity<?> markAllAsRead(@PathVariable Integer userId) {
+    @PutMapping("/me/read-all")
+    public ResponseEntity<?> markAllAsRead() {
+        Integer userId = currentUserAccess.getCurrentUserId();
+
 
         notificationService.markAllAsRead(userId);
 
@@ -59,8 +75,11 @@ public class NotificationController {
 
 
     //delete my notification
-    @DeleteMapping("/delete/{userId}/{notificationId}")
-    public ResponseEntity<?> deleteNotification(@PathVariable Integer userId, @PathVariable Integer notificationId) {
+    @DeleteMapping("/me/{notificationId}")
+    public ResponseEntity<?> deleteNotification(@PathVariable Integer notificationId) {
+        Integer userId = currentUserAccess.getCurrentUserId();
+        resourceOwnershipAccess.requireNotification(notificationId);
+
 
         notificationService.deleteNotification(userId, notificationId);
 
