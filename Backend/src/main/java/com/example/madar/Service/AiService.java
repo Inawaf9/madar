@@ -29,6 +29,7 @@ public class AiService {
     private final UserRepository userRepository;
     //last cards shown to each user, so "the second listing" works in the next message
     private final Map<Integer, List<PropertyDTO>> lastCardsByUser = new HashMap<>();
+    private final Map<Integer, String> lastReplyByUser = new HashMap<>();
 
     //rules for explain-match: use our numbers only
     private static final String RULES = """
@@ -50,19 +51,21 @@ public class AiService {
             - If the message is racist or offensive about a tribe, family origin, nationality, race, skin color, religion, sect, gender or disability: reply with exactly one word: BLOCKED
             - If the user asks for a district or listings based on who lives there (no foreigners, no certain nationality, only a certain tribe or sect, and similar), reply with exactly one word: BLOCKED
             - Normal questions about districts, prices, families, schools or mosques are fine, do not block them. Names like عبدالله are normal.
+            - Asking for offices, shops, land, or anything that is not housing is NOT offensive. Never reply BLOCKED for it: say kindly that Madar is for housing only.
 
             General rules (most important):
             - You have tools that return the user's real data. Always use them before you reply.
             - Even if you already mentioned listings or numbers earlier in the chat, call the tool again before you mention any listing or number.
             - Never mention a price, count, distance or district unless it came from a tool result. Never guess.
             - Never ask the user for the city, property type, rent/sale, or budget. Leave these values empty in the tool, the system fills them from the user's preference.
-            - If the user says "على ميزانيتي", "ضمن ميزانيتي", "بميزانيتي", "my budget" or "within my budget" without a district or place, call withinMyBudget right away.
+            - If the user says "على ميزانيتي", "ضمن ميزانيتي", "بميزانيتي", "my budget" or "within my budget" without a district, a place or another city, call withinMyBudget right away. If they mention another city (like جدة), use priceRange with that city and leave maxPrice empty to use the budget.
             - If the user mentions a city other than their own (like جدة), pass it to the tool in English (jeddah), do not leave it empty.
             - If the user mentions a property type (فيلا، دور، دوبلكس), pass it to the tool in English.
             - Cities are in English lowercase, like riyadh and jeddah.
             - Available types: apartment, villa, floor, duplex, building. Madar is for housing only: no offices, shops or land.
             - If the user answers your last question with a short yes like "ايه", "ايوه", "اكيد", "تمام", "يب" or "yes", do exactly what you offered in that question right away using the tools. Do not ask another question.
             - If you offered listings in the user's district (like "تبي تشوف الشقق اللي في حي الملقا؟") and the user agrees, call myDistrictProperties.
+            - This platform is called "مدار" (Madar). Never mention any other app, website or platform (like عقار، بيوت، Bayut، Aqar). Say "في مدار" when you point the user to a page.
 
             The user's position and the market:
             - Any question about the user's situation, budget, district or the market: call myPreference then myMarketSummary first.
@@ -90,7 +93,7 @@ public class AiService {
             - Only ask the user to add a place if myPlaces says there are no places.
             - Never guess coordinates.
             - Never say listings are "near" or "around" a district unless they came from nearLocation.
-            - If myPlaces does not have the place the user means, never ask for coordinates, a street or a description of the place, because you cannot use them. Ask the user to add the place from "أماكني المهمة" in Madar.
+            - If myPlaces does not have the place the user means, never ask for coordinates, a street or a description of the place, because you cannot use them. Ask the user to add the place from "أماكني المهمة" في مدار.
             - If the user tells you the district of the place (like "دوامي في النرجس"), search right away with priceRange: put the district in districts and leave maxPrice empty to use the budget. Say these listings are in the same district, and that adding the exact place in "أماكني المهمة" will show the real distance.
             - nearLocation results are sorted by distance, nearest first, not by price. Say "الأقرب لـ<place>", never say the prices "start from" a number.
             - In nearLocation results, add the distance to each listing bullet, like: - **1.** **72000 ريال** · المربع · 2 غرف · 1.2 كم
@@ -188,13 +191,15 @@ public class AiService {
         PropertyTools tools = newTools(userId, message);
         String reply = openRouterClient.chat(rules, message, tools, "user-" + userId);
         //the AI found the message offensive, rude or racist
-        if(reply != null && reply.trim().toUpperCase().startsWith("BLOCKED")){
+        if(isBlocked(reply)){
             System.out.println("Blocked by AI, user " + userId + ": " + message);
+            openRouterClient.forgetLastTurn("user-" + userId);
             return new ChatReplyDTO(respectWarning(lang), new ArrayList<>());
         }
 
         //the AI asked, or said "not found", without calling any tool: try again
         if(tools.getUsedData().isEmpty() && (asksForKnownInfo(reply) || claimsWithoutSearch(reply))){
+            openRouterClient.forgetLastTurn("user-" + userId);
             tools = newTools(userId, message);
             reply = openRouterClient.chat(rules,
                     message + "\n(تنبيه من النظام: ما استدعيت أي أداة. نفّذ الطلب الآن باستخدام الأدوات بدون سؤال تأكيد. النوع والإيجار والبيع من تفضيلات المستخدم، والمدينة من المحادثة أو التفضيلات، والأماكن المهمة من myPlaces. وإذا المستخدم يقصد عقار من الرد السابق، استخدم previousListing أو similarToPrevious)",
@@ -205,14 +210,26 @@ public class AiService {
         if(!numbersAreFrom(reply, tools.getUsedData() + " " + message)){
             System.out.println("Rejected reply: " + reply);
             System.out.println("Tool data: " + tools.getUsedData());
+            //forget the wrong reply, so the AI does not copy it later
+            openRouterClient.forgetLastTurn("user-" + userId);
             tools = newTools(userId, message);
-            reply = openRouterClient.chat(rules,
+            //try again without the old messages, so the AI must call the tools
+            reply = openRouterClient.chatWithoutHistory(rules,
                     message + "\n(تنبيه من النظام: استدعِ الأدوات الآن واستخدم أرقامها فقط، لا تعتمد على الرسائل السابقة)",
                     tools, "user-" + userId);
 
-            //still not real: safe answer without numbers, in the user's language
+            //still not real: forget it too
             if(!numbersAreFrom(reply, tools.getUsedData() + " " + message)){
                 System.out.println("Rejected again: " + reply);
+                openRouterClient.forgetLastTurn("user-" + userId);
+
+                //the tools found listings: write the reply in Java from the real cards
+                if(!tools.getLastProperties().isEmpty()){
+                    List<PropertyDTO> cards = propertyService.localize(tools.getLastProperties(), lang);
+                    lastCardsByUser.put(userId, tools.getLastProperties());
+                    return new ChatReplyDTO(replyFromCards(cards, lang), cards);
+                }
+
                 String safe = "ما قدرت أتأكد من الأرقام لهالسؤال، جرّب تسألني بشكل أوضح، مثل: وريني شقق في الملقا.";
                 if(lang.equals("en")){
                     safe = "I could not verify the numbers for this question. Try asking more clearly, for example: show me apartments in Al Malqa.";
@@ -220,11 +237,18 @@ public class AiService {
                 return new ChatReplyDTO(safe, new ArrayList<>());
             }
         }
+        //a retry can also say BLOCKED: never show this word to the user
+        if(isBlocked(reply)){
+            System.out.println("Blocked by AI after retry, user " + userId + ": " + message);
+            openRouterClient.forgetLastTurn("user-" + userId);
+            return new ChatReplyDTO(respectWarning(lang), new ArrayList<>());
+        }
         //save the new list of cards (not a single listing), so "the second listing" still means the same list
         if(tools.getLastProperties().size() > 1){
             lastCardsByUser.put(userId, tools.getLastProperties());
         }
-        //cards in the same language as the message
+
+        lastReplyByUser.put(userId, reply);
         return new ChatReplyDTO(cleanReply(reply), propertyService.localize(tools.getLastProperties(), lang));
     }
 
@@ -236,6 +260,7 @@ public class AiService {
         }
         openRouterClient.clearChat("user-" + userId);
         lastCardsByUser.remove(userId);
+        lastReplyByUser.remove(userId);
     }
 
     //polite reply when a message is blocked, in the user's language
@@ -244,6 +269,47 @@ public class AiService {
             return "Let's keep it respectful 🙏 Madar is for everyone. I'm here to help you find your home, what would you like me to search for?";
         }
         return "خلّنا نحافظ على أسلوب محترم 🙏 مدار للجميع، وأنا هنا أساعدك تلقى سكنك. وش تحب أدوّر لك؟";
+    }
+
+
+    private boolean isBlocked(String reply){
+        return reply != null && reply.trim().toUpperCase().startsWith("BLOCKED");
+    }
+
+    //reply written in Java from the real cards, used when the AI reply fails the check twice
+    private String replyFromCards(List<PropertyDTO> cards, String lang){
+        boolean en = lang.equals("en");
+        String text = "أبشر، هذا اللي لقيته لك:\n";
+        if(en){
+            text = "Here is what I found for you:\n";
+        }
+        for(int i = 0; i < cards.size() && i < 3; i++){
+            PropertyDTO p = cards.get(i);
+            text += "- **" + (i + 1) + ".** **" + p.getPrice() + (en ? " SAR" : " ريال") + "**";
+            if(p.getNeighborhood() != null){
+                text += " · " + p.getNeighborhood();
+            }
+            if(p.getBedrooms() != null){
+                if(p.getBedrooms() == 0){
+                    text += en ? " · studio" : " · استوديو";
+                }else if(p.getBedrooms() == 1){
+                    text += en ? " · 1 bedroom" : " · 1 غرفة";
+                }else{
+                    text += " · " + p.getBedrooms() + (en ? " bedrooms" : " غرف");
+                }
+            }
+            if(p.getAreaSqm() != null){
+                text += " · " + Math.round(p.getAreaSqm()) + (en ? " m²" : " م²");
+            }
+            if(p.getDistanceKm() != null){
+                text += " · " + p.getDistanceKm() + (en ? " km" : " كم");
+            }
+            text += "\n";
+        }
+        if(en){
+            return text + "\nWould you like more details about any of them?";
+        }
+        return text + "\nتبي تفاصيل أكثر عن أي واحد منها؟";
     }
 
 
@@ -399,7 +465,8 @@ public class AiService {
             return false;
         }
         //asked to add a place without checking myPlaces first
-        if(reply.contains("تضيف مكان") || reply.contains("تضيف موقع") || reply.contains("أضف مكان") || reply.contains("ضيف مكان")){
+        if(reply.contains("تضيف مكان") || reply.contains("تضيف موقع") || reply.contains("أضف مكان") || reply.contains("ضيف مكان")
+                || reply.contains("أماكني المهمة") || reply.contains("اماكني المهمة")){
             return true;
         }
         if(!reply.contains("؟") && !reply.contains("?")){
@@ -422,6 +489,10 @@ public class AiService {
             return false;
         }
         String lower = reply.toLowerCase();
+        //"Madar is for housing only" is a right answer, not a missed search
+        if(reply.contains("للسكن") || lower.contains("housing only") || lower.contains("for housing")){
+            return false;
+        }
         return reply.contains("ما لقيت") || reply.contains("مالقيت") || reply.contains("ما قدرت ألاقي")
                 || reply.contains("لا يوجد") || reply.contains("ما فيه شي") || reply.contains("غير موجود")
                 || lower.contains("couldn't find") || lower.contains("could not find") || lower.contains("no listings")
@@ -439,15 +510,36 @@ public class AiService {
         }
         return null;
     }
-    //new tools object for one message, with the city from the message and the previous cards
+
+
+
+
     private PropertyTools newTools(Integer userId, String message){
         PropertyTools tools = new PropertyTools(propertyService, housingPreferenceRepository, placePreferenceRepository, userId);
         tools.setCityFromMessage(detectCity(message));
         tools.setPreviousCards(lastCardsByUser.get(userId));
-        tools.setMessageHasNumber(message.matches("(?s).*[0-9٠-٩].*"));
+
+        //the price can come from the message, or from the bot's last question when the user just says "yes"
+        boolean hasNumber = message.matches("(?s).*[0-9٠-٩].*");
+        String lastReply = lastReplyByUser.get(userId);
+        if(!hasNumber && isShortYes(message) && lastReply != null){
+
+            String lastQuestion = lastReply.trim().substring(lastReply.trim().lastIndexOf("\n") + 1);
+            if(lastQuestion.matches("(?s).*[0-9٠-٩].*")){
+                hasNumber = true;
+            }
+        }
+        tools.setMessageHasNumber(hasNumber);
         return tools;
     }
 
+
+    private boolean isShortYes(String message){
+        String text = message.trim().toLowerCase().replaceAll("[.!؟?،,\\s]+", "");
+        List<String> yesWords = List.of("ايه", "ايوه", "إيه", "أيوه", "ايوا", "اكيد", "أكيد", "تمام", "يب", "اوكي", "نعم", "طيب", "يلا",
+                "yes", "yeah", "yep", "ok", "okay", "sure");
+        return yesWords.contains(text);
+    }
 
     //the language the user wrote in: more English letters = en, otherwise ar
     private String detectMessageLang(String message){
