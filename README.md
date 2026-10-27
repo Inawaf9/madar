@@ -1,7 +1,8 @@
 <div align="center">
 
 <!-- Replace with the actual path to MADAR's original logo -->
-<img src="Frontend/assets/madar-logo.png" alt="MADAR Logo" width="180">
+
+<img src="assets/madar-logo.png" alt="MADAR Logo" width="180">
 
 # MADAR | مدار
 
