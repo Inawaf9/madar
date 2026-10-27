@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class AiService {
     private final HousingPreferenceRepository housingPreferenceRepository;
     private final PlacePreferenceRepository placePreferenceRepository;
     private final UserRepository userRepository;
+    private final CreditService creditService;
     //last cards shown to each user, so "the second listing" works in the next message
     private final Map<Integer, List<PropertyDTO>> lastCardsByUser = new HashMap<>();
     private final Map<Integer, String> lastReplyByUser = new HashMap<>();
@@ -124,6 +126,36 @@ public class AiService {
             - Prices are in SAR per year for rent.
             - Answer directly. Never start with phrases like "بناءً على اللي قلته", "بناءً على اللي فهمته", "حسب المعلومات" or "اللي قلته لي قبل". The user's budget, city and district come from their saved preferences, not from the chat: if you need to mention it, say "حسب تفضيلاتك".
             """;
+
+
+    public ChatReplyDTO chatWithCredits(Integer userId, String message) {
+
+        String operationId = UUID.randomUUID().toString();
+
+        // Reserve 2 credits before running the chatbot
+        creditService.reserveCredits(userId, "AI_CHAT", operationId);
+
+        try {
+            // Run the original chatbot without changing its logic
+            ChatReplyDTO response = chat(userId, message);
+
+            // Confirm the credit deduction after success
+            creditService.confirmCredits(userId, operationId);
+
+            return response;
+
+        } catch (Exception e) {
+
+            // Refund reserved credits if the chatbot fails
+            try {
+                creditService.cancelReservation(userId, operationId);
+            } catch (Exception cancelException) {
+                e.addSuppressed(cancelException);
+            }
+
+            throw e;
+        }
+    }
 
     //AI explains my match summary and my place in the market
     public AiExplanationDTO explainMatch(Integer userId){

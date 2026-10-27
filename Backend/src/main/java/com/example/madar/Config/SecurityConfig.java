@@ -70,7 +70,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/user/register").denyAll()
                         .requestMatchers(HttpMethod.PUT,
                                 "/api/v1/user/update/{userId}",
-                                "/api/v1/user/admin/update/{adminId}/{userId}",
                                 "/api/v1/user/reactivate/{userId}"
                         ).denyAll()
                         // n8n internal endpoints
@@ -78,6 +77,16 @@ public class SecurityConfig {
                                 HttpMethod.GET,
                                 "/api/v1/n8n/weekly-report/recipients"
                         ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/credit-packages/active"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/api/v1/credit-packages",
+                                "/api/v1/credit-packages/**"
+                        ).hasRole("ADMIN")
 
                         .requestMatchers(
                                 HttpMethod.POST,
@@ -109,24 +118,18 @@ public class SecurityConfig {
                                 "/api/v1/properties/results-count/{city}/{listingType}",
                                 "/api/v1/properties/similar/{source}/{externalId}"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/v1/current-home/get",
-                                "/api/v1/housing-preference/get",
-                                "/api/v1/property-comparison/get",
-                                "/api/v1/user/admin/users",
-                                "/api/v1/user/admin/get-all/{adminId}"
-                        ).hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT,
-                                "/api/v1/user/admin/update/{adminId}/{userId}",
-                                "/api/v1/user/admin/users/{targetUserId}/suspend",
-                                "/api/v1/user/admin/users/{targetUserId}/unsuspend",
-                                "/api/v1/user/admin/suspend/{adminId}/{userId}",
-                                "/api/v1/user/admin/unsuspend/{adminId}/{userId}"
-                        ).hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE,
-                                "/api/v1/user/admin/users/{targetUserId}",
-                                "/api/v1/user/admin/delete/{adminId}/{userId}"
-                        ).hasRole("ADMIN")
+
+                        // Admin endpoints
+                        .requestMatchers("/api/v1/user/admin/**").hasRole("ADMIN")
+
+
+                        // Moving Checklist - USER only
+                        .requestMatchers(
+                                "/api/v1/moving-checklist/generate",
+                                "/api/v1/moving-checklist/get",
+                                "/api/v1/moving-checklist/toggle/{taskId}",
+                                "/api/v1/moving-checklist/reset"
+                        ).hasRole("USER")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 ->

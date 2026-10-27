@@ -116,7 +116,11 @@ public class RefreshTokenService {
 
     private User lockUser(Integer userId) {
         User user = lockUserWithoutRefresh(userId);
-        if (user != null) entityManager.refresh(user, LockModeType.PESSIMISTIC_WRITE);
+
+        if (user != null) {
+            entityManager.refresh(user);
+        }
+
         return user;
     }
 

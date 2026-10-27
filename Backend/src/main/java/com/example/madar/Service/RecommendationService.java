@@ -32,6 +32,7 @@ public class RecommendationService {
     private final RecommendationAI recommendationAI;
     private final PlacePreferenceRepository placePreferenceRepository;
     private final LifestyleInterestRepository lifestyleInterestRepository;
+    private final CreditService creditService;
 
 
 
@@ -72,6 +73,65 @@ public class RecommendationService {
         }
 
         return buildSmartRecommendations(userId, weights, language, preference.getDistrict());
+    }
+
+    // Paid smart recommendations for direct user requests
+    public SmartRecommendationResponseDTO getSmartRecommendationsWithCredits(
+            Integer userId,
+            RecommendationWeightsDTO weights,
+            String language) {
+
+        String operationId = UUID.randomUUID().toString();
+
+        creditService.reserveCredits(userId, "TOP_3_RECOMMENDATIONS", operationId);
+
+        try {
+            SmartRecommendationResponseDTO response =
+                    getSmartRecommendations(userId, weights, language);
+
+            creditService.confirmCredits(userId, operationId);
+
+            return response;
+
+        } catch (Exception e) {
+            try {
+                creditService.cancelReservation(userId, operationId);
+            } catch (Exception cancelException) {
+                e.addSuppressed(cancelException);
+            }
+
+            throw e;
+        }
+    }
+
+
+    // Paid recommendations within the user's selected neighborhood
+    public SmartRecommendationResponseDTO getSelectedNeighborhoodRecommendationsWithCredits(
+            Integer userId,
+            RecommendationWeightsDTO weights,
+            String language) {
+
+        String operationId = UUID.randomUUID().toString();
+
+        creditService.reserveCredits(userId, "TOP_3_RECOMMENDATIONS", operationId);
+
+        try {
+            SmartRecommendationResponseDTO response =
+                    getSelectedNeighborhoodRecommendations(userId, weights, language);
+
+            creditService.confirmCredits(userId, operationId);
+
+            return response;
+
+        } catch (Exception e) {
+            try {
+                creditService.cancelReservation(userId, operationId);
+            } catch (Exception cancelException) {
+                e.addSuppressed(cancelException);
+            }
+
+            throw e;
+        }
     }
 
 

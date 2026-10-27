@@ -40,7 +40,7 @@ public class RecommendationController {
         Integer userId = currentUserAccess.getCurrentUserId();
 
 
-        return ResponseEntity.status(200).body(recommendationService.getSmartRecommendations(userId, weights,language));
+        return ResponseEntity.status(200).body(recommendationService.getSmartRecommendationsWithCredits(userId, weights, language));
     }
 
     // Evaluate a neighborhood for the current user's lifestyle and commutes
@@ -88,7 +88,7 @@ public class RecommendationController {
         Integer userId = currentUserAccess.getCurrentUserId();
 
 
-        return ResponseEntity.status(200).body(recommendationService.getSelectedNeighborhoodRecommendations(userId, weights, language));
+        return ResponseEntity.status(200).body(recommendationService.getSelectedNeighborhoodRecommendationsWithCredits(userId, weights, language));
     }
 
 

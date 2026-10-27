@@ -40,6 +40,7 @@ public class PlacePreferenceService {
     private final GoogleRoutesClient googleRoutesClient;
     private final GooglePlacesClient googlePlacesClient;
     private final PropertyService propertyService;
+    private final CreditService creditService;
 
 
     //get Places for User
@@ -271,6 +272,37 @@ public List<PlacePreference>getMyPlaces(Integer userId){
 
 
 
+    // Generate a paid commute report using credits
+    public CommuteSummaryResponseDTO getCommuteAnalysisWithCredits(
+            Integer userId,
+            Double latitude,
+            Double longitude) {
+
+        String operationId = UUID.randomUUID().toString();
+
+        // Reserve 20 credits
+        creditService.reserveCredits(userId, "COMMUTE_REPORT", operationId);
+
+        try {
+            // Run the original commute analysis
+            CommuteSummaryResponseDTO response =
+                    getCommuteAnalysis(userId, latitude, longitude);
+
+            // Confirm credit deduction
+            creditService.confirmCredits(userId, operationId);
+
+            return response;
+
+        } catch (Exception e) {
+            try {
+                creditService.cancelReservation(userId, operationId);
+            } catch (Exception cancelException) {
+                e.addSuppressed(cancelException);
+            }
+
+            throw e;
+        }
+    }
 
 
 

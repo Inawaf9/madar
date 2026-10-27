@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +37,7 @@ public class PropertyComparisonService {
     private final RecommendationAI recommendationAI;
     private final PropertyService propertyService;
     private final SavedPropertyRepository savedPropertyRepository;
+    private final CreditService creditService;
 
 
 
@@ -161,6 +163,73 @@ public class PropertyComparisonService {
 
 
 
+    // Compare two properties and charge 10 credits
+    public PropertyComparisonResultDTO compareTwoPropertiesWithCredits(
+            Integer userId,
+            String firstSource,
+            String firstPropertyId,
+            String secondSource,
+            String secondPropertyId,
+            String language) {
+
+        String operationId = UUID.randomUUID().toString();
+
+        creditService.reserveCredits(userId, "AI_COMPARISON", operationId);
+
+        try {
+            PropertyComparisonResultDTO response = compareTwoProperties(
+                    userId,
+                    firstSource,
+                    firstPropertyId,
+                    secondSource,
+                    secondPropertyId,
+                    language
+            );
+
+            creditService.confirmCredits(userId, operationId);
+
+            return response;
+
+        } catch (Exception e) {
+            try {
+                creditService.cancelReservation(userId, operationId);
+            } catch (Exception cancelException) {
+                e.addSuppressed(cancelException);
+            }
+
+            throw e;
+        }
+    }
+
+
+    // Compare saved properties and charge 10 credits
+    public PropertyComparisonResultDTO compareMultiplePropertiesWithCredits(
+            Integer userId,
+            List<Integer> savedPropertyIds,
+            String language) {
+
+        String operationId = UUID.randomUUID().toString();
+
+        creditService.reserveCredits(userId, "AI_COMPARISON", operationId);
+
+        try {
+            PropertyComparisonResultDTO response =
+                    compareMultipleProperties(userId, savedPropertyIds, language);
+
+            creditService.confirmCredits(userId, operationId);
+
+            return response;
+
+        } catch (Exception e) {
+            try {
+                creditService.cancelReservation(userId, operationId);
+            } catch (Exception cancelException) {
+                e.addSuppressed(cancelException);
+            }
+
+            throw e;
+        }
+    }
 
 
     //Helper methods

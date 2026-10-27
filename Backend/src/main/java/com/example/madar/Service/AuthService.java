@@ -40,6 +40,7 @@ public class AuthService {
     private final PasswordResetService passwordResetService;
     private final RefreshTokenService refreshTokenService;
     private final N8nClient n8nClient;
+    private final CreditService creditService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -64,9 +65,7 @@ public class AuthService {
 
         user.setFullName(request.fullName().trim());
         user.setEmail(email);
-        user.setPassword(
-                passwordEncoder.encode(request.password())
-        );
+        user.setPassword(passwordEncoder.encode(request.password()));
 
         // Never accept the role from the client.
         user.setRole("USER");
@@ -75,6 +74,9 @@ public class AuthService {
         user.setNotificationsEnabled(false);
 
         User savedUser = userRepository.save(user);
+
+        // Give 100 welcome credits to the newly registered user.
+        creditService.createWelcomeWallet(savedUser);
 
         org.springframework.transaction.support.TransactionSynchronizationManager
                 .registerSynchronization(
@@ -140,11 +142,9 @@ public class AuthService {
         // - One-time usage
         // - Secure OTP hashing
         String otp = passwordResetService.createResetCode(user);
+        n8nClient.sendPasswordReset(user.getEmail(), otp);
 
-//        emailService.sendPasswordResetCode(
-//                user.getEmail(),
-//                otp
-//        );
+
     }
 
     // ==========================================

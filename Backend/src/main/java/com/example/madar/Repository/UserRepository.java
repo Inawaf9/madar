@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Lock;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
 import java.util.List;
@@ -27,11 +29,11 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     boolean existsByEmail(String email);
 
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT u FROM User u WHERE u.id = :userId")
-    Optional<User> findByIdForUpdate(
-            @Param("userId") Integer userId
-    );
+    @Query(
+            value = "SELECT * FROM user WHERE id = :userId FOR UPDATE",
+            nativeQuery = true
+    )
+    Optional<User> findByIdForUpdate(@Param("userId") Integer userId);
 
     // n8n - Weekly report recipients
     @Query("""
@@ -45,5 +47,17 @@ public interface UserRepository extends JpaRepository<User, Integer> {
         ORDER BY u.id
         """)
     List<User> findWeeklyReportRecipients();
+
+    Page<User> findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+            String fullName,
+            String email,
+            Pageable pageable
+    );
+
+    Page<User> findByActiveTrueAndSuspendedByAdminFalse(Pageable pageable);
+
+    Page<User> findByActiveFalse(Pageable pageable);
+
+    Page<User> findBySuspendedByAdminTrue(Pageable pageable);
 
 }

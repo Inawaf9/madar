@@ -50,7 +50,7 @@ public class SavedPropertyController {
     }
 
     @GetMapping("/me/check")
-    public ResponseEntity<Boolean> isPropertySaved(@RequestParam String source, @RequestParam String externalId) {
+    public ResponseEntity<?> isPropertySaved(@RequestParam String source, @RequestParam String externalId) {
         Integer userId = currentUserAccess.getCurrentUserId();
 
 

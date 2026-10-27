@@ -30,9 +30,14 @@ public class NotificationService {
         if (user == null) {
             throw new ApiException("User not found");
         }
-        if (!Boolean.TRUE.equals(user.getNotificationsEnabled())
-                || !Boolean.TRUE.equals(user.getActive())
-                || Boolean.TRUE.equals(user.getSuspendedByAdmin())) {
+        boolean optionalNotification =
+                "PRICE_DROP".equals(type)
+                        || "PRICE_INCREASE".equals(type)
+                        || "PRICE_CHANGE".equals(type)
+                        || "PROMOTION".equals(type);
+
+        if (optionalNotification
+                && !Boolean.TRUE.equals(user.getNotificationsEnabled())) {
             return;
         }
 

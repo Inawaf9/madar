@@ -2,7 +2,6 @@
 package com.example.madar.Service;
 
 import com.example.madar.Api.ApiException;
-import com.example.madar.Client.N8nClient;
 import com.example.madar.DTO.Out.User.ProfileCompletionDTO;
 import com.example.madar.DTO.Out.User.UserDashboardSummaryDTO;
 import com.example.madar.Model.CurrentHome;
@@ -29,32 +28,10 @@ public class UserService {
     private final CurrentHomeRepository currentHomeRepository;
     private final LifestyleInterestRepository lifestyleInterestRepository;
     private final PaymentRepository paymentRepository;
-    private final N8nClient n8nClient;
 
 
 
     //USER
-
-    //register
-    public void register(User user){
-        if(userRepository.existsByEmail(user.getEmail())){
-            throw new ApiException("Email is already registered");
-        }
-
-        if (user.getNotificationsEnabled() == null) {
-            user.setNotificationsEnabled(false);
-        }
-
-        user.setId(null);
-        user.setRole("USER");
-        user.setActive(true);
-        user.setSuspendedByAdmin(false);
-
-        //Todo : encode password with BCrypt when Spring Security is added
-        userRepository.save(user);
-        //welcome email from n8n
-        n8nClient.sendWelcome(user.getFullName(), user.getEmail());
-    }
 
     //get my account
     public User getMyAccount(Integer userId){
@@ -77,7 +54,6 @@ public class UserService {
         }
         oldUser.setFullName(updated.getFullName());
         oldUser.setEmail(updated.getEmail());
-        oldUser.setPassword(updated.getPassword());
         userRepository.save(oldUser);
     }
 
@@ -221,100 +197,5 @@ public class UserService {
 
         user.setNotificationsEnabled(enabled);
         userRepository.save(user);
-    }
-
-
-    //ADMIN
-
-    //get all users Todo:(admin)
-    //admin get all users
-    public List<User> getAllUsers(Integer adminId){
-        checkAdmin(adminId);
-        return userRepository.findAll();
-    }
-
-    //admin update user
-    public void adminUpdateUser(Integer adminId, Integer userId, User updated){
-        checkAdmin(adminId);
-        User oldUser = userRepository.findUserById(userId);
-        if(oldUser == null){
-            throw new ApiException("User not found");
-        }
-        User userWithEmail = userRepository.findUserByEmail(updated.getEmail());
-        if(userWithEmail != null && !userWithEmail.getId().equals(userId)){
-            throw new ApiException("Email is already used by another account");
-        }
-        oldUser.setFullName(updated.getFullName());
-        oldUser.setEmail(updated.getEmail());
-        oldUser.setPassword(updated.getPassword());
-        userRepository.save(oldUser);
-    }
-
-    //admin delete user
-    @Transactional
-    public void adminDeleteUser(Integer adminId, Integer userId) {
-
-        checkAdmin(adminId);
-
-        if (adminId.equals(userId)) {
-            throw new ApiException("Admin cannot delete their own account from here");
-        }
-
-        deleteMyAccount(userId);
-    }
-
-    // Admin temporarily suspends a user
-    @Transactional
-    public void adminSuspendUser(Integer adminId, Integer userId) {
-
-        checkAdmin(adminId);
-
-        if (adminId.equals(userId)) {
-            throw new ApiException("Admin cannot suspend their own account");
-        }
-
-        User user = userRepository.findUserById(userId);
-
-        if (user == null) {
-            throw new ApiException("User not found");
-        }
-
-        user.setSuspendedByAdmin(true);
-
-        userRepository.save(user);
-    }
-
-    @Transactional
-    public void adminUnsuspendUser(Integer adminId, Integer userId) {
-
-        checkAdmin(adminId);
-
-        User user = userRepository.findUserById(userId);
-
-        if (user == null) {
-            throw new ApiException("User not found");
-        }
-
-        if (!Boolean.TRUE.equals(user.getSuspendedByAdmin())) {
-            throw new ApiException("Account is not suspended by admin");
-        }
-
-        user.setSuspendedByAdmin(false);
-
-        userRepository.save(user);
-    }
-
-
-    //helper method
-
-    //check admin
-    private void checkAdmin(Integer adminId){
-        User admin = userRepository.findUserById(adminId);
-        if(admin == null){
-            throw new ApiException("Admin not found");
-        }
-        if(!admin.getRole().equals("ADMIN")){
-            throw new ApiException("Only admin can perform this action");
-        }
     }
 }

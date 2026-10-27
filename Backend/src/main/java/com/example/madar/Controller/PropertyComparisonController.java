@@ -97,7 +97,7 @@ public class PropertyComparisonController {
     ,@RequestHeader(value = "Accept-Language", defaultValue = "ar") String language) {
         Integer userId = currentUserAccess.getCurrentUserId();
 
-        return ResponseEntity.status(200).body(comparisonService.compareTwoProperties(userId, firstSource, firstPropertyId, secondSource, secondPropertyId,language));
+        return ResponseEntity.status(200).body(comparisonService.compareTwoPropertiesWithCredits(userId, firstSource, firstPropertyId, secondSource, secondPropertyId, language));
     }
 
 
@@ -109,7 +109,7 @@ public class PropertyComparisonController {
         resourceOwnershipAccess.requireSavedProperties(savedPropertyIds);
 
 
-        return ResponseEntity.status(200).body(comparisonService.compareMultipleProperties(userId, savedPropertyIds,language));
+        return ResponseEntity.status(200).body(comparisonService.compareMultiplePropertiesWithCredits(userId, savedPropertyIds, language));
     }
 
 

@@ -9,7 +9,6 @@ import com.example.madar.DTO.Out.Commute.CommuteSummaryResponseDTO;
 import com.example.madar.DTO.Out.GooglePlaces.GooglePlacesResponseDTO;
 import com.example.madar.DTO.Out.PlacePreference.PlacePreferenceSummaryDTO;
 import com.example.madar.Service.PlacePreferenceService;
-import com.example.madar.Service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +22,6 @@ public class PlacePreferenceController {
     private final CurrentUserAccess currentUserAccess;
     private final ResourceOwnershipAccess resourceOwnershipAccess;
     private final PlacePreferenceService placePreferenceService;
-    private final PaymentService paymentService;
 
     //get my places
     @GetMapping("/me")
@@ -73,14 +71,13 @@ public class PlacePreferenceController {
     }
 
 
-    // Get commute details and estimated weekly travel time
+    // Get commute details using credits
     @GetMapping("/me/commutes")
     public ResponseEntity<CommuteSummaryResponseDTO> calculateCommutes(@RequestParam Double latitude, @RequestParam Double longitude) {
+
         Integer userId = currentUserAccess.getCurrentUserId();
 
-        paymentService.requireCommuteAccess(userId);
-        CommuteSummaryResponseDTO response = placePreferenceService.getCommuteAnalysis(userId, latitude, longitude);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).body(placePreferenceService.getCommuteAnalysisWithCredits(userId, latitude, longitude));
     }
 
 

@@ -95,6 +95,10 @@ public class User implements UserDetails {
     @JsonIgnore
     private List<MovingTask> movingTasks;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private CreditWallet creditWallet;
+
 
     @PrePersist
     public void onCreate() {

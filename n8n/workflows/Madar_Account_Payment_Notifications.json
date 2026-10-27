@@ -1,0 +1,432 @@
+{
+  "name": "Madar_Account_Payment_Notifications",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "madar-account-payment",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -272,
+        16
+      ],
+      "id": "6f0d521c-3bcf-4b33-8d7a-2cce8a177bee",
+      "name": "Webhook",
+      "webhookId": "6554ab16-a5a8-410a-a60d-9b9d7f77abd7",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fyTs7TXsbUf2nC3Q",
+          "name": "Header Auth account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.eventType }}",
+                    "rightValue": "ACCOUNT_SUSPENDED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "5c0fd325-90f3-4be8-be32-f5e9a3c1fe00"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Suspended"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "0887d78c-53a2-4852-ab8a-5377f2bb694f",
+                    "leftValue": "={{ $json.body.eventType }}",
+                    "rightValue": "ACCOUNT_UNSUSPENDED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unsuspended"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "6fb37610-08e2-42e5-8cef-10cf74690d91",
+                    "leftValue": "={{ $json.body.eventType }}",
+                    "rightValue": "PAYMENT_SUCCESS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PaymentSuccess"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        32,
+        0
+      ],
+      "id": "f76adc4e-dca6-4e0d-9e7e-935832326269",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1b22645-830c-47a0-ace4-d89b0e0d805a",
+              "name": "toEmail",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "4be78355-c694-450c-a45e-df2909f8b9b2",
+              "name": "fullName",
+              "value": "={{ $json.body.fullName }}",
+              "type": "string"
+            },
+            {
+              "id": "0892f41d-07fe-417d-a61b-ff5cb126c269",
+              "name": "subject",
+              "value": "إشعار بشأن حسابك في مدار",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        -160
+      ],
+      "id": "9060f054-805f-4926-b212-54001b7e471f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=\n{{ JSON.stringify({\n  sender: { name: \"Madar | مدار\", email: \"madarplatform@aol.com\" },\n  to: [{ email: $json.toEmail, name: $json.fullName }],\n  subject: $json.subject,\n  htmlContent: `<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#F3F0EB;\" dir=\"rtl\"><tr><td align=\"center\" style=\"padding:32px 12px;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;background-color:#FFFFFF;border-radius:16px;\" dir=\"rtl\">\n<tr><td align=\"center\" style=\"background-color:#FFFFFF;border-radius:16px 16px 0 0;border-bottom:3px solid #BA9077;padding:28px 24px;\">\n<img src=\"https://res.cloudinary.com/tadyisak/image/upload/f_auto,q_auto/madar-logo\" alt=\"مدار\" width=\"120\" style=\"display:block;width:120px;max-width:120px;height:auto;border:0;margin:0 auto 12px;\">\n<p style=\"margin:0;font-family:Tahoma,Arial,sans-serif;font-size:20px;font-weight:bold;color:#414C6B;\">مدار</p>\n<p style=\"margin:6px 0 0;font-family:Tahoma,Arial,sans-serif;font-size:13px;color:#BA9077;\">السكن، من منظور أوسع</p>\n</td></tr>\n<tr><td style=\"padding:32px 28px 10px;font-family:Tahoma,Arial,sans-serif;text-align:right;\">\n<p style=\"margin:0 0 18px;font-size:22px;font-weight:bold;color:#29292E;\">إشعار بتعليق الحساب</p>\n<p style=\"margin:0 0 18px;font-size:15px;line-height:1.9;color:#29292E;\">مرحبًا ${String($json.fullName || \"عزيزنا المستخدم\").replace(/[<>&\"'`]/g, \"\")}،</p>\n<p style=\"margin:0 0 20px;font-size:15px;line-height:1.9;color:#29292E;\">نود إبلاغك بأنه تم تعليق حسابك في منصة مدار من قِبل الإدارة. خلال فترة التعليق، لن تتمكن من تسجيل الدخول أو الاستفادة من خدمات المنصة.</p>\n</td></tr>\n<tr><td style=\"padding:0 28px 24px;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#F3F0EB;border-radius:10px;\" dir=\"rtl\">\n<tr><td style=\"padding:18px 20px;font-family:Tahoma,Arial,sans-serif;font-size:14px;line-height:1.9;color:#414C6B;text-align:right;\">إذا كنت تعتقد أن التعليق حدث بالخطأ، يمكنك التواصل مع فريق دعم مدار لمراجعة حالة حسابك.</td></tr>\n</table>\n</td></tr>\n<tr><td style=\"padding:0 28px 30px;font-family:Tahoma,Arial,sans-serif;text-align:right;\">\n<p style=\"margin:0 0 20px;font-size:14px;line-height:1.9;color:#74747C;\">سنُعلمك عبر البريد الإلكتروني عند فك التعليق عن حسابك.</p>\n<p style=\"margin:0;font-size:15px;line-height:1.9;color:#29292E;\">مع تحياتنا،<br><strong>فريق مدار</strong></p>\n</td></tr>\n<tr><td align=\"center\" style=\"border-top:1px solid #F3F0EB;padding:18px 24px 22px;font-family:Tahoma,Arial,sans-serif;\">\n<p style=\"margin:0 0 4px;font-size:13px;font-weight:bold;color:#414C6B;\">مدار</p>\n<p style=\"margin:0;font-size:12px;line-height:1.7;color:#74747C;\">هذه رسالة تلقائية لإبلاغك بتحديث حالة حسابك في مدار.</p>\n</td></tr>\n</table></td></tr></table>`\n}) }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        736,
+        -176
+      ],
+      "id": "9e3ef557-6c78-4f0d-b12c-b2f62438fb26",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "H2pQWBKisWTxDzgR",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1b22645-830c-47a0-ace4-d89b0e0d805a",
+              "name": "toEmail",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "4be78355-c694-450c-a45e-df2909f8b9b2",
+              "name": "fullName",
+              "value": "={{ $json.body.fullName }}",
+              "type": "string"
+            },
+            {
+              "id": "0892f41d-07fe-417d-a61b-ff5cb126c269",
+              "name": "subject",
+              "value": "تم فك تعليق حسابك في مدار",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        496,
+        48
+      ],
+      "id": "1ef5072d-5bab-4b52-aa7f-687d16deb4af",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1b22645-830c-47a0-ace4-d89b0e0d805a",
+              "name": "toEmail",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "4be78355-c694-450c-a45e-df2909f8b9b2",
+              "name": "fullName",
+              "value": "={{ $json.body.fullName }}",
+              "type": "string"
+            },
+            {
+              "id": "0892f41d-07fe-417d-a61b-ff5cb126c269",
+              "name": "paymentId",
+              "value": "{{ $json.body.paymentId }}",
+              "type": "string"
+            },
+            {
+              "id": "edc26e12-2381-4343-a7b1-4d04b3f0223e",
+              "name": "subject",
+              "value": "تأكيد نجاح عملية الدفع في مدار",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        480,
+        240
+      ],
+      "id": "f19193cb-78b3-4112-881d-df91d712ef4e",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=\n{{ JSON.stringify({\n  sender: { name: \"Madar | مدار\", email: \"madarplatform@aol.com\" },\n  to: [{ email: $json.toEmail, name: $json.fullName }],\n  subject: $json.subject,\n  htmlContent: `<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#F3F0EB;\" dir=\"rtl\"><tr><td align=\"center\" style=\"padding:32px 12px;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;background-color:#FFFFFF;border-radius:16px;\" dir=\"rtl\">\n<tr><td align=\"center\" style=\"background-color:#FFFFFF;border-radius:16px 16px 0 0;border-bottom:3px solid #BA9077;padding:28px 24px;\">\n<img src=\"https://res.cloudinary.com/tadyisak/image/upload/f_auto,q_auto/madar-logo\" alt=\"مدار\" width=\"120\" style=\"display:block;width:120px;max-width:120px;height:auto;border:0;margin:0 auto 12px;\">\n<p style=\"margin:0;font-family:Tahoma,Arial,sans-serif;font-size:20px;font-weight:bold;color:#414C6B;\">مدار</p>\n<p style=\"margin:6px 0 0;font-family:Tahoma,Arial,sans-serif;font-size:13px;color:#BA9077;\">السكن، من منظور أوسع</p>\n</td></tr>\n<tr><td style=\"padding:32px 28px 10px;font-family:Tahoma,Arial,sans-serif;text-align:right;\">\n<p style=\"margin:0 0 18px;font-size:22px;font-weight:bold;color:#29292E;\">حسابك رجع فعّالًا</p>\n<p style=\"margin:0 0 18px;font-size:15px;line-height:1.9;color:#29292E;\">مرحبًا ${String($json.fullName || \"عزيزنا المستخدم\").replace(/[<>&\"'`]/g, \"\")}،</p>\n<p style=\"margin:0 0 20px;font-size:15px;line-height:1.9;color:#29292E;\">يسعدنا إبلاغك بأنه تم فك التعليق عن حسابك في منصة مدار، وتقدر الآن تسجّل دخولك وتستخدم خدمات المنصة من جديد.</p>\n</td></tr>\n<tr><td style=\"padding:0 28px 24px;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#F3F0EB;border-radius:10px;\" dir=\"rtl\">\n<tr><td style=\"padding:18px 20px;font-family:Tahoma,Arial,sans-serif;font-size:14px;line-height:1.9;color:#414C6B;text-align:right;\">أهلًا بعودتك إلى مدار! نساعدك تختار السكن الأقرب لحياتك واحتياجاتك.</td></tr>\n</table>\n</td></tr>\n<tr><td style=\"padding:0 28px 30px;font-family:Tahoma,Arial,sans-serif;text-align:right;\">\n<p style=\"margin:0;font-size:15px;line-height:1.9;color:#29292E;\">مع تحياتنا،<br><strong>فريق مدار</strong></p>\n</td></tr>\n<tr><td align=\"center\" style=\"border-top:1px solid #F3F0EB;padding:18px 24px 22px;font-family:Tahoma,Arial,sans-serif;\">\n<p style=\"margin:0 0 4px;font-size:13px;font-weight:bold;color:#414C6B;\">مدار</p>\n<p style=\"margin:0;font-size:12px;line-height:1.7;color:#74747C;\">هذه رسالة تلقائية لإبلاغك بتحديث حالة حسابك في مدار.</p>\n</td></tr>\n</table></td></tr></table>`\n}) }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        768,
+        16
+      ],
+      "id": "b1129105-048c-4dc8-9313-1c38ed25c7cf",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "H2pQWBKisWTxDzgR",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=\n{{ JSON.stringify({\n  sender: { name: \"Madar | مدار\", email: \"madarplatform@aol.com\" },\n  to: [{ email: $json.toEmail, name: $json.fullName }],\n  subject: $json.subject,\n  htmlContent: `<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#F3F0EB;\" dir=\"rtl\"><tr><td align=\"center\" style=\"padding:32px 12px;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;background-color:#FFFFFF;border-radius:16px;\" dir=\"rtl\">\n<tr><td align=\"center\" style=\"background-color:#FFFFFF;border-radius:16px 16px 0 0;border-bottom:3px solid #BA9077;padding:28px 24px;\">\n<img src=\"https://res.cloudinary.com/tadyisak/image/upload/f_auto,q_auto/madar-logo\" alt=\"مدار\" width=\"120\" style=\"display:block;width:120px;max-width:120px;height:auto;border:0;margin:0 auto 12px;\">\n<p style=\"margin:0;font-family:Tahoma,Arial,sans-serif;font-size:20px;font-weight:bold;color:#414C6B;\">مدار</p>\n<p style=\"margin:6px 0 0;font-family:Tahoma,Arial,sans-serif;font-size:13px;color:#BA9077;\">السكن، من منظور أوسع</p>\n</td></tr>\n<tr><td style=\"padding:32px 28px 10px;font-family:Tahoma,Arial,sans-serif;text-align:right;\">\n<p style=\"margin:0 0 18px;font-size:22px;font-weight:bold;color:#29292E;\">تمت عملية الدفع بنجاح</p>\n<p style=\"margin:0 0 18px;font-size:15px;line-height:1.9;color:#29292E;\">مرحبًا ${String($json.fullName || \"عزيزنا المستخدم\").replace(/[<>&\"'&\\x60]/g, \"\")}،</p>\n<p style=\"margin:0 0 20px;font-size:15px;line-height:1.9;color:#29292E;\">نؤكد لك نجاح عملية الدفع في منصة مدار، وتمت إضافة رصيد الكريدت الذي اشتريته إلى محفظتك بنجاح.</p>\n</td></tr>\n<tr><td style=\"padding:0 28px 24px;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#F3F0EB;border-radius:10px;\" dir=\"rtl\">\n<tr><td style=\"padding:18px 20px;font-family:Tahoma,Arial,sans-serif;font-size:14px;line-height:2;color:#414C6B;text-align:right;\">\n<p style=\"margin:0 0 8px;font-weight:bold;color:#414C6B;\">تفاصيل العملية</p>\n<strong>رقم العملية:</strong> ${String($json.paymentId || \"—\").replace(/[<>&\"'&\\x60]/g, \"\")}\n<br><strong>حالة الدفع:</strong> مكتمل بنجاح\n</td></tr>\n</table>\n</td></tr>\n<tr><td style=\"padding:0 28px 30px;font-family:Tahoma,Arial,sans-serif;text-align:right;\">\n<p style=\"margin:0 0 18px;font-size:15px;line-height:1.9;color:#29292E;\">رصيدك جاهز الآن للاستفادة من التوصيات الذكية، ومقارنة العقارات، والمساعد الذكي، وتقارير المشاوير.</p>\n<p style=\"margin:0;font-size:15px;line-height:1.9;color:#29292E;\">شكرًا لثقتك بمدار.<br><strong>فريق مدار</strong></p>\n</td></tr>\n<tr><td align=\"center\" style=\"border-top:1px solid #F3F0EB;padding:18px 24px 22px;font-family:Tahoma,Arial,sans-serif;\">\n<p style=\"margin:0 0 4px;font-size:13px;font-weight:bold;color:#414C6B;\">مدار</p>\n<p style=\"margin:0;font-size:12px;line-height:1.7;color:#74747C;\">وصلك هذا الإيميل لتأكيد نجاح عملية الدفع في منصة مدار.</p>\n</td></tr>\n</table></td></tr></table>`\n}) }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        768,
+        256
+      ],
+      "id": "50fa8093-032a-4585-85cd-4e15f431ca52",
+      "name": "HTTP Request2",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "H2pQWBKisWTxDzgR",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "740c4f04-f9aa-4e88-ab63-1ba76b5c2c16",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fe092880e0c78ddca9fd2f6750fd324a7822e75bac5151e4e9b6e939798af9e6"
+  },
+  "nodeGroups": [],
+  "id": "v9zQb2jLc1zzES2y",
+  "tags": []
+}

@@ -30,7 +30,7 @@ public class AiController {
     public ResponseEntity<?> chat(@RequestBody @Valid ChatRequestDTO request){
         Integer userId = currentUserAccess.getCurrentUserId();
 
-        return ResponseEntity.status(200).body(aiService.chat(userId, request.getMessage()));
+        return ResponseEntity.status(200).body(aiService.chatWithCredits(userId, request.getMessage()));
     }
     //start a new chat (forget old messages)
     @DeleteMapping("/chat")

@@ -56,6 +56,19 @@ public class Payment {
 
     private Integer refundedAmount;
 
+    // Snapshot of purchased credit package.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "credit_package_id")
+    @JsonIgnore
+    private CreditPackage creditPackage;
+
+    // Credits agreed at checkout time.
+    @Column(name = "purchased_credits")
+    private Integer purchasedCredits;
+
+    @Column(name = "refunded_credits")
+    private Integer refundedCredits = 0;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
