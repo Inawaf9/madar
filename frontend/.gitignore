@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-*/
 /out/
 # Generated from the installed package before dev/build; no bundled vendor code.
 /public/maplibre/
@@ -41,6 +42,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-/.next-verification/
-/.next-production-check/

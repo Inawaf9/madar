@@ -1,2 +1,4 @@
-import { LocationsSkeleton } from "@/components/product/page-skeleton";
-export default function Loading() { return <LocationsSkeleton />; }
+import { LocationsSkeleton } from "@/features/account/skeletons";
+export default function Loading() {
+  return <LocationsSkeleton />;
+}

@@ -1,13 +1,21 @@
-import type { AccountInput, ApiResponse, UserResponse, ProfileCompletion, DashboardSummary } from "./contracts";
-
-import { apiRequest } from "./client";
-
+import type {
+  ApiResponse,
+  UserResponse,
+  ProfileCompletion,
+  DashboardSummary,
+} from "./contracts";
+import { apiRequest, apiGet } from "./client";
 export const profileApi = {
-  completion: (id: number, signal?: AbortSignal) => apiRequest<ProfileCompletion>(`/api/v1/user/profile-completion/${id}`, { signal }),
-  dashboard: (id: number, signal?: AbortSignal) => apiRequest<DashboardSummary>(`/api/v1/user/dashboard-summary/${id}`, { signal }),
-  update: (userId: number, body: AccountInput) => apiRequest<ApiResponse>(`/api/v1/user/update/${userId}`, { method: "PUT", body }),
-  remove: (userId: number) => apiRequest<ApiResponse>(`/api/v1/user/delete/${userId}`, { method: "DELETE" }),
-  get: (userId: number, signal?: AbortSignal) => apiRequest<UserResponse>(`/api/v1/user/get/${userId}`, { signal }),
+  completion: (signal?: AbortSignal) =>
+    apiRequest<ProfileCompletion>("/api/v1/user/me/profile-completion", { signal }),
+  dashboard: (signal?: AbortSignal) =>
+    apiRequest<DashboardSummary>("/api/v1/user/me/dashboard-summary", { signal }),
+  remove: () => apiRequest<ApiResponse>("/api/v1/user/me", { method: "DELETE" }),
+  deactivate: () =>
+    apiRequest<ApiResponse>("/api/v1/user/me/deactivate", { method: "PUT" }),
+  notifications: (enabled: boolean) =>
+    apiRequest<ApiResponse>(`/api/v1/user/me/notifications?enabled=${enabled}`, {
+      method: "PUT",
+    }),
+  get: (signal?: AbortSignal) => apiGet<UserResponse>("/api/v1/user/me", {}, signal),
 };
-
-export const registerUser = (body: AccountInput) => apiRequest<ApiResponse>("/api/v1/user/register", { method: "POST", body });

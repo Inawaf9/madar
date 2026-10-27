@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { categories } from "./discovery-contracts";
+import type { Property } from "./discovery-contracts";
 
 export type ApiResponse = { message: string | null };
 export type UserResponse = {
@@ -24,7 +24,10 @@ export type HousingPreference = {
   district?: string | null;
   maxBudget: number;
   occupantsCount: number | null;
-  interests: string[] | null;
+  /** View-only active codes derived from the lifestyleInterests response. Never sent as housing input. */
+  interests: string[];
+  lifestyleInterests?: LifestyleInterest[];
+  includeNearbyServices?: boolean | null;
   propertyType: string;
   listingType: "rent" | "sale";
   user?: UserResponse | null;
@@ -43,7 +46,11 @@ export type SavedProperty = {
   externalPropertyId: string;
   source: string;
   titleSnapshot?: string | null;
+  titleSnapshotAr?: string | null;
+  titleSnapshotEn?: string | null;
   savedAt?: string | null;
+  available?: boolean;
+  property?: Property | null;
 };
 export type PropertyComparison = {
   id?: number | null;
@@ -55,35 +62,56 @@ export type PropertyComparison = {
 };
 
 const requiredNumber = z.preprocess(
-  (value) => value === "" || (typeof value === "number" && Number.isNaN(value)) ? undefined : value,
+  (value) =>
+    value === "" || (typeof value === "number" && Number.isNaN(value))
+      ? undefined
+      : value,
   z.number(),
 );
 
-export const userIdSchema = z.object({ userId: z.coerce.number().int().positive().max(2147483647) });
 export const placeSchema = z.object({
-  name: z.string().min(1).max(100), type: z.string().min(1).max(50),
-  latitude: requiredNumber.pipe(z.number().min(-90).max(90)), longitude: requiredNumber.pipe(z.number().min(-180).max(180)),
-  importance: requiredNumber.pipe(z.number().int().min(1).max(5)), visitPerWeek: requiredNumber.pipe(z.number().int()),
+  name: z.string().min(1).max(100),
+  type: z.string().min(1).max(50),
+  latitude: requiredNumber.pipe(z.number().min(-90).max(90)),
+  longitude: requiredNumber.pipe(z.number().min(-180).max(180)),
+  importance: requiredNumber.pipe(z.number().int().min(1).max(5)),
+  visitPerWeek: requiredNumber.pipe(z.number().int()),
 });
 export const savedPropertySchema = z.object({
-  externalPropertyId: z.string().min(1).max(150), source: z.string().min(1).max(50),
-  titleSnapshot: z.string().max(200).optional(),
+  externalPropertyId: z.string().min(1).max(150),
+  source: z.string().min(1).max(50),
 });
-export const comparisonSchema = z.object({
-  firstPropertyId: z.string().min(1).max(150), firstPropertySource: z.string().min(1).max(50),
-  secondPropertyId: z.string().min(1).max(150), secondPropertySource: z.string().min(1).max(50),
-}).refine((value) => value.firstPropertyId !== value.secondPropertyId || value.firstPropertySource !== value.secondPropertySource, {
-  path: ["secondPropertyId"], message: "Choose two different listings.",
-});
+export const comparisonSchema = z
+  .object({
+    firstPropertyId: z.string().min(1).max(150),
+    firstPropertySource: z.string().min(1).max(50),
+    secondPropertyId: z.string().min(1).max(150),
+    secondPropertySource: z.string().min(1).max(50),
+  })
+  .refine(
+    (value) =>
+      value.firstPropertyId !== value.secondPropertyId ||
+      value.firstPropertySource !== value.secondPropertySource,
+    {
+      path: ["secondPropertyId"],
+      message: "Choose two different listings.",
+    },
+  );
 export const currentHomeSchema = z.object({
-  latitude: requiredNumber.pipe(z.number().min(-90).max(90)), longitude: requiredNumber.pipe(z.number().min(-180).max(180)), externalPropertyId: z.string().max(150).optional(),
-  source: z.string().max(50).optional(), movedInAt: z.union([z.iso.date(), z.literal("")]).optional(),
+  latitude: requiredNumber.pipe(z.number().min(-90).max(90)),
+  longitude: requiredNumber.pipe(z.number().min(-180).max(180)),
+  externalPropertyId: z.string().max(150).nullable().optional(),
+  source: z.string().max(50).nullable().optional(),
 });
 export const housingPreferenceSchema = z.object({
-  region: z.string().min(1).max(100), city: z.string().regex(/^[a-z-]+$/), district: z.string().max(100).optional(),
+  region: z.string().min(1).max(100),
+  city: z.string().regex(/^[a-z-]+$/),
+  district: z.string().max(100).nullable().optional(),
   occupantsCount: requiredNumber.pipe(z.number().int().min(1).max(2147483647)),
-  interests: z.array(z.enum(categories)),
-  maxBudget: requiredNumber.pipe(z.number().min(1)), propertyType: z.enum(["apartment", "villa", "floor", "duplex", "building"]), listingType: z.enum(["rent", "sale"]),
+  includeNearbyServices: z.boolean().nullable().optional(),
+  maxBudget: requiredNumber.pipe(z.number().min(1)),
+  propertyType: z.enum(["apartment", "villa", "floor", "duplex", "building"]),
+  listingType: z.enum(["rent", "sale"]),
 });
 export type PlaceInput = z.infer<typeof placeSchema>;
 export type SavedPropertyInput = z.infer<typeof savedPropertySchema>;
@@ -94,12 +122,57 @@ export type HousingPreferenceInput = z.infer<typeof housingPreferenceSchema>;
 export const accountSchema = z.object({
   fullName: z.string().min(3).max(100),
   email: z.email().max(100),
-  password: z.string().min(8).max(64).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9\s])\S{8,64}$/),
+  password: z
+    .string()
+    .min(8)
+    .max(64)
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9\s])\S{8,64}$/),
 });
 export type AccountInput = z.infer<typeof accountSchema>;
 
-export type HomeStatus = { status: "NO_HOME" | "PENDING_MOVE" | "MOVED_IN"; homeId: number | null; movedInAt: string | null };
-export type ProfileCompletion = { completionPercentage: number; housingCompleted: boolean; placesCompleted: boolean; interestsCompleted: boolean; readyForSearch: boolean; missingFeatures: { feature: string; messageKey: string }[] };
-export type DashboardSummary = { userId: number; housingPreferencesCompleted: boolean; savedPropertiesCount: number; importantLocationsCount: number; currentHomeStatus: HomeStatus["status"] };
+export type HomeStatus = {
+  status: "NO_HOME" | "HOME_SET" | "MOVED_IN";
+  homeId: number | null;
+  movedInAt: string | null;
+};
+export type ProfileCompletion = {
+  completionPercentage: number;
+  housingCompleted: boolean;
+  placesCompleted: boolean;
+  interestsCompleted: boolean;
+  readyForSearch: boolean;
+  missingFeatures: { feature: string; messageKey: string }[];
+};
+export type DashboardSummary = {
+  userId: number;
+  housingPreferencesCompleted: boolean;
+  savedPropertiesCount: number;
+  importantLocationsCount: number;
+  currentHomeStatus: HomeStatus["status"];
+};
 export type SavedSummary = { totalSaved: number; countBySource: Record<string, number> };
 export type PlacesSummary = { totalPlaces: number; countByType: Record<string, number> };
+
+export const lifestyleInterestSchema = z.object({
+  code: z.string().trim().min(1).max(60),
+  active: z.boolean().nullable().optional(),
+});
+export type LifestyleInterestInput = z.infer<typeof lifestyleInterestSchema>;
+export type LifestyleInterest = {
+  id: number;
+  code: string;
+  active: boolean | null;
+  category?: string;
+  searchType?: string;
+  googlePlaceType?: string | null;
+  searchQuery?: string | null;
+};
+export type UserNotification = {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  referenceUrl: string | null;
+  isRead: boolean;
+  createdAt: string;
+};

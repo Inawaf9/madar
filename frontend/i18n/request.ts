@@ -7,10 +7,12 @@ export default getRequestConfig(async () => {
   const requestedLocale = await rootParams.locale();
   // Error/not-found rendering can also request messages. Validate the URL in
   // the locale layout, rather than throwing while configuring translations.
-  const locale = hasLocale(routing.locales, requestedLocale) ? requestedLocale : routing.defaultLocale;
+  const locale = hasLocale(routing.locales, requestedLocale)
+    ? requestedLocale
+    : routing.defaultLocale;
 
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    messages: (await import(`../messages/${locale}/index`)).messages,
   };
 });

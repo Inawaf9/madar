@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
-import { LandingPage } from "@/components/landing/landing-page";
+import { LandingPage } from "@/features/marketing/landing/landing-page";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const arabic = locale === "ar";
   return {
-    title: arabic ? "مدار | بيتك المناسب بناءً على حياتك" : "MADAR | The right home, built around your life",
+    title: arabic ? "مدار | بيت يناسب يومك" : "MADAR | Find a home that fits your day",
     description: arabic
-      ? "اكتشف خيارات السكن وقارن بينها وفق المواقع التي تهمك وإيقاع يومك."
-      : "Explore and compare homes around the places that matter and the rhythm of your day.",
+      ? "تصفّح العقارات وقارن بينها حسب ميزانيتك ومشاويرك والأماكن اللي تهمك."
+      : "Explore and compare properties by budget, commute, and the places that matter to you.",
     alternates: { languages: { ar: "/ar", en: "/en" } },
-    openGraph: { locale: arabic ? "ar_SA" : "en_US", alternateLocale: [arabic ? "en_US" : "ar_SA"] },
+    openGraph: {
+      locale: arabic ? "ar_SA" : "en_US",
+      alternateLocale: [arabic ? "en_US" : "ar_SA"],
+    },
   };
 }
 

@@ -1,2 +1,4 @@
-import { ProfileSkeleton } from "@/components/product/page-skeleton";
-export default function Loading() { return <ProfileSkeleton />; }
+import { ProfileSkeleton } from "@/features/account/skeletons";
+export default function Loading() {
+  return <ProfileSkeleton />;
+}

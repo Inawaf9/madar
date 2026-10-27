@@ -1,0 +1,55 @@
+/* Only authentication forms inherit these presentation rules. Shared controls stay unchanged. */
+.madar-auth-fields [data-slot="field-group"] {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+.madar-auth-fields [data-slot="field"] {
+  gap: 0.5rem;
+}
+.madar-auth-fields [data-slot="field-label"] {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+.madar-auth-fields [data-slot="input"] {
+  height: 3.25rem;
+  font-size: 1rem;
+  background: var(--background);
+}
+.madar-auth-fields [data-slot="field-description"] {
+  font-size: 0.8125rem;
+  line-height: 1.75;
+}
+.madar-auth-fields [data-form-actions] {
+  display: block;
+  padding-top: 0.25rem;
+}
+.madar-auth-fields [data-form-actions] > button {
+  width: 100%;
+  min-height: 3.25rem;
+  font-size: 1rem;
+}
+.madar-auth-fields [data-slot="alert"] {
+  background: var(--background);
+}
+.madar-auth-fields [data-slot="input"]::placeholder {
+  opacity: 0.8;
+}
+.madar-auth-fields [data-slot="field-error"] {
+  line-height: 1.7;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .madar-auth-fields [data-slot="input"] {
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+  .madar-auth-fields [data-form-actions] > button {
+    transition:
+      background-color 160ms ease,
+      transform 160ms ease;
+  }
+  .madar-auth-fields [data-form-actions] > button:active {
+    transform: translateY(1px);
+  }
+}

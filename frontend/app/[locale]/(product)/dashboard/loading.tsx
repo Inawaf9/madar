@@ -1,2 +1,4 @@
-import { DashboardSkeleton } from "@/components/product/page-skeleton";
-export default function Loading() { return <DashboardSkeleton />; }
+import { DashboardSkeleton } from "@/features/workspace/skeletons";
+export default function Loading() {
+  return <DashboardSkeleton />;
+}

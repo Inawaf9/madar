@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   distDir: process.env.MADAR_NEXT_DIST_DIR || ".next",
   cacheComponents: true,
   partialPrefetching: true,
-  allowedDevOrigins: ['10.61.11.153', '192.168.0.81'],
+  allowedDevOrigins: ["10.61.11.153", "192.168.0.81"],
   turbopack: {
     rules: {
       "*.css": {

@@ -1,0 +1,16 @@
+{
+  "title": "Nearby services",
+  "description": "Choose a service type to see available places within 2 km of the property.",
+  "searching": "Searching",
+  "showServices": "Show services",
+  "categoriesLabel": "Nearby service types",
+  "resultsCount": "{count} available results",
+  "distanceNote": "Distances are approximate straight-line measurements from the property, not walking or driving distances.",
+  "unnamedPlace": "Unnamed place",
+  "placeDetails": "Place details",
+  "noResults": "No matching services",
+  "noResultsHint": "No results were returned for this type within the search area. Try another type.",
+  "showLess": "Show less",
+  "showMore": "Show more ({count})",
+  "startHint": "Choose a service type to start searching. Driving times are not calculated here."
+}

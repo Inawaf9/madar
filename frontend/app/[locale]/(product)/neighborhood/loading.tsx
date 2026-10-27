@@ -1,2 +1,4 @@
-import { NeighborhoodSkeleton } from "@/components/product/page-skeleton";
-export default function Loading() { return <NeighborhoodSkeleton />; }
+import { NeighborhoodSkeleton } from "@/features/neighborhood/skeletons";
+export default function Loading() {
+  return <NeighborhoodSkeleton />;
+}

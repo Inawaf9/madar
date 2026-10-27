@@ -1,10 +1,11 @@
 "use client";
 import { createContext, useContext } from "react";
-import type { useAssistantConversation } from "./use-assistant-conversation";
+import type { useAssistantConversation } from "./hooks/use-assistant-conversation";
 import type { useAssistantAccountContext } from "./assistant-account-context";
 
 type AssistantContextValue = ReturnType<typeof useAssistantConversation> & {
-  open: boolean; setOpen: (value: boolean) => void;
+  open: boolean;
+  setOpen: (value: boolean) => void;
   accountData: ReturnType<typeof useAssistantAccountContext>;
 };
 export const AssistantContext = createContext<AssistantContextValue | null>(null);

@@ -1,14 +1,17 @@
-import { cn } from "cn"
+import { cn } from "cn";
 
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="skeleton"
       aria-hidden="true"
-      className={cn("animate-pulse rounded-2xl bg-muted motion-reduce:animate-none", className)}
+      className={cn(
+        "animate-pulse rounded-2xl bg-muted motion-reduce:animate-none",
+        className,
+      )}
       {...props}
     />
-  )
+  );
 }
 
-export { Skeleton }
+export { Skeleton };

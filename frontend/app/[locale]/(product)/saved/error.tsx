@@ -1,3 +1,15 @@
 "use client";
-import { RouteError, type RouteErrorProps } from "@/components/product/route-error";
-export default function Error(props: RouteErrorProps) { return <RouteError {...props} title={"تعذّر عرض المحفوظات"} description={"حدث خطأ أثناء عرض القائمة. أعد المحاولة؛ لا يعني هذا حذف عقاراتك المحفوظة."} backHref={"/dashboard"} backLabel={"لوحة المتابعة"} />; }
+import { RouteError, type RouteErrorProps } from "@/components/shared/route-error";
+export default function Error(props: RouteErrorProps) {
+  return (
+    <RouteError
+      {...props}
+      title={"تعذّر عرض المحفوظات"}
+      description={
+        "ما قدرنا نعرض العقارات المحفوظة. حاول مرة ثانية. عقاراتك ما انحذفت بسبب خطأ العرض."
+      }
+      backHref={"/dashboard"}
+      backLabel={"لوحة التحكم"}
+    />
+  );
+}

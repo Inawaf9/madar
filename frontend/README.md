@@ -1,22 +1,21 @@
 # MADAR Frontend
 
-Next.js App Router client for MADAR, localized in Arabic and English. The public marketing site and consumer-facing product shell are available in Arabic and English.
+Next.js 16 App Router frontend for MADAR, localized in Arabic and English.
 
 ## Local development
 
-1. Copy `.env.example` to `.env.local` and set `API_BASE_URL` to the backend's URL (the default local backend is `http://localhost:8080`).
-2. Run `pnpm dev`.
-3. Open `/ar` or `/en`. The product experience is under `/ar/app` and `/en/app`; property discovery is under `/ar/app/properties` and `/en/app/properties`.
+1. Configure `MADAR_BACKEND_BASE_URL=http://localhost:8080` and the exact frontend `MADAR_APP_ORIGIN` using `.env.example` as a reference. Keep existing provider settings.
+2. Run `pnpm auth:cookie-key` to create an independent cookie encryption key in ignored `.env.local`. It does not display or overwrite an existing key.
+3. Start the documented Spring backend, then run `pnpm dev`.
+4. Open `/ar/login`, `/en/login`, `/ar/register`, or `/en/register`. Public discovery is under `/ar/properties` and `/en/properties`; the authenticated experience starts at `/ar/dashboard` or `/en/dashboard`.
 
-Sign-in and registration pages are available at `/sign-in` and `/register`, but credential submission is disabled. The backend has no login/session endpoint, does not hash passwords during registration, and does not authorize user ownership. The development profile selector is available only through the existing isolated-development gate; a local user ID is not authentication.
+Spring owns registration, login, JWT issuance/validation, account state, and authorization. Next.js transports its access JWT inside an jose JWE (dir/A256GCM) encrypted, authenticated HttpOnly cookie and sends Bearer headers only from allowlisted server BFF handlers. No frontend database, session service, JWT signing key, or browser token storage is required.
 
-## Isolated staging
+Production requires HTTPS and the same stable server-only `MADAR_AUTH_COOKIE_SECRET` on all Next.js instances. The new Spring token-pair/refresh/logout contracts are integrated. Logout revokes a refresh family; logout-all invalidates access account-wide. Automatic rotation is deliberately blocked because the strict single-use contract has no safe coordination/recovery mechanism for stateless replicas; the current frontend requires login after at most 15 minutes. See [auth implementation and setup](docs/FRONTEND_AUTH_IMPLEMENTATION.md).
 
-The backend proxy remains disabled unless running local development against a loopback host or explicitly configuring `MADAR_UNAUTHENTICATED_API_ENV=isolated-staging`. For Vercel, the app additionally refuses this setting when `VERCEL_ENV=production`.
+Business integrations follow the JWT controller migration: personal routes use `/me`, AI routes omit the caller ID, and administrative routes retain only target IDs. See the [complete frontend migration report](docs/FRONTEND_JWT_MIGRATION_REPORT.md) for endpoint coverage, strict DTOs, and remaining limitations.
 
-An enabled staging deployment must be inaccessible from the public internet, use non-sensitive test data, and have network-level restrictions. The environment check does not authenticate callers. Never set the staging flag on a public production deployment. Authentication and authorization must be completed before public launch.
-
-## Checks
+## Static validation
 
 - `pnpm lint`
 - `pnpm exec tsc --noEmit --incremental false`

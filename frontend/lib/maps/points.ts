@@ -15,11 +15,29 @@ export type MapPoint = {
   details?: string | null;
 };
 export function validCoordinates(latitude: unknown, longitude: unknown): boolean {
-  return typeof latitude === "number" && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
-    && typeof longitude === "number" && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+  return (
+    typeof latitude === "number" &&
+    Number.isFinite(latitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    typeof longitude === "number" &&
+    Number.isFinite(longitude) &&
+    longitude >= -180 &&
+    longitude <= 180
+  );
 }
 export function renderablePoints(points: readonly MapPoint[]) {
-  return Array.from(new Map(points.filter(point =>
-    ((point.provenance === "listing" || point.provenance === "user") ? point.kind !== "service" : point.provenance === "geoapify" && point.kind === "service") && validCoordinates(point.latitude, point.longitude)
-  ).map(point => [point.id, point])).values());
+  return Array.from(
+    new Map(
+      points
+        .filter(
+          (point) =>
+            (point.provenance === "listing" || point.provenance === "user"
+              ? point.kind !== "service"
+              : point.provenance === "geoapify" && point.kind === "service") &&
+            validCoordinates(point.latitude, point.longitude),
+        )
+        .map((point) => [point.id, point]),
+    ).values(),
+  );
 }

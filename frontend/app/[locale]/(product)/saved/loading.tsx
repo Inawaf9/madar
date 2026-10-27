@@ -1,2 +1,4 @@
-import { SavedPageSkeleton } from "@/components/product/page-skeleton";
-export default function Loading() { return <SavedPageSkeleton />; }
+import { SavedPageSkeleton } from "@/features/saved/skeletons";
+export default function Loading() {
+  return <SavedPageSkeleton />;
+}

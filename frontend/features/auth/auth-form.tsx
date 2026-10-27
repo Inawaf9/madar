@@ -1,30 +1,150 @@
 "use client";
-
-import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@/i18n/navigation";
-import { profileApi } from "@/lib/api/account";
-import { registerUser } from "@/lib/api/account";
-import { accountSchema, userIdSchema } from "@/lib/api/contracts";
-import { saveUserId } from "@/lib/user-id";
-import { DataForm } from "@/components/forms/data-form";
-import { Panel } from "@/components/shared/panel";
-import { PageHeading } from "@/components/shared/page-heading";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-export function AuthForm({ mode, developmentEnabled = false }: { mode: "login" | "register"; developmentEnabled?: boolean }) {
-  const t = useTranslations("Workspace"); const router = useRouter(); const cache = useQueryClient(); const [registered, setRegistered] = useState(false);
-  const establish = async (id: number) => { const user = await profileApi.get(id); if (user.id !== id) throw new Error("Invalid user response"); await cache.cancelQueries(); cache.clear(); saveUserId(user.id); router.replace("/dashboard"); };
-  return <section className="mx-auto grid max-w-5xl items-start gap-10 py-12 sm:py-20 lg:grid-cols-2"><div><PageHeading title={t(mode)} description={t("authIntro")} /><div className="rounded-3xl bg-primary p-8 text-primary-foreground"><p className="font-heading text-2xl leading-relaxed">{t("authQuote")}</p><p className="mt-5 text-sm opacity-80">{t("developmentNote")}</p></div></div><div className="flex flex-col gap-5"><Panel title={t(mode)}>
-    {mode === "register" ? registered ? null : <DataForm schema={accountSchema} fields={[{ name: "fullName", min: 3, maxLength: 100, autoComplete: "name", hint: "nameHint" }, { name: "email", type: "email", autoComplete: "email" }, { name: "password", type: "password", autoComplete: "new-password", hint: "passwordHint", maxLength: 64 }]} submitLabel={t("register")} onSubmit={async value => {
-      const result = await registerUser(value);
-      if ("id" in result && typeof result.id === "number" && result.id > 0) await establish(result.id);
-      else setRegistered(true);
-    }} /> : <Alert><AlertDescription>{t("loginGap")}</AlertDescription></Alert>}
-
-    {registered ? <Alert className="mt-5"><AlertDescription>{t("registeredNoId")}</AlertDescription></Alert> : null}
-    <p className="mt-6 text-sm text-muted-foreground"><Link href={mode === "login" ? "/register" : "/login"} className="underline underline-offset-4">{t(mode === "login" ? "needAccount" : "haveAccount")}</Link></p>
-  </Panel>{developmentEnabled ? <details className="rounded-2xl border bg-card p-5"><summary className="cursor-pointer text-sm font-medium">{t("developmentAccess")}</summary><p className="my-4 text-sm leading-6 text-muted-foreground">{t("developmentAccessHint")}</p><DataForm schema={userIdSchema as z.ZodType<{ userId: number }, Record<string, unknown>>} fields={[{ name: "userId", type: "number", min: 1, max: 2147483647 }]} submitLabel={t("continue")} onSubmit={async ({ userId }) => establish(userId)} /></details> : null}</div></section>;
+import { registerSchema, loginSchema, safeSessionSchema } from "@/lib/auth/contracts";
+import { authMutation, safeReturnTo } from "@/lib/auth/client";
+import { setClientSession } from "@/lib/user-id";
+import { broadcastAuthChange } from "./session-provider";
+import { DataForm, type FormFieldRenderProps } from "@/components/forms/data-form";
+import { AuthFrame } from "./auth-presentation";
+import { AuthField } from "./auth-field";
+import { LoginLegalNotice, RegistrationConsent } from "./auth-legal";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { ApiError } from "@/lib/api/errors";
+type ConfigurationStatus =
+  | "ready"
+  | "missing-cookie-key"
+  | "invalid-cookie-key"
+  | "invalid-backend"
+  | "invalid-origin";
+export function AuthForm({
+  mode,
+  configurationStatus,
+}: {
+  mode: "login" | "register";
+  configurationStatus: ConfigurationStatus;
+}) {
+  const available = configurationStatus === "ready";
+  const t = useTranslations("AuthUI");
+  const router = useRouter();
+  const cache = useQueryClient();
+  const registrationFormSchema = registerSchema.extend({
+    legalAgreement: z.literal(true, { error: t("consentRequired") }),
+  });
+  const submit = async (value: unknown) => {
+    const registration = mode === "register" ? registrationFormSchema.parse(value) : null;
+    const body = registration
+      ? {
+          fullName: registration.fullName,
+          email: registration.email,
+          password: registration.password,
+        }
+      : value;
+    const session = safeSessionSchema.parse(await authMutation(mode, body));
+    await cache.cancelQueries();
+    cache.clear();
+    setClientSession(session);
+    broadcastAuthChange();
+    router.replace(safeReturnTo(new URLSearchParams(window.location.search).get("next")));
+    router.refresh();
+  };
+  const fields = [
+    {
+      name: "email",
+      label: t("email"),
+      fullWidth: true,
+      render: (props: FormFieldRenderProps) => (
+        <AuthField
+          {...props}
+          kind="email"
+        />
+      ),
+    },
+    {
+      name: "password",
+      label: t("password"),
+      fullWidth: true,
+      ...(mode === "register" ? { description: t("passwordRequirements") } : {}),
+      render: (props: FormFieldRenderProps) => (
+        <AuthField
+          {...props}
+          kind="password"
+          newPassword={mode === "register"}
+        />
+      ),
+    },
+  ];
+  return (
+    <AuthFrame
+      title={t(`${mode}Title`)}
+      description={t(`${mode}Description`)}
+    >
+      {!available ? (
+        <Alert className="mb-6 bg-secondary/50">
+          <AlertTitle>{t("configurationTitle")}</AlertTitle>
+          <AlertDescription>{t("configurationDescription")}</AlertDescription>
+        </Alert>
+      ) : null}
+      <div className="madar-auth-fields">
+        {mode === "register" ? (
+          <DataForm
+            schema={registrationFormSchema}
+            defaults={{ legalAgreement: false }}
+            fields={[
+              {
+                name: "fullName",
+                label: t("fullName"),
+                fullWidth: true,
+                render: (props) => (
+                  <AuthField
+                    {...props}
+                    kind="fullName"
+                  />
+                ),
+              },
+              ...fields,
+              {
+                name: "legalAgreement",
+                label: t("consentLabel"),
+                fullWidth: true,
+                visuallyHiddenLabel: true,
+                validationMessage: t("consentRequired"),
+                render: (props) => <RegistrationConsent {...props} />,
+              },
+            ]}
+            submitLabel={t("registerSubmit")}
+            disabled={!available}
+            showSuccess={false}
+            onSubmit={submit}
+          />
+        ) : (
+          <DataForm
+            schema={loginSchema}
+            fields={fields}
+            submitLabel={t("loginSubmit")}
+            disabled={!available}
+            showSuccess={false}
+            onSubmit={submit}
+            getSubmitError={(error) =>
+              error instanceof ApiError && error.status === 401
+                ? t("invalidCredentials")
+                : undefined
+            }
+          />
+        )}
+      </div>
+      {mode === "login" ? <LoginLegalNotice /> : null}
+      <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 text-sm text-muted-foreground">
+        {t(mode === "login" ? "needAccount" : "haveAccount")}
+        <Link
+          href={mode === "login" ? "/register" : "/login"}
+          className="inline-flex min-h-11 items-center rounded-lg font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+        >
+          {t(mode === "login" ? "createAccount" : "signIn")}
+        </Link>
+      </p>
+    </AuthFrame>
+  );
 }

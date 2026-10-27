@@ -1,0 +1,14 @@
+{
+  "loginToSave": "Sign in to save this property",
+  "save": "Save property",
+  "remove": "Remove from saved",
+  "unsave": "Unsave property",
+  "updating": "Updating saved properties",
+  "updated": "Saved properties updated",
+  "updateFailed": "Could not update saved properties. Try again.",
+  "retrySaved": "Reload saved properties",
+  "retrySavedTitle": "Could not load saved properties. Try again.",
+  "compare": "Compare with a saved property",
+  "compareShort": "Compare",
+  "untitled": "Untitled property"
+}

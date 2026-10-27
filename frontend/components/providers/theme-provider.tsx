@@ -4,7 +4,10 @@ import { ThemeProvider as NextThemeProvider } from "next-themes";
 import { MotionConfig } from "motion/react";
 import type { ComponentProps } from "react";
 
-export function ThemeProvider({ children, ...props }: ComponentProps<typeof NextThemeProvider>) {
+export function ThemeProvider({
+  children,
+  ...props
+}: ComponentProps<typeof NextThemeProvider>) {
   // Preserve the existing React 19 remount workaround: the server copy runs
   // before hydration; the client-rendered copy must not execute a second time.
   const scriptProps =

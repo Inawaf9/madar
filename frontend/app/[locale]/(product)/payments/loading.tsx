@@ -1,2 +1,4 @@
-import { PaymentsSkeleton } from "@/components/product/page-skeleton";
-export default function Loading() { return <PaymentsSkeleton />; }
+import { PaymentsSkeleton } from "@/features/payments/skeletons";
+export default function Loading() {
+  return <PaymentsSkeleton />;
+}
