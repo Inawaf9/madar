@@ -11,5 +11,6 @@
     "**/.symlinks": true,
     "**/.plugin_symlinks": true,
     "**/node_modules": true
-  }
+  },
+  "i18n-ally.localesPaths": ["i18n", "messages", "features/properties/messages"]
 }

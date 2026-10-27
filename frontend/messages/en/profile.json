@@ -1,0 +1,11 @@
+{
+  "housingPreference": {
+    "missing": "Add housing preferences to personalize your options."
+  },
+  "importantLocations": {
+    "missing": "Optionally add important places for commute analysis."
+  },
+  "interests": {
+    "missing": "Optionally choose the nearby services that matter to you."
+  }
+}

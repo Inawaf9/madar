@@ -1,2 +1,4 @@
-import { InterestsSkeleton } from "@/components/product/page-skeleton";
-export default function Loading() { return <InterestsSkeleton />; }
+import { InterestsSkeleton } from "@/features/account/skeletons";
+export default function Loading() {
+  return <InterestsSkeleton />;
+}

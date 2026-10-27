@@ -18,6 +18,14 @@ export function getUserFacingApiError(error: unknown): string {
   if (error instanceof ApiError && error.status === 400) return "invalidRequest";
   if (error instanceof ApiError && error.status === 503) return "backendUnavailable";
   if (error instanceof ApiError && error.status === 404) return "featureUnavailable";
-  if (error instanceof ApiError && error.status === 408) return "requestTimedOut";
+  if (error instanceof ApiError && (error.status === 408 || error.status === 504))
+    return "requestTimedOut";
   return "requestFailed";
+}
+
+/** Invalid requests/auth/ownership denials are terminal, never automatic retry candidates. */
+export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  if (error instanceof ApiError && error.status >= 400 && error.status < 500)
+    return false;
+  return failureCount < 1;
 }

@@ -79,14 +79,15 @@
   --radius-3xl: calc(var(--radius) * 2.2);
 }
 
-:root, .dark {
+:root,
+.dark {
   --comparison: var(--primary);
   --comparison-foreground: var(--primary-foreground);
-  --brand-photo: #424D68;
-  --brand-photo-foreground: #FFFFFF;
-  --photo-overlay: #292A3040;
-  --photo-shade: #292A3099;
-  --scrim: #171A21;
+  --brand-photo: #424d68;
+  --brand-photo-foreground: #ffffff;
+  --photo-overlay: #292a3040;
+  --photo-shade: #292a3099;
+  --scrim: #171a21;
   --sidebar: var(--card);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -102,32 +103,35 @@
   --assistant-trigger-size: 3.5rem;
   --assistant-edge-gap: clamp(1rem, 2vw, 1.5rem);
   /* Reserve the fixed control's footprint inside content, never after the shell. */
-  --assistant-content-clearance: calc(var(--assistant-trigger-size) + var(--assistant-edge-gap) + env(safe-area-inset-bottom) + 1rem);
-  --background: #F4F0E9;
-  --foreground: #292A30;
-  --card: #FFFCF7;
-  --card-foreground: #292A30;
-  --popover: #FFFCF7;
-  --popover-foreground: #292A30;
-  --primary: #424D68;
-  --primary-foreground: #FFFFFF;
-  --secondary: #ECE5DB;
-  --secondary-foreground: #292A30;
-  --muted: #ECE5DB;
-  --muted-foreground: #696A70;
-  --accent: #B98B70;
-  --accent-ink: #855B43;
-  --accent-foreground: #292A30;
-  --destructive: #A33D35;
-  --destructive-foreground: #FFFFFF;
-  --border: #D9CFC0;
-  --input: #D9CFC0;
-  --ring: #424D68;
-  --chart-1: #424D68;
-  --chart-2: #B98B70;
-  --chart-3: #696A70;
+  --assistant-content-clearance: calc(
+    var(--assistant-trigger-size) + var(--assistant-edge-gap) +
+      env(safe-area-inset-bottom) + 1rem
+  );
+  --background: #f4f0e9;
+  --foreground: #292a30;
+  --card: #fffcf7;
+  --card-foreground: #292a30;
+  --popover: #fffcf7;
+  --popover-foreground: #292a30;
+  --primary: #424d68;
+  --primary-foreground: #ffffff;
+  --secondary: #ece5db;
+  --secondary-foreground: #292a30;
+  --muted: #ece5db;
+  --muted-foreground: #696a70;
+  --accent: #b98b70;
+  --accent-ink: #855b43;
+  --accent-foreground: #292a30;
+  --destructive: #a33d35;
+  --destructive-foreground: #ffffff;
+  --border: #d9cfc0;
+  --input: #d9cfc0;
+  --ring: #424d68;
+  --chart-1: #424d68;
+  --chart-2: #b98b70;
+  --chart-3: #696a70;
   --chart-4: #827560;
-  --chart-5: #71657F;
+  --chart-5: #71657f;
   --radius: 0.875rem;
   --stone-shadow: 0 18px 50px #292a3010;
   --panel-shadow: 0 2px 8px #292a3008;
@@ -136,71 +140,145 @@
 
 .dark {
   color-scheme: dark;
-  --background: #171A21;
-  --foreground: #F2EEE8;
-  --card: #252A35;
-  --card-foreground: #F2EEE8;
-  --popover: #252A35;
-  --popover-foreground: #F2EEE8;
-  --primary: #AAB8D2;
-  --primary-foreground: #171A21;
+  --background: #171a21;
+  --foreground: #f2eee8;
+  --card: #252a35;
+  --card-foreground: #f2eee8;
+  --popover: #252a35;
+  --popover-foreground: #f2eee8;
+  --primary: #aab8d2;
+  --primary-foreground: #171a21;
   --secondary: #303645;
-  --secondary-foreground: #F2EEE8;
+  --secondary-foreground: #f2eee8;
   --muted: #303645;
-  --muted-foreground: #B9BDC8;
-  --accent: #C99C82;
-  --accent-ink: #C99C82;
-  --accent-foreground: #171A21;
-  --destructive: #F0998F;
-  --destructive-foreground: #171A21;
+  --muted-foreground: #b9bdc8;
+  --accent: #c99c82;
+  --accent-ink: #c99c82;
+  --accent-foreground: #171a21;
+  --destructive: #f0998f;
+  --destructive-foreground: #171a21;
   --border: #424957;
   --input: #424957;
-  --ring: #AAB8D2;
-  --chart-1: #AAB8D2;
-  --chart-2: #C99C82;
-  --chart-3: #B9BDC8;
-  --chart-4: #B6AB92;
-  --chart-5: #B3A4C3;
+  --ring: #aab8d2;
+  --chart-1: #aab8d2;
+  --chart-2: #c99c82;
+  --chart-3: #b9bdc8;
+  --chart-4: #b6ab92;
+  --chart-5: #b3a4c3;
   --stone-shadow: 0 18px 55px #0003;
   --panel-shadow: 0 2px 8px #00000014;
   --floating-shadow: 0 16px 48px #00000052;
 }
 
 @layer base {
-  * { @apply border-border; }
-  html { @apply font-sans; scroll-behavior: smooth; scroll-padding-block-start: 7rem; }
-  body { @apply bg-background font-sans text-foreground; line-height: 1.65; font-synthesis: none; }
-  button, input, select, textarea { font-family: inherit; }
-  :where(h1, h2, h3, h4, h5, h6) { text-wrap: balance; overflow-wrap: break-word; }
-  :where(h1, h2, h3, h4, h5, h6, [data-slot="empty-title"], [data-slot="dialog-title"]):lang(ar) { letter-spacing: normal; }
-  :where(code, kbd, samp, pre) { font-family: var(--font-thmanyah-sans), sans-serif; }
-  :where(button, a, input, select, textarea) { touch-action: manipulation; }
-  :focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
-  ::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+    scroll-padding-block-start: 7rem;
+  }
+  body {
+    @apply bg-background font-sans text-foreground;
+    line-height: 1.65;
+    font-synthesis: none;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+  :where(h1, h2, h3, h4, h5, h6) {
+    text-wrap: balance;
+    overflow-wrap: break-word;
+  }
+  :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    [data-slot="empty-title"],
+    [data-slot="dialog-title"]
+  ):lang(ar) {
+    letter-spacing: normal;
+  }
+  :where(code, kbd, samp, pre) {
+    font-family: var(--font-thmanyah-sans), sans-serif;
+  }
+  :where(button, a, input, select, textarea) {
+    touch-action: manipulation;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+  }
 }
 
 /* MapLibre ships a Helvetica/Arial shorthand. Keep DOM controls and popups in
    Thmanyah; vector basemap labels are supplied by the map style, not CSS. */
-.maplibregl-map.maplibregl-map, .maplibregl-map .maplibregl-popup-content, .maplibregl-map .maplibregl-ctrl {
+.maplibregl-map.maplibregl-map,
+.maplibregl-map .maplibregl-popup-content,
+.maplibregl-map .maplibregl-ctrl {
   font-family: var(--font-thmanyah-sans), sans-serif;
 }
-.maplibregl-map :is(.maplibregl-popup-content, .maplibregl-ctrl-group, .maplibregl-ctrl-attrib) {
+.maplibregl-map
+  :is(.maplibregl-popup-content, .maplibregl-ctrl-group, .maplibregl-ctrl-attrib) {
   background-color: var(--card);
   color: var(--card-foreground);
   box-shadow: var(--panel-shadow);
 }
-.maplibregl-map .maplibregl-popup-content { border-radius: var(--radius-2xl); }
-.maplibregl-map .maplibregl-ctrl-attrib a { color: inherit; }
-.maplibregl-map .maplibregl-ctrl-group { border: 1px solid var(--border); border-radius: var(--radius-md); }
-.maplibregl-map .maplibregl-ctrl-group button + button { border-top-color: var(--border); }
-.maplibregl-map :is(.maplibregl-popup-anchor-bottom, .maplibregl-popup-anchor-bottom-left, .maplibregl-popup-anchor-bottom-right) .maplibregl-popup-tip { border-top-color: var(--card); }
-.maplibregl-map :is(.maplibregl-popup-anchor-top, .maplibregl-popup-anchor-top-left, .maplibregl-popup-anchor-top-right) .maplibregl-popup-tip { border-bottom-color: var(--card); }
-.maplibregl-map .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--card); }
-.maplibregl-map .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--card); }
-.dark .maplibregl-ctrl-group .maplibregl-ctrl-icon { filter: invert(1); }
+.maplibregl-map .maplibregl-popup-content {
+  border-radius: var(--radius-2xl);
+}
+.maplibregl-map .maplibregl-ctrl-attrib a {
+  color: inherit;
+}
+.maplibregl-map .maplibregl-ctrl-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.maplibregl-map .maplibregl-ctrl-group button + button {
+  border-top-color: var(--border);
+}
+.maplibregl-map
+  :is(
+    .maplibregl-popup-anchor-bottom,
+    .maplibregl-popup-anchor-bottom-left,
+    .maplibregl-popup-anchor-bottom-right
+  )
+  .maplibregl-popup-tip {
+  border-top-color: var(--card);
+}
+.maplibregl-map
+  :is(
+    .maplibregl-popup-anchor-top,
+    .maplibregl-popup-anchor-top-left,
+    .maplibregl-popup-anchor-top-right
+  )
+  .maplibregl-popup-tip {
+  border-bottom-color: var(--card);
+}
+.maplibregl-map .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--card);
+}
+.maplibregl-map .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--card);
+}
+.dark .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

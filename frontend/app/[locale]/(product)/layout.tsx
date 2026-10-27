@@ -1,9 +1,16 @@
-import { ProductShell } from "@/components/product/product-shell";
-
-// Account content is selected after the development ID is read in the browser.
-// Its children cannot be validated by the server instant-navigation probe.
+import { Suspense } from "react";
+import { ProductShell } from "@/features/workspace/product-shell";
+import { requirePageSession } from "@/lib/auth/authorization.server";
 export const instant = false;
+async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+  await requirePageSession();
+  return <ProductShell>{children}</ProductShell>;
+}
 
 export default function ProductLayout({ children }: { children: React.ReactNode }) {
-  return <ProductShell>{children}</ProductShell>;
+  return (
+    <Suspense fallback={null}>
+      <AuthenticatedLayout>{children}</AuthenticatedLayout>
+    </Suspense>
+  );
 }

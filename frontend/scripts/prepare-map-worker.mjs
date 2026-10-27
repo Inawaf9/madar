@@ -7,12 +7,17 @@ import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 const packageRoot = dirname(require.resolve("maplibre-gl/package.json"));
 const { version } = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
-if (!/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(version)) throw new Error("Unexpected MapLibre package version");
+if (!/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(version))
+  throw new Error("Unexpected MapLibre package version");
 const projectRoot = fileURLToPath(new URL("../", import.meta.url));
 const destination = join(projectRoot, "public", "maplibre", version);
 await mkdir(destination, { recursive: true });
 await Promise.all([
-  ...["maplibre-gl-worker.mjs", "maplibre-gl-worker.mjs.map", "maplibre-gl-shared.mjs"].map(file => copyFile(join(packageRoot, "dist", file), join(destination, file))),
+  ...[
+    "maplibre-gl-worker.mjs",
+    "maplibre-gl-worker.mjs.map",
+    "maplibre-gl-shared.mjs",
+  ].map((file) => copyFile(join(packageRoot, "dist", file), join(destination, file))),
   copyFile(join(packageRoot, "LICENSE.txt"), join(destination, "LICENSE.txt")),
 ]);
 console.info(`[maps] Prepared local MapLibre ${version} worker assets.`);

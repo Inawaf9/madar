@@ -1,18 +1,138 @@
 import { apiRequest } from "./client";
+import { ApiError } from "./errors";
+import type { ApiResponse } from "./contracts";
 import type { EssentialResult } from "./discovery-contracts";
 import { serializeQuery } from "./query";
-import { weightsSchema, type RecommendationWeights, type MatchScore, type SmartRecommendations, type ComputedComparison, type NeighborhoodInput, type NeighborhoodSuitability, type NeighborhoodComparison, type Affordability, type AiExplanation } from "./insight-contracts";
+import {
+  weightsSchema,
+  type RecommendationWeights,
+  type MatchScore,
+  type SmartRecommendations,
+  smartRecommendationsSchema,
+  type ComputedComparison,
+  type NeighborhoodInput,
+  type NeighborhoodSuitability,
+  type NeighborhoodComparison,
+  type NeighborhoodSuggestions,
+  type Affordability,
+  type AiExplanation,
+} from "./insight-contracts";
 import { type ApiLanguage } from "./config";
 const enc = encodeURIComponent;
 const languageHeaders = (language: ApiLanguage) => ({ "Accept-Language": language });
 export const insights = {
-  propertyInterests: (id: number, source: string, externalId: string, signal?: AbortSignal) => apiRequest<EssentialResult[]>(`/api/v1/properties/nearby-interests/${id}/${enc(source)}/${enc(externalId)}?radius=2000`, { signal }),
-  affordability: (id: number, source: string, externalId: string, signal?: AbortSignal) => apiRequest<Affordability>(`/api/v1/properties/affordability/${id}?${serializeQuery({ source, externalId })}`, { signal }),
-  match: (id: number, source: string, externalId: string, weights?: RecommendationWeights, signal?: AbortSignal) => apiRequest<MatchScore>(`/api/v1/recommendations/match-score/${id}?${serializeQuery({ source, externalId })}`, { method: "POST", body: weights ? weightsSchema.parse(weights) : undefined, signal }),
-  smart: (id: number, language: ApiLanguage, weights?: RecommendationWeights, signal?: AbortSignal) => apiRequest<SmartRecommendations>(`/api/v1/recommendations/smart/${id}`, { method: "POST", body: weights ? weightsSchema.parse(weights) : undefined, headers: languageHeaders(language), signal }),
-  compareTwo: (id: number, firstSource: string, firstId: string, secondSource: string, secondId: string, language: ApiLanguage, signal?: AbortSignal) => apiRequest<ComputedComparison>(`/api/v1/property-comparison/compare-two/${id}/${enc(firstSource)}/${enc(firstId)}/${enc(secondSource)}/${enc(secondId)}`, { headers: languageHeaders(language), signal }),
-  compareMultiple: (id: number, savedIds: number[], language: ApiLanguage, signal?: AbortSignal) => apiRequest<ComputedComparison>(`/api/v1/property-comparison/compare-multiple/${id}/${savedIds.join(",")}`, { headers: languageHeaders(language), signal }),
-  neighborhood: (id: number, input: NeighborhoodInput, language: ApiLanguage, signal?: AbortSignal) => apiRequest<NeighborhoodSuitability>(`/api/v1/recommendations/neighborhood-suitability/${id}?${serializeQuery(input)}`, { headers: languageHeaders(language), signal }),
-  compareNeighborhoods: (id: number, first: NeighborhoodInput, second: NeighborhoodInput, language: ApiLanguage, signal?: AbortSignal) => apiRequest<NeighborhoodComparison>(`/api/v1/recommendations/compare-neighborhoods/${id}?${new URLSearchParams({ firstLatitude: String(first.latitude), firstLongitude: String(first.longitude), firstDistrict: first.district ?? "", secondLatitude: String(second.latitude), secondLongitude: String(second.longitude), secondDistrict: second.district ?? "" })}`, { headers: languageHeaders(language), signal }),
-  explanation: (id: number, signal?: AbortSignal) => apiRequest<AiExplanation>(`/api/v1/ai/explain-match/${id}`, { signal }),
+  propertyInterests: (source: string, externalId: string, signal?: AbortSignal) =>
+    apiRequest<EssentialResult[]>(
+      `/api/v1/properties/me/nearby-interests/${enc(source)}/${enc(externalId)}?radius=2000`,
+      { signal },
+    ),
+  affordability: (source: string, externalId: string, signal?: AbortSignal) =>
+    apiRequest<Affordability>(
+      `/api/v1/properties/me/affordability?${serializeQuery({ source, externalId })}`,
+      { signal },
+    ),
+  match: (
+    source: string,
+    externalId: string,
+    weights?: RecommendationWeights,
+    signal?: AbortSignal,
+  ) =>
+    apiRequest<MatchScore>(
+      `/api/v1/recommendations/me/match-score?${serializeQuery({ source, externalId })}`,
+      {
+        method: "POST",
+        body: weights ? weightsSchema.parse(weights) : undefined,
+        signal,
+      },
+    ),
+  smart: async (
+    language: ApiLanguage,
+    weights?: RecommendationWeights,
+    signal?: AbortSignal,
+  ): Promise<SmartRecommendations> => {
+    const result = await apiRequest<unknown>("/api/v1/recommendations/me/smart", {
+      method: "POST",
+      body: weights ? weightsSchema.parse(weights) : undefined,
+      headers: languageHeaders(language),
+      signal,
+    });
+    const parsed = smartRecommendationsSchema.safeParse(result);
+    if (!parsed.success) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error(
+          "[smart-search:response-validation-failed]",
+          parsed.error.issues.map(({ code, path }) => ({ code, path })),
+        );
+      }
+      throw new ApiError("Invalid Smart Search response", 502);
+    }
+    return parsed.data;
+  },
+  compareTwo: (
+    firstSource: string,
+    firstId: string,
+    secondSource: string,
+    secondId: string,
+    language: ApiLanguage,
+    signal?: AbortSignal,
+  ) =>
+    apiRequest<ComputedComparison>(
+      `/api/v1/property-comparison/me/compare-two/${enc(firstSource)}/${enc(firstId)}/${enc(secondSource)}/${enc(secondId)}`,
+      { headers: languageHeaders(language), signal },
+    ),
+  compareMultiple: (savedIds: number[], language: ApiLanguage, signal?: AbortSignal) =>
+    apiRequest<ComputedComparison>(
+      `/api/v1/property-comparison/me/compare-multiple/${savedIds.join(",")}`,
+      { headers: languageHeaders(language), signal },
+    ),
+  neighborhood: (input: NeighborhoodInput, language: ApiLanguage, signal?: AbortSignal) =>
+    apiRequest<NeighborhoodSuitability>(
+      `/api/v1/recommendations/me/neighborhood-suitability?${serializeQuery(input)}`,
+      { headers: languageHeaders(language), signal },
+    ),
+  compareNeighborhoods: (
+    first: NeighborhoodInput,
+    second: NeighborhoodInput,
+    language: ApiLanguage,
+    signal?: AbortSignal,
+  ) =>
+    apiRequest<NeighborhoodComparison>(
+      `/api/v1/recommendations/me/compare-neighborhoods?${new URLSearchParams({ firstLatitude: String(first.latitude), firstLongitude: String(first.longitude), firstDistrict: first.district ?? "", secondLatitude: String(second.latitude), secondLongitude: String(second.longitude), secondDistrict: second.district ?? "" })}`,
+      { headers: languageHeaders(language), signal },
+    ),
+  suggestNeighborhoods: (
+    language: ApiLanguage,
+    weights?: RecommendationWeights,
+    signal?: AbortSignal,
+  ) =>
+    apiRequest<NeighborhoodSuggestions>(
+      "/api/v1/recommendations/me/suggest-neighborhoods",
+      {
+        method: "POST",
+        body: weights ? weightsSchema.parse(weights) : undefined,
+        headers: languageHeaders(language),
+        signal,
+      },
+    ),
+  selectNeighborhood: (district: string) =>
+    apiRequest<ApiResponse>("/api/v1/recommendations/me/selected-neighborhood", {
+      method: "PUT",
+      body: { district: district.trim() },
+    }),
+  selectedNeighborhoodProperties: (
+    language: ApiLanguage,
+    weights?: RecommendationWeights,
+    signal?: AbortSignal,
+  ) =>
+    apiRequest<SmartRecommendations>(
+      "/api/v1/recommendations/me/selected-neighborhood-properties",
+      {
+        method: "POST",
+        body: weights ? weightsSchema.parse(weights) : undefined,
+        headers: languageHeaders(language),
+        signal,
+      },
+    ),
+  explanation: (signal?: AbortSignal) =>
+    apiRequest<AiExplanation>(`/api/v1/ai/explain-match`, { signal }),
 };

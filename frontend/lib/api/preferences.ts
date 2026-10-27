@@ -1,12 +1,36 @@
 import type { ApiResponse, HousingPreference, HousingPreferenceInput } from "./contracts";
-
 import { apiRequest } from "./client";
-
 import { optionalRecord } from "./optional-record";
-
+import { housingPreferenceRequest } from "./resource-requests";
 export const preferencesApi = {
-  get: (userId: number, signal?: AbortSignal) => optionalRecord(apiRequest<HousingPreference>(`/api/v1/housing-preference/get-by-user/${userId}`, { signal }), "Housing preference not found"),
-  add: (userId: number, body: HousingPreferenceInput) => apiRequest<ApiResponse>(`/api/v1/housing-preference/add/${userId}`, { method: "POST", body }),
-  update: (userId: number, id: number, body: HousingPreferenceInput) => apiRequest<ApiResponse>(`/api/v1/housing-preference/update/${userId}/${id}`, { method: "PUT", body }),
-  remove: (userId: number, id: number) => apiRequest<ApiResponse>(`/api/v1/housing-preference/delete/${userId}/${id}`, { method: "DELETE" }),
+  get: async (signal?: AbortSignal) => {
+    const value = await optionalRecord(
+      apiRequest<Omit<HousingPreference, "interests">>("/api/v1/housing-preference/me", {
+        signal,
+      }),
+      "Housing preference not found",
+    );
+    return value
+      ? {
+          ...value,
+          interests: (value.lifestyleInterests ?? [])
+            .filter((item) => item.active === true)
+            .map((item) => item.code),
+        }
+      : null;
+  },
+  add: (body: HousingPreferenceInput) =>
+    apiRequest<ApiResponse>("/api/v1/housing-preference/me", {
+      method: "POST",
+      body: housingPreferenceRequest(body),
+    }),
+  update: (preferenceId: number, body: HousingPreferenceInput) =>
+    apiRequest<ApiResponse>(`/api/v1/housing-preference/me/${preferenceId}`, {
+      method: "PUT",
+      body: housingPreferenceRequest(body),
+    }),
+  remove: (preferenceId: number) =>
+    apiRequest<ApiResponse>(`/api/v1/housing-preference/me/${preferenceId}`, {
+      method: "DELETE",
+    }),
 };

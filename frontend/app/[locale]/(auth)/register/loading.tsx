@@ -1,2 +1,4 @@
-import { AuthSkeleton } from "@/components/product/page-skeleton";
-export default function Loading() { return <AuthSkeleton register />; }
+import { AuthPending } from "@/features/auth/auth-pending";
+export default function Loading() {
+  return <AuthPending mode="register" />;
+}

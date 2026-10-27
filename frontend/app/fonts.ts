@@ -15,7 +15,11 @@ export const thmanyahSans = localFont({
 
 export const thmanyahDisplay = localFont({
   src: [
-    { path: "./fonts/thmanyahserifdisplay-Regular.woff2", weight: "400", style: "normal" },
+    {
+      path: "./fonts/thmanyahserifdisplay-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
     { path: "./fonts/thmanyahserifdisplay-Bold.woff2", weight: "700", style: "normal" },
     { path: "./fonts/thmanyahserifdisplay-Black.woff2", weight: "900", style: "normal" },
   ],

@@ -1,2 +1,2 @@
 "use client";
-export { RouteError as default } from "@/components/product/route-error";
+export { RouteError as default } from "@/components/shared/route-error";

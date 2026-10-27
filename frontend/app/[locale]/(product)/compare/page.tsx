@@ -1,6 +1,14 @@
-// User-specific content renders after client-side development identity loading.
+import { requirePageSession } from "@/lib/auth/authorization.server";
+// Private content requires a server-side session.
 export const instant = false;
 import { Suspense } from "react";
-import { ComparisonsPage } from "@/features/product/comparisons";
-import { ComparisonSkeleton } from "@/components/product/page-skeleton";
-export default function Page() { return <Suspense fallback={<ComparisonSkeleton />}><ComparisonsPage /></Suspense>; }
+import { ComparisonsPage } from "@/features/comparisons/comparisons";
+import { ComparisonSkeleton } from "@/features/comparisons/skeletons";
+export default async function Page() {
+  await requirePageSession();
+  return (
+    <Suspense fallback={<ComparisonSkeleton />}>
+      <ComparisonsPage />
+    </Suspense>
+  );
+}

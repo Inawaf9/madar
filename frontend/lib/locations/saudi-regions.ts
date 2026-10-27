@@ -9,11 +9,14 @@ export const administrativeRegions = [
   // No arbitrary assignment of the six reference colors to the remaining regions.
   { id: "qassim", ar: "منطقة القصيم", en: "Qassim Region", identity: null },
   { id: "hail", ar: "منطقة حائل", en: "Hail Region", identity: null },
-  { id: "northern-borders", ar: "منطقة الحدود الشمالية", en: "Northern Borders Region", identity: null },
+  {
+    id: "northern-borders",
+    ar: "منطقة الحدود الشمالية",
+    en: "Northern Borders Region",
+    identity: null,
+  },
   { id: "jazan", ar: "منطقة جازان", en: "Jazan Region", identity: null },
   { id: "najran", ar: "منطقة نجران", en: "Najran Region", identity: null },
   { id: "al-bahah", ar: "منطقة الباحة", en: "Al Bahah Region", identity: null },
   { id: "al-jawf", ar: "منطقة الجوف", en: "Al Jawf Region", identity: null },
 ] as const;
-
-

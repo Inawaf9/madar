@@ -1,0 +1,9 @@
+{
+  "unavailable": "The payment form is unavailable because service setup is incomplete.",
+  "loading": "Loading the secure payment form",
+  "failed": "The payment attempt did not complete or the form could not load. Check payment history before trying again.",
+  "checkHistory": "Check payment history",
+  "reload": "Reload page",
+  "submitted": "The payment was sent to the provider. Access starts only after server confirmation.",
+  "securityNote": "Moyasar processes card details directly. The server sets the amount, currency, and return URL."
+}
