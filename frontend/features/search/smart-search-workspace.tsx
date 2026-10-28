@@ -163,52 +163,74 @@ export function SmartSearchWorkspace() {
           ? t("interestsRequirement")
           : t("completeTitle");
 
-  return (
-    <section className="space-y-5">
-      <div className="rounded-3xl border border-border/60 bg-card p-5 sm:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="font-heading text-section font-semibold">{t("smartTitle")}</h2>
-            <p className="mt-2 max-w-2xl text-muted-foreground">
-              {ready ? t("readyDescription") : t("completeDescription")}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => showView("requirements")}
-          >
-            <SlidersHorizontal data-icon="inline-start" />
-            {t("editInformation")}
-          </Button>
-        </div>
-        {housing.data ? (
-          <p className="mt-5 text-sm text-muted-foreground">
-            {t("savedPreferences")}: <bdi>{housing.data.city}</bdi> ·{" "}
-            {new Intl.NumberFormat(locale, {
-              style: "currency",
-              currency: "SAR",
-              maximumFractionDigits: 0,
-            }).format(housing.data.maxBudget)}
-          </p>
-        ) : null}
-      </div>
 
-      {ready ? (
-        <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">{t("creditNotice")}</p>
-          <SmartRecommendationsPanel
-            key={recommendationRevision}
-            actionLabel={t("smartStart")}
-          />
-          <NeighborhoodSuggestionsPanel />
-          <p className="text-xs text-muted-foreground">{t("aiNotice")}</p>
+  return (
+      <section className="space-y-4">
+        {/* Compact saved preferences */}
+        <div className="rounded-[22px] border border-border/60 bg-card px-5 py-4 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0 space-y-1.5">
+              <h2 className="font-heading text-base font-semibold text-foreground">
+                {t("smartTitle")}
+              </h2>
+
+              {housing.data ? (
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {t("savedPreferences")}:{" "}
+                    <bdi className="font-medium text-foreground">
+                      {housing.data.city}
+                    </bdi>
+                    {" · "}
+                    {new Intl.NumberFormat(locale, {
+                      style: "currency",
+                      currency: "SAR",
+                      maximumFractionDigits: 0,
+                    }).format(housing.data.maxBudget)}
+                  </p>
+              ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t("completeDescription")}
+                  </p>
+              )}
+            </div>
+
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 rounded-full"
+                onClick={() => showView("requirements")}
+            >
+              <SlidersHorizontal className="size-4" />
+              {t("editInformation")}
+            </Button>
+          </div>
         </div>
-      ) : (
-        <Button onClick={() => showView("requirements")}>
-          <Sparkles data-icon="inline-start" />
-          {t("completeAction")}
-        </Button>
-      )}
+
+        {ready ? (
+            <div className="space-y-4">
+              {/* Neighborhood suggestions come first */}
+              <NeighborhoodSuggestionsPanel />
+
+              {/* Smart recommendations */}
+              <SmartRecommendationsPanel
+                  key={recommendationRevision}
+                  actionLabel={t("smartStart")}
+              />
+
+              <p className="px-1 text-xs leading-6 text-muted-foreground">
+                {t("creditNotice")} {t("aiNotice")}
+              </p>
+            </div>
+        ) : (
+            <Button onClick={() => showView("requirements")}>
+              <Sparkles className="size-4" />
+              {t("completeAction")}
+            </Button>
+        )}
+
+        {/* Keep your existing TaskDialog below this point */}
+
 
       <TaskDialog
         open={open}

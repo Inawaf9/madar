@@ -2,7 +2,6 @@
 import type { ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpLeft, Columns3, Heart, LoaderCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,14 @@ import { propertyHref, propertyTypeLabel } from "./format";
 import { PropertyCardView } from "@/features/properties/property-card-view";
 import { propertyCardData } from "@/lib/property-card";
 import { rememberPropertyOrigin } from "./property-navigation";
+import {
+  ArrowUpLeft,
+  ArrowLeftRight,
+  Columns3,
+  Heart,
+  LoaderCircle,
+  RefreshCw,
+} from "lucide-react";
 
 export function PropertyActions({
   property,
@@ -190,12 +197,14 @@ export function PropertyActions({
   );
 }
 export function PropertyCard({
-  property,
-  imageFallback,
-}: {
+                               property,
+                               imageFallback,
+                               onCompare,
+                             }: {
   property: Property;
   appearance?: "default" | "image";
   imageFallback?: ReactNode;
+  onCompare?: (property: Property) => void;
 }) {
   const locale = useLocale();
   const ar = locale === "ar";
@@ -229,31 +238,50 @@ export function PropertyCard({
           </p>
         </details>
       }
+
+
       footer={
-        href ? (
-          <Button
-            variant="outline"
-            className="w-full justify-between"
-            nativeButton={false}
-            render={
-              <Link
-                href={href}
-                onNavigate={() => rememberPropertyOrigin(href)}
-              />
-            }
-          >
-            {ar ? "عرض البيت" : "View home"}
-            <ArrowUpLeft
-              data-icon="inline-end"
-              className="ltr:-scale-x-100"
-            />
-          </Button>
-        ) : (
-          <p className="text-caption text-muted-foreground">
-            {ar ? "معرّف الإعلان غير متاح" : "Listing reference unavailable"}
-          </p>
-        )
+        <div className="grid grid-cols-2 gap-2">
+          {href ? (
+              <Button
+                  variant="outline"
+                  className="min-w-0 w-full justify-center gap-2 rounded-xl px-2 text-sm"
+                  nativeButton={false}
+                  render={
+                    <Link
+                        href={href}
+                        onNavigate={() => rememberPropertyOrigin(href)}
+                    />
+                  }
+              >
+                {ar ? "عرض البيت" : "View home"}
+                <ArrowUpLeft className="size-4 shrink-0 ltr:-scale-x-100" />
+              </Button>
+          ) : (
+              <p className="self-center text-xs text-muted-foreground">
+                {ar ? "الإعلان غير متاح" : "Listing unavailable"}
+              </p>
+          )}
+
+          {onCompare && valid ? (
+              <Button
+                  type="button"
+                  variant="secondary"
+                  className="relative z-10 min-w-0 w-full justify-center gap-2 rounded-xl px-2 text-sm"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onCompare(property);
+                  }}
+              >
+                <ArrowLeftRight className="size-4 shrink-0" />
+                {ar ? "قارن العقار" : "Compare"}
+              </Button>
+          ) : null}
+        </div>
       }
+
+
     />
   );
 }

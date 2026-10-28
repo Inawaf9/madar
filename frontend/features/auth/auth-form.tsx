@@ -47,7 +47,15 @@ export function AuthForm({
     cache.clear();
     setClientSession(session);
     broadcastAuthChange();
-    router.replace(safeReturnTo(new URLSearchParams(window.location.search).get("next")));
+
+    const requestedPath = new URLSearchParams(window.location.search).get("next");
+
+    const destination =
+        session.role === "ADMIN"
+            ? "/admin"
+            : safeReturnTo(requestedPath);
+
+    router.replace(destination);
     router.refresh();
   };
   const fields = [

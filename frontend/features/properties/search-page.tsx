@@ -18,13 +18,20 @@ import { PropertyGridSkeleton, SearchSkeleton } from "./skeletons";
 import { ErrorState } from "@/components/shared/error-state";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { ArrowRightLeft } from "lucide-react";
+import { CompareSearchDialog } from "./compare-search-dialog";
 
 export function PropertySearchPage() {
   const locale = useLocale();
   const ar = locale === "ar";
+  const [compareFirst, setCompareFirst] = useState<
+      Awaited<ReturnType<typeof discovery.search>>["data"][number] | null
+  >(null);
   const language = apiLanguage(locale);
   const params = useSearchParams();
   const serialized = params.toString();
+
   const preferences = usePreferenceSearch(serialized);
   const parsed = parseSearch(new URLSearchParams(serialized));
   const t = useLocationTranslations();
@@ -313,11 +320,12 @@ export function PropertySearchPage() {
             {properties.length ? (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
                 {properties.map((property, index) => (
-                  <PropertyCard
-                    key={`${property.source}:${property.externalId || index}`}
-                    property={property}
-                    appearance="image"
-                  />
+                    <PropertyCard
+                        key={`${property.source}:${property.externalId || index}`}
+                        property={property}
+                        appearance="image"
+                        onCompare={setCompareFirst}
+                    />
                 ))}
               </div>
             ) : null}
@@ -355,6 +363,15 @@ export function PropertySearchPage() {
           </>
         )}
       </section>
+
+      {compareFirst && (
+          <CompareSearchDialog
+              key={`${compareFirst.source}:${compareFirst.externalId}`}
+              first={compareFirst}
+              properties={properties}
+              onClose={() => setCompareFirst(null)}
+          />
+      )}
     </div>
   );
 }
