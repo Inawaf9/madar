@@ -7,6 +7,7 @@ import { AuthPending } from "@/features/auth/auth-pending";
 export const instant = false;
 async function ReadyForm() {
   await connection();
+  console.log("[MADAR AUTH CONFIG]", authConfigurationStatus());
   return (
     <AuthForm
       mode="login"

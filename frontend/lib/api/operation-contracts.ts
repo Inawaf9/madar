@@ -558,7 +558,7 @@ export const operationContracts = [
     method: "GET",
     path: "/api/v1/user/admin/users",
     access: "admin",
-    query: [],
+    query: ["page", "size", "status"],
     requiredQuery: [],
   },
   {
@@ -582,6 +582,81 @@ export const operationContracts = [
     query: [],
     requiredQuery: [],
   },
+  {
+    method: "GET",
+    path: "/api/v1/user/admin/dashboard",
+    access: "admin",
+    query: [],
+    requiredQuery: [],
+  },
+  {
+    method: "GET",
+    path: "/api/v1/user/admin/payments",
+    access: "admin",
+    query: ["page", "size", "status"],
+    requiredQuery: [],
+  },
+  {
+    method: "GET",
+    path: "/api/v1/user/admin/payments/{paymentId}",
+    access: "admin",
+    query: [],
+    requiredQuery: [],
+  },
+
+  {
+    method: "GET",
+    path: "/api/v1/credit-packages",
+    access: "admin",
+    query: [],
+    requiredQuery: [],
+  },
+
+  {
+    method: "POST",
+    path: "/api/v1/credit-packages",
+    access: "admin",
+    query: [],
+    requiredQuery: [],
+  },
+  {
+    method: "PUT",
+    path: "/api/v1/credit-packages/{packageId}",
+    access: "admin",
+    query: [],
+    requiredQuery: [],
+  },
+  {
+    method: "DELETE",
+    path: "/api/v1/credit-packages/{packageId}",
+    access: "admin",
+    query: [],
+    requiredQuery: [],
+  },
+
+  {
+    method: "POST",
+    path: "/api/v1/user/admin/users/{targetUserId}/gift-credits",
+    access: "admin",
+    query: ["credits"],
+    requiredQuery: ["credits"],
+  },
+
+  {
+    method: "GET",
+    path: "/api/v1/user/admin/audit-logs",
+    access: "admin",
+    query: ["page", "size"],
+    requiredQuery: [],
+  },
+  {
+    method: "GET",
+    path: "/api/v1/user/admin/system-health",
+    access: "admin",
+    query: [],
+    requiredQuery: [],
+  },
+
   {
     method: "GET",
     path: "/api/v1/current-home/get",
