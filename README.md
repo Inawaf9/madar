@@ -2297,8 +2297,517 @@ The project demonstrates practical experience in:
 - Connecting backend events with workflow automation
 
 ---
+# 20. Frontend Engineering & Architecture
 
-# 20. Team & Acknowledgments
+## Designed & Developed by Nawaf Al-Ghamdi
+
+The entire frontend of **MADAR** was independently architected, designed, and developed by **Nawaf Al-Ghamdi**, transforming the platform's complex housing intelligence capabilities into a cohesive, interactive, and user-centered web application.
+
+The frontend is not merely a presentation layer. It serves as the primary interaction and orchestration layer between users and MADAR's backend services, bringing together property discovery, personalized recommendations, geospatial insights, AI assistance, housing comparisons, and account management within a unified experience.
+
+The implementation emphasizes **maintainability, modular architecture, security, responsive design, accessibility, and seamless integration with Spring Boot REST APIs**.
+
+**Developer:** [Nawaf Al-Ghamdi](https://github.com/Inawaf9)  
+**Role:** Frontend Architect & Developer  
+**Scope:** End-to-End Frontend Development
+
+---
+
+## 20.1 Frontend Technology Stack
+
+| Technology | Responsibility |
+|---|---|
+| Next.js 16 | Application framework and App Router |
+| React 19 | Component-based user interfaces |
+| TypeScript | Type-safe application development |
+| Tailwind CSS | Utility-first styling and responsive layouts |
+| shadcn/ui | Accessible and reusable UI components |
+| TanStack Query | Server-state management, caching, and synchronization |
+| next-intl | Internationalization and localized routing |
+| React Hook Form | Form state management |
+| Zod | Schema validation |
+| Motion | Interactive animations and transitions |
+| Lucide React | Consistent iconography |
+
+The frontend is structured around reusable components, feature-oriented modules, centralized API integrations, and server-side request handling.
+
+---
+
+## 20.2 Frontend System Architecture
+
+MADAR uses a modern **Next.js App Router architecture** with a Backend-for-Frontend (BFF) layer.
+
+Rather than allowing browser components to communicate directly with protected Spring Boot endpoints, the frontend routes sensitive operations through dedicated Next.js server handlers.
+
+```mermaid
+flowchart TB
+    U["User / Browser"]
+
+    subgraph Frontend["MADAR Frontend — Next.js"]
+        UI["React UI Components"]
+        F["Feature Modules"]
+        Q["TanStack Query"]
+        API["Typed API Clients"]
+        BFF["Next.js BFF Route Handlers"]
+        AUTH["Server-Side Authentication"]
+        SEC["CSRF & Request Validation"]
+    end
+
+    subgraph Backend["Spring Boot Backend"]
+        REST["REST Controllers"]
+        SERVICES["Business Services"]
+        AI["AI & Recommendation Engine"]
+        DB[("MySQL")]
+    end
+
+    U --> UI
+    UI --> F
+    F --> Q
+    Q --> API
+    API --> BFF
+    BFF --> AUTH
+    BFF --> SEC
+    BFF --> REST
+    REST --> SERVICES
+    SERVICES --> AI
+    SERVICES --> DB
+```
+
+### Architectural responsibilities
+
+**Presentation Layer**
+
+Handles page rendering, user interactions, accessibility, responsive layouts, and localized content.
+
+**Feature Layer**
+
+Organizes domain-specific functionality into maintainable modules with reusable components and hooks.
+
+**Data Access Layer**
+
+Centralizes API communication, typed requests, response handling, and server-state synchronization.
+
+**BFF Layer**
+
+Acts as the controlled boundary between the browser and Spring Boot, handling authentication context, request validation, and protected API forwarding.
+
+**Backend Integration Layer**
+
+Connects frontend workflows with the platform's existing REST services without duplicating backend business logic.
+
+---
+
+## 20.3 UI/UX Engineering
+
+The MADAR interface was designed to make complex housing decisions easier to understand and navigate.
+
+Rather than exposing backend capabilities as disconnected tools, the frontend organizes them into a connected user journey.
+
+### Design principles
+
+- **User-centered interaction:** Prioritize housing decisions over technical complexity.
+- **Progressive disclosure:** Present advanced information when it becomes relevant.
+- **Visual consistency:** Maintain a unified design language across the application.
+- **Responsive interfaces:** Adapt layouts and interactions across screen sizes.
+- **Accessible components:** Support semantic interfaces and keyboard-friendly controls.
+- **Clear feedback:** Communicate loading, success, error, and empty states.
+- **Contextual navigation:** Connect related housing features into a logical experience.
+
+### Design system
+
+The interface uses Tailwind CSS and shadcn/ui to maintain consistent:
+
+- Typography and visual hierarchy
+- Colors and semantic design tokens
+- Cards, dialogs, and navigation components
+- Form controls and validation messages
+- Interactive states
+- Spacing and layout patterns
+- Responsive behavior
+- Light and dark themes
+
+Motion is used for interface transitions and micro-interactions where they improve clarity and usability.
+
+---
+
+## 20.4 Bilingual Experience & Internationalization
+
+MADAR supports both **Arabic and English**, with particular attention to the needs of Saudi users.
+
+The frontend integrates `next-intl` for localized navigation and interface content.
+
+### Localization capabilities
+
+- Arabic and English interface translations
+- Right-to-left (RTL) layout support
+- Left-to-right (LTR) layout support
+- Locale-aware routing
+- Direction-aware interface components
+- Localized navigation and form labels
+- Consistent bilingual user journeys
+
+The goal is to deliver a native-feeling experience in both languages rather than treating Arabic as a secondary translation.
+
+---
+
+## 20.5 Property Discovery Experience
+
+The property discovery interface connects users with real estate listings retrieved through MADAR's backend.
+
+### Frontend capabilities
+
+- Property search and filtering
+- Property listing cards
+- Detailed property pages
+- Property images and specifications
+- Location and neighborhood information
+- Similar property suggestions
+- Saved-property interactions
+- Personalized property insights
+- Integration with property comparison workflows
+
+The interface separates external listing data from user-specific information, allowing public property discovery and authenticated personalization to coexist.
+
+---
+
+## 20.6 Personalized Recommendations Experience
+
+The frontend provides interactive access to MADAR's recommendation engine.
+
+Users can explore housing recommendations based on their requirements, important destinations, and lifestyle preferences.
+
+### Key interfaces
+
+- Personalized recommendation results
+- Housing suitability scores
+- Commute suitability indicators
+- Nearby-services suitability indicators
+- Weighted recommendation inputs
+- AI-generated explanations
+- Recommendation trade-offs
+- Neighborhood suggestions
+- Selected-neighborhood property recommendations
+
+The frontend presents calculated backend scores and AI explanations as distinct types of information.
+
+For credit-consuming recommendations, the interface incorporates explicit user confirmation and avoids automatic mutation retries.
+
+---
+
+## 20.7 Location & Neighborhood Intelligence
+
+MADAR's location-focused interfaces help users evaluate how a potential home fits their daily routine.
+
+### Important places
+
+Users can manage destinations such as workplaces, universities, and family locations.
+
+The interface supports creating, updating, removing, and prioritizing important places.
+
+### Neighborhood analysis
+
+The frontend provides interfaces for:
+
+- Neighborhood suitability
+- Neighborhood comparisons
+- Nearby services
+- Lifestyle-based points of interest
+- Essential facilities
+- Current-home neighborhood discovery
+- Personalized neighborhood suggestions
+
+### Commute analysis
+
+The frontend connects with backend commute calculations to display routing-related information for the user's important destinations.
+
+Travel information originates from backend routing integrations rather than frontend-generated estimates.
+
+---
+
+## 20.8 AI Housing Assistant Interface
+
+The MADAR AI Assistant is presented through a dedicated conversational interface.
+
+Its frontend implementation connects natural-language interaction with structured housing information returned by the backend.
+
+### Interface responsibilities
+
+- Chat message composition
+- Conversation history rendering
+- Loading and response states
+- Structured property-card rendering
+- Contextual follow-up interactions
+- Conversation reset
+- Backend error feedback
+- Arabic and English conversational presentation
+
+The frontend is designed to display both conversational explanations and structured listing data within the same experience.
+
+This allows users to move naturally between asking questions and exploring actual housing options.
+
+---
+
+## 20.9 Property Comparison Experience
+
+The comparison interfaces help users evaluate housing alternatives through structured information.
+
+Supported frontend workflows include:
+
+- Saved-property comparisons
+- Direct two-property comparisons
+- Multi-property comparison results
+- Comparison record management
+- Location and commute-related insights
+- AI-supported comparison explanations
+
+The interface organizes comparison data to make practical trade-offs easier to identify.
+
+Credit-consuming comparisons require deliberate user interaction rather than automatic execution.
+
+---
+
+## 20.10 Account & Personalization Workspace
+
+MADAR includes a user workspace for managing the personal information that powers housing recommendations.
+
+### Account management
+
+- Profile information
+- Password management
+- Authentication flows
+- Session-related actions
+- Notification preferences
+- Account deactivation
+- Account deletion
+
+### Housing personalization
+
+- Housing preferences
+- Important destinations
+- Lifestyle interests
+- Current-home information
+- Saved properties
+
+These features are connected to backend persistence and synchronized through the frontend data-access layer.
+
+---
+
+## 20.11 Authentication & Frontend Security
+
+Security-sensitive functionality is handled through the Next.js server boundary.
+
+### Implemented security architecture
+
+- Encrypted session cookies
+- HttpOnly authentication storage
+- Secure cookie attributes in production
+- SameSite cookie policy
+- Server-side access-token forwarding
+- Protected BFF operations
+- Request origin and CSRF validation
+- API operation allowlisting
+- Request parameter validation
+- Controlled error handling
+- Server-side authentication operations
+
+The frontend avoids exposing backend access tokens through ordinary browser-side storage.
+
+### Refresh token limitation
+
+The backend supports refresh token rotation, but automatic frontend refresh is currently disabled pending safe cross-instance coordination.
+
+The existing frontend fails closed rather than risking unsafe token reuse.
+
+This remains an integration limitation and is not presented as a completed production feature.
+
+---
+
+## 20.12 API Integration & Server-State Management
+
+MADAR's frontend communicates with Spring Boot through centralized API clients and Next.js route handlers.
+
+TanStack Query is used to manage server state.
+
+### Data management responsibilities
+
+- API request orchestration
+- Loading and error states
+- Query caching
+- Mutation handling
+- Cache invalidation
+- Data synchronization
+- Duplicate-request prevention where applicable
+- Typed API integration
+- Consistent response handling
+
+The frontend also separates read operations from potentially destructive or credit-consuming mutations.
+
+This helps reduce unnecessary external API usage and unintended credit consumption.
+
+---
+
+## 20.13 Credits, Payments & Transactional UX
+
+The frontend includes interfaces for MADAR's credit-based services and payment workflows.
+
+### Credit wallet
+
+- Credit balance display
+- Transaction history
+- Available service prices
+- Credit package selection
+- Credit-consumption confirmation
+
+### Payments
+
+- Checkout initiation
+- Payment verification flow
+- Payment history
+- Paid-service access information
+- Payment-related loading and error feedback
+
+The frontend relies on backend payment verification rather than trusting client-side payment success alone.
+
+Credit-consuming operations are designed around explicit actions, cost visibility, and controlled retry behavior.
+
+---
+
+## 20.14 Notifications & Activity Feedback
+
+The notification experience provides users with visibility into relevant account and housing events.
+
+### Capabilities
+
+- Notification bell
+- Unread notification count
+- Notification listing
+- Mark-as-read actions
+- Mark-all-as-read actions
+- Notification deletion
+- Notification preferences
+
+Notification state is synchronized with backend data rather than maintained exclusively in local browser state.
+
+---
+
+## 20.15 Moving Checklist Experience
+
+MADAR extends beyond property selection by helping users prepare for moving.
+
+The moving checklist frontend provides:
+
+- Checklist generation
+- Task listing
+- Completion toggles
+- Progress tracking
+- Checklist reset with confirmation
+- Loading and empty states
+- Backend-persisted task state
+
+The interface connects moving preparation with the broader housing journey.
+
+---
+
+## 20.16 Reliability & Error Handling
+
+The frontend incorporates safeguards for common application and integration failures.
+
+### Reliability considerations
+
+- Loading and skeleton states
+- Empty-state handling
+- Network error feedback
+- Authentication error handling
+- Backend response validation
+- API timeout handling
+- Mutation retry control
+- Credit-operation confirmation
+- Query cache synchronization
+- Responsive error recovery interfaces
+
+Particular attention is given to preventing accidental repetition of operations that may consume credits or invoke paid external services.
+
+---
+
+## 20.17 Frontend Engineering & Quality Assurance
+
+Frontend development includes API contract review and integration verification against the Spring Boot backend.
+
+### Engineering practices
+
+- Feature-oriented code organization
+- Reusable React components
+- Typed API interfaces
+- Centralized server-state management
+- Controlled BFF request routing
+- Authentication boundary validation
+- API contract verification
+- Focused frontend integration tests
+- Static endpoint coverage analysis
+- Regression-oriented testing
+
+### Endpoint integration audit
+
+The latest static audit identified:
+
+| Metric | Result |
+|---|---:|
+| Backend endpoints discovered | 123 |
+| Statically verified frontend integrations | 92 |
+| Intentionally excluded Admin endpoints | 20 |
+| Backend-only integrations | 4 |
+| Legacy search endpoints without UI consumers | 6 |
+| Blocked refresh integration | 1 |
+
+These results describe static integration coverage, not successful live end-to-end verification.
+
+Additional runtime integration testing remains necessary before production readiness can be established.
+
+---
+
+## 20.18 Engineering Ownership
+
+The frontend was independently developed by **Nawaf Al-Ghamdi**, covering the application from architectural design to user-facing implementation.
+
+### Areas of ownership
+
+**Frontend Architecture**
+- Next.js application structure
+- Feature-oriented modules
+- Shared component architecture
+- API integration architecture
+
+**Interface Engineering**
+- UI/UX implementation
+- Responsive layouts
+- Design system integration
+- Bilingual RTL/LTR support
+- Interactive components and animations
+
+**Application Integration**
+- Spring Boot API connectivity
+- Backend-for-Frontend routing
+- Authentication integration
+- Server-state management
+- Personalized recommendation workflows
+
+**Security & Reliability**
+- Server-side authentication boundaries
+- CSRF protection
+- API request validation
+- Credit-operation safeguards
+- Error handling and integration verification
+
+### Developer
+
+**Nawaf Al-Ghamdi**  
+Frontend Architect & Developer
+
+[GitHub](https://github.com/Inawaf9) · [LinkedIn](https://www.linkedin.com/in/xnawafalghamdi/)
+
+---
+
+# 21. Team & Acknowledgments
 
 ## Project Team
 
