@@ -87,7 +87,7 @@ function InteractiveToolResult({ result }: { result: AssistantActionResult }) {
           <table className="w-full text-xs [&_td]:p-2 [&_th]:p-2 [&_th]:text-start">
             <thead>
               <tr>
-                <th>{ar ? "العقار" : "Property"}</th>
+                <th>{ar ? "البيت" : "Home"}</th>
                 <th>SAR</th>
                 <th>{ar ? "غرف" : "Beds"}</th>
                 <th>m²</th>
@@ -277,7 +277,7 @@ function InteractiveToolResult({ result }: { result: AssistantActionResult }) {
         onOpenChange={(open) => {
           if (!open) setPreview(null);
         }}
-        title={preview?.title || (ar ? "معاينة العقار" : "Property preview")}
+        title={preview?.title || (ar ? "معاينة البيت" : "Home preview")}
         description={
           ar
             ? "بيانات إعلان فعلية عند توفرها، دون تعديل حسابك."
@@ -313,7 +313,7 @@ function ActualPreview({ source, externalId }: { source: string; externalId: str
       <PropertyMedia
         aspect="gallery"
         src={listing.image || listing.images?.[0] || null}
-        title={listing.title || (ar ? "العقار" : "Property")}
+        title={listing.title || (ar ? "البيت" : "Home")}
       />
       <PropertyPrice
         price={listing.price}
@@ -341,11 +341,11 @@ function ActualPreview({ source, externalId }: { source: string; externalId: str
                 tool: "location",
                 initial: { latitude: listing.latitude, longitude: listing.longitude },
               },
-              ar ? "موقع عقار مؤقت" : "Temporary listing location",
+              ar ? "موقع بيت مؤقت" : "Temporary listing location",
             )
           }
         >
-          {ar ? "استخدام موقع العقار مؤقتًا" : "Use property location temporarily"}
+          {ar ? "استخدام موقع البيت مؤقتًا" : "Use home location temporarily"}
         </Button>
       ) : null}
       <Button

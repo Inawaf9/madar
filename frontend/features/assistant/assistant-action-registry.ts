@@ -28,7 +28,7 @@ export const toolNames = [
   "comparison-select",
   "weights",
   "analysis",
-  "home-remove",
+  "property-remove",
   "housing-remove",
   "confirm-move",
   "location",
@@ -145,7 +145,7 @@ const ranges = (schema: z.ZodObject) =>
   });
 export const assistantActionRegistry: Record<ToolName, ToolDefinition> = {
   search: {
-    title: ["البحث عن عقار", "Find a property"],
+    title: ["البحث عن بيت", "Find a home"],
     schema: searchSchema,
     fields: [
       field("city", "city", "المدينة", "City"),
@@ -159,7 +159,7 @@ export const assistantActionRegistry: Record<ToolName, ToolDefinition> = {
         "Neighborhood (optional)",
         { optional: true },
       ),
-      field("type", "select", "نوع العقار", "Property type", { options: propertyTypes }),
+      field("type", "select", "نوع البيت", "Home type", { options: propertyTypes }),
       ...priceFields,
       field("q", "text", "كلمة بحث", "Keyword", { optional: true }),
     ],
@@ -179,7 +179,7 @@ export const assistantActionRegistry: Record<ToolName, ToolDefinition> = {
     defaults: {},
   },
   specifications: {
-    title: ["مواصفات العقار", "Property criteria"],
+    title: ["مواصفات البيت", "Home criteria"],
     schema: ranges(
       z.object({
         minBedrooms: searchSchema.shape.minBedrooms,
@@ -244,19 +244,19 @@ export const assistantActionRegistry: Record<ToolName, ToolDefinition> = {
     defaults: { ids: [] },
   },
   "saved-properties": {
-    title: ["اختر من المحفوظات", "Choose saved properties"],
+    title: ["اختر من المحفوظات", "Choose saved Properties"],
     schema: selected,
-    fields: [field("ids", "properties", "العقارات المحفوظة", "Saved properties")],
+    fields: [field("ids", "properties", "بيوتي المحفوظة", "Saved homes")],
     confirmation: false,
     defaults: { ids: [] },
   },
   comparison: {
-    title: ["مقارنة العقارات", "Compare properties"],
+    title: ["مقارنة البيوت", "Compare Properties"],
     schema: selected.refine((value) => value.ids.length >= 2, {
       path: ["ids"],
       message: "Choose at least two",
     }),
-    fields: [field("ids", "properties", "عقاران على الأقل", "At least two properties")],
+    fields: [field("ids", "properties", "بيتين على الأقل", "At least two homes")],
     confirmation: false,
     defaults: { ids: [] },
   },
@@ -270,7 +270,7 @@ export const assistantActionRegistry: Record<ToolName, ToolDefinition> = {
       })
       .strict(),
     fields: [
-      field("propertyIds", "properties", "عقار (اختياري)", "Property (optional)", {
+      field("propertyIds", "properties", "بيت (اختياري)", "Home (optional)", {
         optional: true,
       }),
       field("categories", "multi", "الخدمات المطلوبة", "Service categories", {
@@ -294,7 +294,7 @@ export const assistantActionRegistry: Record<ToolName, ToolDefinition> = {
       })
       .strict(),
     fields: [
-      field("propertyIds", "properties", "اختر عقارًا واحدًا", "Choose one property"),
+      field("propertyIds", "properties", "اختر بيتًا واحدًا", "Choose one home"),
       field("ids", "places", "وجهات التنقل", "Destinations"),
       field("mode", "select", "وسيلة التنقل المدعومة", "Supported transport", {
         options: ["driving"],
@@ -374,10 +374,7 @@ export const assistantActionRegistry: Record<ToolName, ToolDefinition> = {
     defaults: { movedInAt: "" },
   },
   "property-reference": {
-    title: [
-      "إضافة مرجع عقار (اختيار مؤقت)",
-      "Add a property reference (temporary selection)",
-    ],
+    title: ["إضافة مرجع بيت (اختيار مؤقت)", "Add a home reference (temporary selection)"],
     schema: savedPropertySchema.extend({ titleSnapshot: z.string().max(200).optional() }),
     fields: [
       field("titleSnapshot", "text", "عنوان اختياري", "Optional title", {
@@ -421,7 +418,7 @@ export const assistantActionRegistry: Record<ToolName, ToolDefinition> = {
       })
       .strict(),
     fields: [
-      field("ids", "properties", "اختر عقارًا واحدًا", "Choose one property"),
+      field("ids", "properties", "اختر بيتًا واحدًا", "Choose one home"),
       field("report", "select", "نوع المعاينة", "Preview type", {
         options: ["affordability", "match", "neighborhood"],
       }),
@@ -429,7 +426,7 @@ export const assistantActionRegistry: Record<ToolName, ToolDefinition> = {
     confirmation: false,
     defaults: { ids: [], report: "affordability" },
   },
-  "home-remove": {
+  "property-remove": {
     title: ["إزالة البيت (اختيار مؤقت)", "Remove home (temporary selection)"],
     schema: z.object({}).strict(),
     fields: [],
@@ -458,7 +455,7 @@ export const assistantActionRegistry: Record<ToolName, ToolDefinition> = {
     defaults: {},
   },
   "save-property": {
-    title: ["تغيير حفظ عقار (اختيار مؤقت)", "Change property save (temporary selection)"],
+    title: ["تغيير حفظ بيت (اختيار مؤقت)", "Change home save (temporary selection)"],
     schema: z.object({ id: z.string().min(1).max(200), save: z.boolean() }).strict(),
     fields: [],
     confirmation: true,

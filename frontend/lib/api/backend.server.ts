@@ -1,7 +1,7 @@
 import "server-only";
 import { ApiError } from "./errors";
 import { backendBaseUrl } from "./config.server";
-import { safeBackendMessage } from "./backend-error-catalog";
+import { backendFailure } from "./backend-error-catalog";
 import { requireSession } from "@/lib/auth/session.server";
 export type BackendOptions = {
   method?: string;
@@ -86,15 +86,12 @@ export async function publicBackendResponse(
       typeof data.message === "string"
         ? data.message
         : "";
+    const failure = backendFailure(response.status, message);
     diagnostic("backend-response", {
-      status: response.status,
-      code: safeBackendMessage(message) ?? "UNCLASSIFIED_BACKEND_ERROR",
+      status: failure.status,
+      code: failure.backendMessage ?? "UNCLASSIFIED_BACKEND_ERROR",
     });
-    throw new ApiError(
-      "Backend request failed",
-      response.status,
-      safeBackendMessage(message),
-    );
+    throw new ApiError("Backend request failed", failure.status, failure.backendMessage);
   }
   diagnostic("backend-response", { status: response.status, code: "SUCCESS" });
   return { data, status: response.status };

@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     return error("معاملات البحث غير صالحة.", "INVALID_QUERY", 400);
   const parsed = parameters.safeParse(Object.fromEntries(search));
   if (!parsed.success)
-    return error("اختر تصنيفًا وموقع عقار صالحين.", "INVALID_QUERY", 400);
+    return error("اختر تصنيفًا وموقع بيت صالحين.", "INVALID_QUERY", 400);
   const key = process.env.GEOAPIFY_API_KEY?.trim();
   if (!key)
     return error(

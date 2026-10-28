@@ -8,6 +8,8 @@ import type {
 
 import { apiRequest } from "./client";
 import { emptyListOnMissing } from "./optional-record";
+import type { CommuteReport } from "./discovery-contracts";
+import { commuteRequestPath } from "./comparison-request-paths";
 
 export const placesApi = {
   summary: (signal?: AbortSignal) =>
@@ -17,6 +19,8 @@ export const placesApi = {
       apiRequest<PlacePreference[]>(`/api/v1/place-preference/me`, { signal }),
       "No places found for this user",
     ),
+  commute: (latitude: number, longitude: number, signal?: AbortSignal) =>
+    apiRequest<CommuteReport>(commuteRequestPath(latitude, longitude), { signal }),
   add: (body: PlaceInput) =>
     apiRequest<ApiResponse>(`/api/v1/place-preference/me`, {
       method: "POST",

@@ -20,9 +20,9 @@ export function PropertyLocationExperience({
   propertyReference?: { source: string; externalId: string };
 }) {
   const ar = useLocale() === "ar";
-  const [view, setView] = useState<
-    "map" | "services" | "commute" | "analysis" | "property"
-  >("map");
+  const [view, setView] = useState<"map" | "services" | "commute" | "analysis" | "home">(
+    "map",
+  );
   const located = validCoordinates(point.latitude, point.longitude);
   return (
     <section
@@ -32,12 +32,12 @@ export function PropertyLocationExperience({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-section font-medium">
-            {ar ? "موقع العقار ومحيطه" : "Property location and surroundings"}
+            {ar ? "موقع البيت ومحيطه" : "Home location and surroundings"}
           </h2>
           <p className="mt-1 text-sm leading-7 text-muted-foreground">
             {ar
-              ? "شوف موقع العقار والخدمات القريبة وخيارات المشاوير."
-              : "See the property location, nearby services, and commute options."}
+              ? "شوف موقع البيت والخدمات القريبة وخيارات المشاوير."
+              : "See the home location, nearby services, and commute options."}
           </p>
         </div>
         <Button
@@ -66,7 +66,7 @@ export function PropertyLocationExperience({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setView("property")}
+            onClick={() => setView("home")}
           >
             {ar ? "الميزانية والمطابقة" : "Budget and match"}
           </Button>
@@ -77,7 +77,7 @@ export function PropertyLocationExperience({
           <MapNearbyServices property={point} />
         ) : (
           <MadarMap
-            label={ar ? "موقع العقار" : "Property location"}
+            label={ar ? "موقع البيت" : "Home location"}
             points={[point]}
           />
         )
@@ -98,7 +98,7 @@ export function PropertyLocationExperience({
           </Button>
         </div>
       )}
-      {view === "property" && propertyReference ? (
+      {view === "home" && propertyReference ? (
         <PersonalPropertyInsights {...propertyReference} />
       ) : located ? (
         view === "commute" ? (
@@ -127,8 +127,8 @@ export function PropertyLocationExperience({
       ) : (
         <p className="rounded-2xl border bg-card p-4 text-sm text-muted-foreground">
           {ar
-            ? "موقع هذا العقار غير متاح، لذلك ما نقدر نعرض الخدمات أو نحسب المشاوير."
-            : "This property has no valid location, so services and commute times are unavailable."}
+            ? "موقع هذا البيت غير متاح، لذلك ما نقدر نعرض الخدمات أو نحسب المشاوير."
+            : "This home has no valid location, so services and commute times are unavailable."}
         </p>
       )}
     </section>

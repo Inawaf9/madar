@@ -1,5 +1,6 @@
 import {
   Bookmark,
+  Bell,
   CircleUserRound,
   Columns3,
   CreditCard,
@@ -33,6 +34,7 @@ export const productNavigation = [
     items: [
       { href: "/profile", label: "profile", icon: CircleUserRound },
       { href: "/payments", label: "payments", icon: CreditCard },
+      { href: "/notifications", label: "notifications", icon: Bell },
     ],
   },
 ] as const;

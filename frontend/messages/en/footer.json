@@ -1,11 +1,11 @@
 {
-  "description": "MADAR helps you compare properties by budget, journeys, and places that matter to you.",
+  "description": "MADAR helps you compare homes by budget, journeys, and places that matter to you.",
   "product": "Product",
-  "discover": "Explore properties",
+  "discover": "Explore homes",
   "compare": "Compare options",
   "about": "About MADAR",
   "privacy": "Privacy policy",
   "terms": "Terms of use",
   "copyright": "© {year} MADAR. All rights reserved.",
-  "demoDisclaimer": "Examples shown on this page are not live property listings."
+  "demoDisclaimer": "Examples shown on this page are not live home listings."
 }

@@ -7,14 +7,14 @@ export default async function NotFound() {
       <h1 className="text-2xl font-bold">{ar ? "ما لقينا الصفحة" : "Page not found"}</h1>
       <p className="mt-4 text-muted-foreground">
         {ar
-          ? "تأكد من الرابط أو ارجع لتصفّح العقارات."
-          : "Check the link or return to browsing properties."}
+          ? "تأكد من الرابط أو ارجع لتصفّح البيوت."
+          : "Check the link or return to browsing homes."}
       </p>
       <Link
         href="/properties"
         className="mt-6 inline-flex text-primary underline"
       >
-        {ar ? "تصفّح العقارات" : "Browse properties"}
+        {ar ? "تصفّح البيوت" : "Browse Properties"}
       </Link>
     </main>
   );

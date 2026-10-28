@@ -68,8 +68,8 @@ function AssistantWelcome() {
         </h2>
         <p className="text-sm leading-6 text-muted-foreground">
           {ar
-            ? "اسألني عن العقارات والأماكن والخدمات اللي تهمك."
-            : "Ask about properties, places, and nearby services."}
+            ? "اسألني عن البيوت والأماكن والخدمات اللي تهمك."
+            : "Ask about homes, places, and nearby services."}
         </p>
         <p className="text-xs leading-5 text-muted-foreground">
           {ar

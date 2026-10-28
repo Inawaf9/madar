@@ -19,7 +19,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { MadarLogo } from "@/components/branding/madar-logo";
@@ -35,6 +34,11 @@ export function AppSidebar() {
   const { user } = useIdentity();
   const { setOpenMobile, isMobile } = useSidebar();
   const active = currentNavigation(path);
+  const groupLabel = {
+    primary: "sidebarPrimaryGroup",
+    personal: "sidebarPersonalGroup",
+    account: "sidebarAccountGroup",
+  } as const;
   const close = () => setOpenMobile(false);
   return (
     <Sidebar
@@ -45,7 +49,7 @@ export function AppSidebar() {
       mobileTitle={copy.menu}
       mobileDescription={copy.workspace}
     >
-      <SidebarHeader className="pb-4 pt-4">
+      <SidebarHeader className="pb-5 pt-4">
         <div className="flex items-center justify-between gap-2">
           <Link
             href="/dashboard"
@@ -79,9 +83,12 @@ export function AppSidebar() {
       <SidebarContent className="group-data-[collapsible=icon]:overflow-y-auto">
         <nav aria-label={t("navigation")}>
           {productNavigation.map(({ group, items }) => (
-            <SidebarGroup key={group}>
-              <SidebarGroupLabel className="text-caption font-medium">
-                {copy[group]}
+            <SidebarGroup
+              key={group}
+              className="gap-1 px-2 py-2"
+            >
+              <SidebarGroupLabel className="px-2 text-caption font-semibold tracking-wide text-sidebar-foreground/60">
+                {t(groupLabel[group])}
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -96,7 +103,7 @@ export function AppSidebar() {
                           children: t(label),
                           side: direction === "rtl" ? "left" : "right",
                         }}
-                        className="h-11 gap-3 rounded-xl data-active:bg-primary/10 data-active:font-semibold data-active:text-primary group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-2.5!"
+                        className="h-11 gap-3 rounded-xl hover:bg-sidebar-accent/70 focus-visible:ring-2 focus-visible:ring-sidebar-ring data-active:bg-primary/10 data-active:font-semibold data-active:text-primary group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-2.5! [&_svg]:size-4"
                       >
                         <Icon aria-hidden="true" />
                         <span>{t(label)}</span>
@@ -109,15 +116,16 @@ export function AppSidebar() {
           ))}
         </nav>
       </SidebarContent>
-      <SidebarSeparator />
-      <SidebarFooter className="pb-4">
+      <SidebarFooter className="pt-2 pb-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               render={<Link href="/profile" />}
               onClick={close}
               size="lg"
-              className="h-14 group-data-[collapsible=icon]:size-9! focus-visible:ring-3 focus-visible:ring-sidebar-ring"
+              className="h-14 gap-3 rounded-xl hover:bg-sidebar-accent/70 group-data-[collapsible=icon]:size-9! focus-visible:ring-2 focus-visible:ring-sidebar-ring [&_svg]:size-4"
+              isActive={active?.href === "/profile"}
+              aria-current={active?.href === "/profile" ? "page" : undefined}
               aria-label={t("profile")}
             >
               <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-sm font-semibold">

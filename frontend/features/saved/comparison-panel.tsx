@@ -21,7 +21,7 @@ function titleFor(property: SavedProperty, locale: string) {
     listingTitle?.trim() ||
     (locale === "ar" ? property.titleSnapshotAr : property.titleSnapshotEn)?.trim() ||
     property.titleSnapshot?.trim() ||
-    (locale === "ar" ? "عقار محفوظ" : "Saved property")
+    (locale === "ar" ? "بيت محفوظ" : "Saved home")
   );
 }
 

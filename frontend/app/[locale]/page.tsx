@@ -8,8 +8,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: arabic ? "مدار | بيت يناسب يومك" : "MADAR | Find a home that fits your day",
     description: arabic
-      ? "تصفّح العقارات وقارن بينها حسب ميزانيتك ومشاويرك والأماكن اللي تهمك."
-      : "Explore and compare properties by budget, commute, and the places that matter to you.",
+      ? "تصفّح البيوت وقارن بينها حسب ميزانيتك ومشاويرك والأماكن اللي تهمك."
+      : "Explore and compare homes by budget, commute, and the places that matter to you.",
     alternates: { languages: { ar: "/ar", en: "/en" } },
     openGraph: {
       locale: arabic ? "ar_SA" : "en_US",

@@ -24,7 +24,7 @@ export function PropertyGridSkeleton({
   appearance?: "default" | "image";
 }) {
   return (
-    <LoadingStatus label="جارٍ تحميل العقارات">
+    <LoadingStatus label="جارٍ تحميل البيوت">
       <div
         className={cn(
           "grid sm:grid-cols-2 lg:grid-cols-3",
@@ -105,7 +105,7 @@ export function DetailSkeleton() {
   return (
     <div className="flex flex-col gap-8">
       <HeadingSkeleton />
-      <LoadingStatus label="جارٍ تحميل تفاصيل العقار">
+      <LoadingStatus label="جارٍ تحميل تفاصيل البيت">
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)]">
           <div className="order-2 flex flex-col gap-5 rounded-3xl border bg-card p-5 shadow-stone sm:p-6 lg:order-1">
             <div className="flex gap-2">

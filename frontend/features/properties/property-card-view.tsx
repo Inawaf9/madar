@@ -110,7 +110,7 @@ export function PropertyCardView({
       aria-labelledby={id}
       size={compact ? "sm" : "default"}
       className={cn(
-        "group/property h-full min-w-0 gap-0 py-0 transition-[border-color,box-shadow] hover:border-primary/30 hover:shadow-panel motion-reduce:transition-none",
+        "group/home h-full min-w-0 gap-0 py-0 transition-[border-color,box-shadow] hover:border-primary/30 hover:shadow-panel motion-reduce:transition-none",
         compact && "[--card-spacing:0.75rem]",
         className,
       )}
@@ -122,6 +122,7 @@ export function PropertyCardView({
           loading={loading}
           fallback={imageFallback}
           sizes={compact ? "230px" : undefined}
+          aspect={compact ? "wide" : "listing"}
         />
         {badge || type ? (
           <div className="pointer-events-none absolute start-3 top-3 max-w-[calc(100%-5rem)]">

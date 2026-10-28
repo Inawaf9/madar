@@ -13,7 +13,7 @@ const content = {
       {
         title: "1. التعريف بالمنصة",
         paragraphs: [
-          "مدار منصة تقنية تساعد المستخدمين في البحث عن العقارات ومقارنتها وتحليل مواقعها والخدمات القريبة منها وأوقات التنقل.",
+          "مدار منصة تقنية تساعد المستخدمين في البحث عن البيوت ومقارنتها وتحليل مواقعها والخدمات القريبة منها وأوقات التنقل.",
           "تُقدم المنصة بواسطة [الاسم القانوني للمشغّل].",
         ],
       },
@@ -27,22 +27,22 @@ const content = {
       {
         title: "3. الحسابات",
         paragraphs: [
-          "قد تحتاج تنشئ حساب للوصول لبعض الميزات مثل حفظ العقارات وتفضيلات السكن وتحليل المشاوير.",
+          "قد تحتاج تنشئ حساب للوصول لبعض الميزات مثل حفظ البيوت وتفضيلات السكن وتحليل المشاوير.",
           "أنت مسؤول عن تقديم معلومات صحيحة والمحافظة على سرية بيانات الدخول، وإبلاغنا إذا لاحظت استخدامًا غير مصرح به لحسابك.",
         ],
       },
       {
-        title: "4. معلومات العقارات",
+        title: "4. معلومات البيوت",
         paragraphs: [
-          "قد يعرض مدار بيانات عقارية مصدرها جهات أو مزودو معلومات خارجيون. ويمكن أن تتغير الأسعار والتفاصيل والتوفر بعد عرضها.",
-          "لا يُعد عرض العقار في مدار ضمانًا لتوفره أو دقة جميع بياناته. تأكد من التفاصيل الأساسية مع الجهة المعنية قبل اتخاذ قرار مالي أو تعاقدي.",
+          "قد يعرض مدار بيانات سكنية مصدرها جهات أو مزودو معلومات خارجيون. ويمكن أن تتغير الأسعار والتفاصيل والتوفر بعد عرضها.",
+          "لا يُعد عرض البيت في مدار ضمانًا لتوفره أو دقة جميع بياناته. تأكد من التفاصيل الأساسية مع الجهة المعنية قبل اتخاذ قرار مالي أو تعاقدي.",
         ],
       },
       {
         title: "5. المقارنات والتوصيات",
         paragraphs: [
-          "يوفر مدار أدوات تساعدك تقارن بين العقارات وتقيّم الخيارات بناءً على تفضيلاتك واحتياجاتك.",
-          "نتائج المقارنات والتوصيات معلومات مساعدة لاتخاذ القرار، وليست تقييمًا عقاريًا معتمدًا أو استشارة مالية أو قانونية.",
+          "يوفر مدار أدوات تساعدك تقارن بين البيوت وتقيّم الخيارات بناءً على تفضيلاتك واحتياجاتك.",
+          "نتائج المقارنات والتوصيات تساعدك على الاختيار، لكنها ليست تقييمًا معتمدًا لقيمة البيت ولا استشارة مالية أو قانونية.",
         ],
       },
       {
@@ -97,7 +97,7 @@ const content = {
       {
         title: "13. حدود المسؤولية",
         paragraphs: [
-          "يقدم مدار أدوات معلوماتية تساعد على تقييم الخيارات العقارية، ولا يحل محل التحقق المستقل أو الاستشارة المتخصصة عند الحاجة.",
+          "يقدم مدار أدوات معلوماتية تساعد على تقييم الخيارات السكنية، ولا يحل محل التحقق المستقل أو الاستشارة المتخصصة عند الحاجة.",
           "لا يُقصد بهذه الشروط استبعاد أي مسؤولية أو حق لا يجوز استبعاده بموجب الأنظمة المطبقة في المملكة العربية السعودية.",
         ],
       },
@@ -127,7 +127,7 @@ const content = {
       {
         title: "1. About MADAR",
         paragraphs: [
-          "MADAR is a technology platform for property discovery, comparisons, neighborhood information, and commute analysis.",
+          "MADAR is a technology platform for home discovery, comparisons, neighborhood information, and commute analysis.",
           "The platform is operated by [Legal Operator Name].",
         ],
       },
@@ -145,17 +145,17 @@ const content = {
         ],
       },
       {
-        title: "4. Property Information",
+        title: "4. Home Information",
         paragraphs: [
-          "Property listings may originate from external providers. Prices, availability, and other details may change.",
+          "Home listings may come from external providers. Prices, availability, and other details can change.",
           "MADAR does not guarantee the availability or accuracy of every listing. Verify important details with the relevant party before making financial or contractual decisions.",
         ],
       },
       {
         title: "5. Comparisons and Recommendations",
         paragraphs: [
-          "MADAR provides tools to help evaluate housing options based on preferences and relevant property information.",
-          "Recommendations and comparisons are informational and do not constitute certified property valuations or financial or legal advice.",
+          "MADAR provides tools to help evaluate housing options based on preferences and relevant home information.",
+          "Recommendations and comparisons are for information only. They are not formal valuations of a home's market value or financial or legal advice.",
         ],
       },
       {

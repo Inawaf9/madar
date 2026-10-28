@@ -37,7 +37,7 @@ export function adaptChatProperty(dto: ChatProperty, locale: string) {
   return {
     listing: propertyCardData(
       { ...localized, source: dto.source || undefined },
-      ar ? "عقار بدون عنوان" : "Untitled property",
+      ar ? "بيت بدون عنوان" : "Untitled home",
     ),
     property,
   };

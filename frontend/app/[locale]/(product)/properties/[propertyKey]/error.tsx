@@ -4,8 +4,8 @@ export default function Error(props: RouteErrorProps) {
   return (
     <RouteError
       {...props}
-      title={"تعذّر عرض العقار المحفوظ"}
-      description={"ما قدرنا نعرض مرجع العقار. حاول مرة ثانية أو ارجع للعقارات المحفوظة."}
+      title={"تعذّر عرض البيت المحفوظ"}
+      description={"ما قدرنا نعرض مرجع البيت. حاول مرة ثانية أو ارجع للبيوت المحفوظة."}
       backHref={"/saved"}
       backLabel={"المحفوظات"}
     />

@@ -1,11 +1,11 @@
 {
   "eyebrow": "How MADAR works",
   "title": "Search and compare your way",
-  "description": "Start with properties, then add the details that matter to you when you need them.",
-  "stepOneTitle": "Search for a property",
-  "stepOneDescription": "Browse properties in MADAR or save a listing reference you already have.",
+  "description": "Start with homes, then add the details that matter to you when you need them.",
+  "stepOneTitle": "Search for a home",
+  "stepOneDescription": "Browse homes in MADAR or save a listing reference you already have.",
   "stepTwoTitle": "Add important places",
   "stepTwoDescription": "Add work, school, or other regular destinations if you want to compare journeys.",
   "stepThreeTitle": "Compare your options",
-  "stepThreeDescription": "Review available details for each property and choose what works for you."
+  "stepThreeDescription": "Review available details for each home and choose what works for you."
 }

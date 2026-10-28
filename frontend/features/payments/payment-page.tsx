@@ -61,14 +61,14 @@ const creditServiceLabels: Record<string, [string, string]> = {
 
 const creditServiceDescriptions: Record<string, [string, string]> = {
   TOP_3_RECOMMENDATIONS: [
-    "اقتراحات عقارية مخصصة بناءً على تفضيلاتك.",
-    "Personalized property recommendations based on your preferences.",
+    "اقتراحات سكنية مخصصة بناءً على تفضيلاتك.",
+    "Personalized home recommendations based on your preferences.",
   ],
   AI_CHAT: [
     "محادثة مع مدار للمساعدة في رحلة البحث.",
     "Chat with Madar for help during your search.",
   ],
-  AI_COMPARISON: ["تحليل ذكي لمقارنة العقارات.", "AI analysis to compare properties."],
+  AI_COMPARISON: ["تحليل ذكي لمقارنة البيوت.", "AI analysis to compare homes."],
   COMMUTE_REPORT: [
     "تحليل التنقل إلى الأماكن المهمة المحفوظة.",
     "Commute analysis for your saved important places.",

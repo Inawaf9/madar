@@ -1,14 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import {
-  CircleUserRound,
-  House,
-  LoaderCircle,
-  LogOut,
-  MoreHorizontal,
-  Search,
-} from "lucide-react";
+import { CircleUserRound, House, LoaderCircle, LogOut, Search } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useIdentity } from "@/features/account/identity";
 import { getLayoutCopy } from "@/messages/layout-copy";
@@ -34,6 +27,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { currentNavigation } from "./navigation";
+import { NotificationBell } from "./notification-bell";
 
 export function DashboardHeader() {
   const locale = useLocale();
@@ -61,7 +55,7 @@ export function DashboardHeader() {
         <BreadcrumbList className="flex-nowrap overflow-hidden">
           <BreadcrumbItem className="hidden shrink-0 sm:inline-flex">
             <BreadcrumbLink render={<Link href="/dashboard" />}>
-              {copy.primary}
+              {t("dashboard")}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator className="hidden sm:block" />
@@ -89,17 +83,21 @@ export function DashboardHeader() {
           ) : null}
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="flex shrink-0 items-center gap-0.5">
+      <div className="flex shrink-0 items-center gap-1">
         <Button
           nativeButton={false}
           render={<Link href="/properties" />}
           variant="ghost"
           size="icon"
           aria-label={copy.publicSearch}
-          className="hidden sm:inline-flex"
+          title={copy.publicSearch}
+          className="size-10"
         >
           <Search aria-hidden="true" />
         </Button>
+        <NotificationBell />
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
         <Button
           nativeButton={false}
           render={<Link href="/" />}
@@ -107,7 +105,7 @@ export function DashboardHeader() {
           size="sm"
           aria-label={t("backHome")}
           title={t("backHome")}
-          className="hidden size-10 sm:inline-flex xl:h-9 xl:w-auto xl:px-3"
+          className="hidden size-10 lg:inline-flex xl:h-9 xl:w-auto xl:px-3"
         >
           <House
             data-icon="inline-start"
@@ -115,42 +113,17 @@ export function DashboardHeader() {
           />
           <span className="hidden xl:inline">{t("backHome")}</span>
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={signingOut}
-          aria-label={signingOut ? t("working") : t("logout")}
-          title={signingOut ? t("working") : t("logout")}
-          aria-busy={signingOut}
-          onClick={() => void logout()}
-          className="hidden size-10 sm:inline-flex xl:h-9 xl:w-auto xl:px-3"
-        >
-          {signingOut ? (
-            <LoaderCircle
-              data-icon="inline-start"
-              aria-hidden="true"
-              className="animate-spin"
-            />
-          ) : (
-            <LogOut
-              data-icon="inline-start"
-              aria-hidden="true"
-            />
-          )}
-          <span className="hidden xl:inline">
-            {signingOut ? t("working") : t("logout")}
-          </span>
-        </Button>
-        <LanguageSwitcher />
-        <ThemeToggle />
+        <div className="hidden items-center gap-1 md:flex">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-10 xl:size-9"
+                className="size-10"
                 aria-label={signingOut ? t("working") : copy.accountMenu}
                 aria-busy={signingOut}
                 disabled={signingOut}
@@ -163,7 +136,7 @@ export function DashboardHeader() {
                 className="animate-spin"
               />
             ) : (
-              <MoreHorizontal aria-hidden="true" />
+              <CircleUserRound aria-hidden="true" />
             )}
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -174,11 +147,15 @@ export function DashboardHeader() {
               <DropdownMenuLabel>{copy.accountNote}</DropdownMenuLabel>
               <DropdownMenuItem
                 render={<Link href="/" />}
-                className="sm:hidden"
+                className="lg:hidden"
               >
                 <House aria-hidden="true" />
                 {t("backHome")}
               </DropdownMenuItem>
+              <div className="flex items-center justify-between gap-2 px-2 py-2 md:hidden">
+                <LanguageSwitcher />
+                <ThemeToggle />
+              </div>
               {role === "ADMIN" ? (
                 <DropdownMenuItem render={<Link href="/admin" />}>
                   <CircleUserRound aria-hidden="true" />
@@ -189,12 +166,19 @@ export function DashboardHeader() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem
-                className="sm:hidden"
                 disabled={signingOut}
                 onClick={() => void logout()}
+                aria-busy={signingOut}
               >
-                <LogOut aria-hidden="true" />
-                {t("logout")}
+                {signingOut ? (
+                  <LoaderCircle
+                    aria-hidden="true"
+                    className="animate-spin"
+                  />
+                ) : (
+                  <LogOut aria-hidden="true" />
+                )}
+                {signingOut ? t("working") : t("logout")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={signingOut}

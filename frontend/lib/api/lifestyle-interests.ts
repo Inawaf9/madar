@@ -20,9 +20,12 @@ export const lifestyleApi = {
     }),
 };
 /** Preserve selection UX through the dedicated resource API. Each retry diffs fresh server state. */
-export async function saveSelectedInterests(codes: string[]) {
+export async function saveSelectedInterests(
+  codes: string[],
+  currentInterests?: LifestyleInterest[],
+) {
   const selected = new Set(codes);
-  const existing = await lifestyleApi.get();
+  const existing = currentInterests ?? (await lifestyleApi.get());
   for (const item of existing) {
     const active = selected.has(item.code);
     if (item.active !== active)

@@ -72,7 +72,16 @@ function fitPoints(map: Map, points: MapPoint[]) {
   const bounds = new LngLatBounds();
   for (const point of points) bounds.extend([point.longitude!, point.latitude!]);
   if (points.length === 1) map.jumpTo({ center: bounds.getCenter(), zoom: 14 });
-  else map.fitBounds(bounds, { padding: 64, maxZoom: 15, duration: 0 });
+  else {
+    map.fitBounds(bounds, { padding: 64, maxZoom: 15, duration: 0 });
+    const home = points.find((point) => point.kind === "home");
+    if (home) {
+      map.jumpTo({
+        center: [home.longitude!, home.latitude!],
+        zoom: map.getZoom(),
+      });
+    }
+  }
 }
 
 function markerButton(point: MapPoint) {
@@ -89,9 +98,9 @@ function markerButton(point: MapPoint) {
     ),
   );
   button.classList.add(
-    ...(point.kind === "property"
+    ...(point.kind === "home"
       ? "bg-primary text-primary-foreground"
-      : point.kind === "home"
+      : point.kind === "property"
         ? "bg-accent text-accent-foreground"
         : "bg-secondary text-secondary-foreground"
     ).split(" "),
@@ -389,8 +398,8 @@ function MapCanvas({
             ? 0
             : 400,
         });
-        const property = points.find((p) => p.kind === "property");
-        if (point.kind === "service" && property) fitPoints(map, [property, point]);
+        const home = points.find((p) => p.kind === "property");
+        if (point.kind === "service" && home) fitPoints(map, [home, point]);
       };
       openers[point.id] = () => open(false);
       button.addEventListener("click", (event) => {
@@ -566,14 +575,13 @@ function MapCanvas({
                 variant="outline"
                 size="icon"
                 className="absolute end-3 top-16 bg-card"
-                aria-label={locale === "ar" ? "العودة إلى العقار" : "Return to property"}
-                title={locale === "ar" ? "العودة إلى العقار" : "Return to property"}
+                aria-label={locale === "ar" ? "العودة إلى البيت" : "Return to home"}
+                title={locale === "ar" ? "العودة إلى البيت" : "Return to home"}
                 onClick={() => {
-                  const property = (JSON.parse(pointsJson) as MapPoint[]).find(
+                  const home = (JSON.parse(pointsJson) as MapPoint[]).find(
                     (p) => p.kind === "property",
                   );
-                  if (instance.current && property)
-                    fitPoints(instance.current, [property]);
+                  if (instance.current && home) fitPoints(instance.current, [home]);
                 }}
               >
                 <House />

@@ -42,7 +42,7 @@ function propertyTitle(property: SavedProperty, locale: string) {
     property.property?.title?.trim() ||
     (locale === "ar" ? property.titleSnapshotAr : property.titleSnapshotEn)?.trim() ||
     property.titleSnapshot?.trim() ||
-    (locale === "ar" ? "عقار محفوظ" : "Saved property")
+    (locale === "ar" ? "بيت محفوظ" : "Saved home")
   );
 }
 
@@ -337,7 +337,7 @@ export function SavedPage() {
         </div>
       </header>
 
-      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(18rem,3fr)]">
+      <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,7fr)_minmax(18rem,3fr)]">
         <main className="flex min-w-0 flex-col gap-4">
           <SavedPropertiesFilters
             search={search}
@@ -364,7 +364,7 @@ export function SavedPage() {
 
           <QueryFeedback query={saved} />
           {saved.isPending ? (
-            <SavedCardsSkeleton className="@min-[38rem]/saved-skeleton:grid-cols-2" />
+            <SavedCardsSkeleton className="@min-[44rem]/saved-skeleton:grid-cols-2" />
           ) : saved.isError && !saved.data ? (
             <ErrorState
               error={saved.error}
@@ -486,8 +486,8 @@ export function SavedDetail({ id }: { id: number }) {
   if (!property)
     return (
       <EmptyState
-        title={t("propertyMissing")}
-        description={t("propertyMissingHint")}
+        title={t("PropertyMissing")}
+        description={t("PropertyMissingHint")}
       >
         <Button
           nativeButton={false}

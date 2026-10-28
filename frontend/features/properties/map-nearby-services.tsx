@@ -29,8 +29,8 @@ export function MapNearbyServices(props: Props) {
         className="rounded-2xl border bg-card p-4 text-sm text-muted-foreground"
       >
         {ar
-          ? "موقع هذا العقار غير متاح، لذلك ما نقدر نبحث عن الخدمات القريبة."
-          : "This property has no valid location, so nearby services cannot be searched."}
+          ? "موقع هذا البيت غير متاح، لذلك ما نقدر نبحث عن الخدمات القريبة."
+          : "This home has no valid location, so nearby services cannot be searched."}
       </p>
     );
   return (
@@ -84,7 +84,7 @@ function LocatedNearbyServices({
   return (
     <div className="flex min-w-0 flex-col gap-5">
       <MadarMap
-        label={ar ? "العقار والخدمات القريبة" : "Property and nearby services"}
+        label={ar ? "البيت والخدمات القريبة" : "Home and nearby services"}
         points={points}
         selectedId={selected}
         onSelectPoint={setSelected}
@@ -118,7 +118,7 @@ function LocatedNearbyServices({
       >
         <div>
           <h3 className="text-lg font-semibold">
-            {ar ? "استكشف الخدمات حول العقار" : "Explore nearby services"}
+            {ar ? "استكشف الخدمات حول البيت" : "Explore nearby services"}
           </h3>
           <p className="mt-1 text-xs leading-6 text-muted-foreground">
             {ar

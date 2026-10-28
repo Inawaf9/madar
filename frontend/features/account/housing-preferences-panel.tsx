@@ -156,7 +156,7 @@ export function HousingPanel() {
             <p className="mt-2 text-sm text-muted-foreground">
               {ar
                 ? "اختر نوع السكن والمدينة والميزانية."
-                : "Choose your property type, city and budget."}
+                : "Choose your home type, city and budget."}
             </p>
           )}
         </div>

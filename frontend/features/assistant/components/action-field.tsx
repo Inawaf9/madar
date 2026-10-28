@@ -141,7 +141,7 @@ export function ActionField({
             <p className="w-full text-xs text-muted-foreground">
               {ar
                 ? "لا توجد بيانات محملة؛ اقرأ حسابك أو أضف مثالًا بنفسك."
-                : "No data loaded. Read your account or discover properties."}
+                : "No data loaded. Read your account or discover homes."}
             </p>
             <Button
               type="button"
@@ -162,8 +162,8 @@ export function ActionField({
                   ? "أضف مكانًا من الخريطة"
                   : "Add place from map"
                 : ar
-                  ? "استكشف العقارات"
-                  : "Discover properties"}
+                  ? "استكشف البيوت"
+                  : "Discover Properties"}
             </Button>
           </div>
         ) : null}

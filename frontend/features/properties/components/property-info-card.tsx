@@ -19,7 +19,7 @@ export function PropertyInfoCard({ property: p }: { property: Property }) {
   const purpose = listingTypeLabel(p.listingType);
   return (
     <section
-      aria-label="معلومات العقار"
+      aria-label="معلومات البيت"
       className="flex min-h-0 min-w-0 flex-col gap-5 rounded-2xl border border-border/70 bg-card p-5 shadow-panel sm:p-6"
     >
       <div className="flex flex-wrap gap-2">

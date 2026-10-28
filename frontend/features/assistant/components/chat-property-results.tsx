@@ -42,7 +42,7 @@ export function ChatPropertyResults({ properties }: { properties: ChatProperty[]
       }}
       setApi={setApi}
       tabIndex={0}
-      aria-label={ar ? "العقارات الواردة من المحادثة" : "Properties returned by chat"}
+      aria-label={ar ? "بيوت مقترحة في المحادثة" : "Homes suggested in chat"}
       className="w-full min-w-0 max-w-full rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring [&_[data-slot=carousel-content]]:overscroll-x-contain"
     >
       <CarouselContent className="ms-0">
@@ -55,7 +55,7 @@ export function ChatPropertyResults({ properties }: { properties: ChatProperty[]
               className="basis-[min(230px,88%)] pe-2 ps-0"
               aria-label={
                 ar
-                  ? `العقار ${index + 1} من ${properties.length}`
+                  ? `البيت ${index + 1} من ${properties.length}`
                   : `Property ${index + 1} of ${properties.length}`
               }
             >
@@ -94,7 +94,7 @@ export function ChatPropertyResults({ properties }: { properties: ChatProperty[]
                         disabled={busy || !canChat}
                         onClick={() => {
                           const text = ar
-                            ? `اعرض عقارات مشابهة للعقار ذي المعرّف ${dto.externalId} من المصدر ${dto.source}.`
+                            ? `اعرض بيوتًا مشابهة لهذا البيت من المصدر ${dto.source}.`
                             : `Find properties similar to external ID ${dto.externalId} from source ${dto.source}.`;
                           send({ type: "text", text }, text);
                         }}
@@ -117,16 +117,16 @@ export function ChatPropertyResults({ properties }: { properties: ChatProperty[]
       </CarouselContent>
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="text-caption text-muted-foreground">
-          {ar ? "نتائج العقارات · اسحب للمزيد" : "Property results · swipe for more"}
+          {ar ? "بيوت مقترحة · اسحب للمزيد" : "Suggested homes · swipe for more"}
         </span>
         <div className="flex gap-1">
           <CarouselPrevious
             className="static inset-auto m-0 size-10 rounded-full"
-            aria-label={ar ? "العقار السابق" : "Previous property"}
+            aria-label={ar ? "البيت السابق" : "Previous home"}
           />
           <CarouselNext
             className="static inset-auto m-0 size-10 rounded-full"
-            aria-label={ar ? "العقار التالي" : "Next property"}
+            aria-label={ar ? "البيت التالي" : "Next home"}
           />
         </div>
       </div>

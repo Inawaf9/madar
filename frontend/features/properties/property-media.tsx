@@ -15,7 +15,7 @@ type Props = {
   priority?: boolean;
   sizes?: string;
   fit?: "cover" | "contain";
-  aspect?: "listing" | "gallery" | "fill";
+  aspect?: "listing" | "gallery" | "wide" | "fill";
   fallback?: ReactNode;
 };
 export function PropertyMedia(props: Props) {
@@ -44,11 +44,13 @@ function Media({
     <div
       className={cn(
         "relative isolate min-w-0 overflow-hidden bg-secondary",
-        aspect === "listing"
-          ? "aspect-[16/10]"
-          : aspect === "gallery"
-            ? "aspect-[4/3]"
-            : "size-full",
+        aspect === "wide"
+          ? "aspect-video"
+          : aspect === "listing"
+            ? "aspect-[16/10]"
+            : aspect === "gallery"
+              ? "aspect-[4/3]"
+              : "size-full",
       )}
     >
       {loading && !image ? (
@@ -68,7 +70,7 @@ function Media({
             onLoad={() => setLoaded(true)}
             onError={() => setFailed(true)}
             className={cn(
-              "transition-transform duration-300 motion-safe:group-hover/property:scale-[1.025] motion-reduce:transition-none",
+              "transition-transform duration-300 motion-safe:group-hover/home:scale-[1.025] motion-reduce:transition-none",
               fit === "contain" ? "object-contain" : "object-cover",
             )}
           />

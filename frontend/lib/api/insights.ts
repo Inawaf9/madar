@@ -18,6 +18,7 @@ import {
   type AiExplanation,
 } from "./insight-contracts";
 import { type ApiLanguage } from "./config";
+import { compareSavedPropertiesPath } from "./comparison-request-paths";
 const enc = encodeURIComponent;
 const languageHeaders = (language: ApiLanguage) => ({ "Accept-Language": language });
 export const insights = {
@@ -81,10 +82,10 @@ export const insights = {
       { headers: languageHeaders(language), signal },
     ),
   compareMultiple: (savedIds: number[], language: ApiLanguage, signal?: AbortSignal) =>
-    apiRequest<ComputedComparison>(
-      `/api/v1/property-comparison/me/compare-multiple/${savedIds.join(",")}`,
-      { headers: languageHeaders(language), signal },
-    ),
+    apiRequest<ComputedComparison>(compareSavedPropertiesPath(savedIds), {
+      headers: languageHeaders(language),
+      signal,
+    }),
   neighborhood: (input: NeighborhoodInput, language: ApiLanguage, signal?: AbortSignal) =>
     apiRequest<NeighborhoodSuitability>(
       `/api/v1/recommendations/me/neighborhood-suitability?${serializeQuery(input)}`,

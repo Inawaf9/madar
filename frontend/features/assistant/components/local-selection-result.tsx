@@ -23,7 +23,7 @@ export function LocalSelectionResult({ result }: { result: AssistantActionResult
           ? "/locations"
           : ["comparison", "comparison-select", "analysis"].includes(tool || "")
             ? "/compare"
-            : ["home", "confirm-move", "home-remove"].includes(tool || "")
+            : ["home", "confirm-move", "property-remove"].includes(tool || "")
               ? "/neighborhood"
               : tool === "commute"
                 ? "/payments"

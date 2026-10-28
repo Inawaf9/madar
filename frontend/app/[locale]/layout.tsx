@@ -21,8 +21,8 @@ export async function generateMetadata(): Promise<Metadata> {
       template: "%s | MADAR",
     },
     description: arabic
-      ? "تصفّح العقارات وقارن بينها حسب ميزانيتك ومشاويرك والأماكن اللي تهمك."
-      : "Explore and compare properties by budget, commute, and the places that matter to you.",
+      ? "تصفّح البيوت وقارن بينها حسب ميزانيتك ومشاويرك والأماكن اللي تهمك."
+      : "Explore and compare homes by budget, commute, and the places that matter to you.",
     icons: {
       icon: [
         {
@@ -54,8 +54,8 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: arabic ? "مدار | بيت يناسب يومك" : "MADAR | Find a home that fits your day",
       description: arabic
-        ? "تصفّح العقارات وقارن بينها حسب ميزانيتك ومشاويرك والأماكن اللي تهمك."
-        : "Explore and compare properties by budget, commute, and the places that matter to you.",
+        ? "تصفّح البيوت وقارن بينها حسب ميزانيتك ومشاويرك والأماكن اللي تهمك."
+        : "Explore and compare homes by budget, commute, and the places that matter to you.",
       siteName: "MADAR",
       type: "website",
     },

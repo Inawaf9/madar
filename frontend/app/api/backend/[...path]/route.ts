@@ -14,6 +14,7 @@ import {
 import { deleteSession } from "@/lib/auth/session.server";
 import { ApiError } from "@/lib/api/errors";
 import { randomUUID } from "node:crypto";
+import { encodeBackendPathSegments } from "@/lib/api/backend-path";
 type Context = { params: Promise<{ path: string[] }> };
 async function handle(request: NextRequest, context: Context) {
   let smartSearchRequest = false;
@@ -28,7 +29,7 @@ async function handle(request: NextRequest, context: Context) {
       )
     )
       return json({ message: "Invalid path" }, 400);
-    const path = `/${segments.map(encodeURIComponent).join("/")}`;
+    const path = encodeBackendPathSegments(segments);
     smartSearchRequest =
       request.method === "POST" && path === "/api/v1/recommendations/me/smart";
     diagnosticId = smartSearchRequest ? randomUUID() : undefined;
