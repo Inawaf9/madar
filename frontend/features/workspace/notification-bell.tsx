@@ -14,7 +14,7 @@ import {
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
-  useNotifications,
+  useUnreadNotifications,
   useUnreadNotificationCount,
 } from "./notifications-query";
 
@@ -30,7 +30,7 @@ function notificationTime(value: string, locale: string) {
 export function NotificationBell() {
   const locale = useLocale();
   const t = useTranslations("Workspace");
-  const notifications = useNotifications();
+  const notifications = useUnreadNotifications();
   const unreadCount = useUnreadNotificationCount();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();

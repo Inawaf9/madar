@@ -53,6 +53,7 @@ const profile = z.object({
   fullName: z.string(),
   email: z.email(),
   createdAt: z.string().nullable().optional(),
+  notificationsEnabled: z.boolean().optional(),
 });
 function sanitize(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sanitize);

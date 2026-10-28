@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   compareSavedPropertiesPath,
+  compareTwoPropertiesPath,
   commuteRequestPath,
 } from "../lib/api/comparison-request-paths.ts";
 import { encodeBackendPathSegments } from "../lib/api/backend-path.ts";
@@ -36,6 +37,13 @@ test("comparison request uses saved-property IDs and preserves Spring list encod
   assert.equal(
     encodeBackendPathSegments(frontendPath.split("/").slice(1)),
     "/api/v1/property-comparison/me/compare-multiple/5%2C4",
+  );
+});
+
+test("direct comparison uses the two source and property path parameters safely", () => {
+  assert.equal(
+    compareTwoPropertiesPath("KITE", "property/with space", "KITE", "42"),
+    "/api/v1/property-comparison/me/compare-two/KITE/property%2Fwith%20space/KITE/42",
   );
 });
 

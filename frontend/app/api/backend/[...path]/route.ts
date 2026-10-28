@@ -36,7 +36,12 @@ async function handle(request: NextRequest, context: Context) {
     smartSearchHadJsonContentType =
       request.headers.get("content-type")?.startsWith("application/json") ?? false;
     if (request.method !== "GET") await checkCsrf(request);
-    if (request.method === "GET" && /^\/api\/v1\/payments\/me\/\d+\/verify$/.test(path))
+    if (
+      request.method === "GET" &&
+      (/^\/api\/v1\/payments\/me\/\d+\/verify$/.test(path) ||
+        /^\/api\/v1\/property-comparison\/me\/compare-(?:two|multiple)\//.test(path) ||
+        path === "/api/v1/place-preference/me/commutes")
+    )
       await checkCsrf(request);
     const upstreamMethod =
       request.method === "POST" && /^\/api\/v1\/payments\/me\/\d+\/verify$/.test(path)

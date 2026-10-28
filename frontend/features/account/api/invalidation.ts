@@ -24,6 +24,7 @@ const userRoots = new Set([
   "neighborhood-analysis",
   "ai-explanation",
   "property-interests",
+  "moving-checklist",
 ]);
 export function invalidateUserData(cache: QueryClient, userId: number) {
   return cache.invalidateQueries({

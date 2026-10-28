@@ -14,6 +14,7 @@ import {
 } from "@/features/account/api/query-hooks";
 import { CategorySelector } from "@/features/account/category-selector";
 import { SmartRecommendationsPanel } from "@/features/recommendations/smart-recommendations";
+import { NeighborhoodSuggestionsPanel } from "@/features/recommendations/neighborhood-suggestions";
 import { TaskDialog } from "@/components/shared/task-dialog";
 import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
@@ -199,6 +200,7 @@ export function SmartSearchWorkspace() {
             key={recommendationRevision}
             actionLabel={t("smartStart")}
           />
+          <NeighborhoodSuggestionsPanel />
           <p className="text-xs text-muted-foreground">{t("aiNotice")}</p>
         </div>
       ) : (

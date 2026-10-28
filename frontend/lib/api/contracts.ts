@@ -7,6 +7,7 @@ export type UserResponse = {
   fullName: string;
   email: string;
   createdAt: string | null;
+  notificationsEnabled?: boolean;
 };
 export type CurrentHome = {
   id?: number | null;

@@ -23,6 +23,7 @@ const routes = operationContracts.map((contract) => ({
               "comparisonId",
               "notificationId",
               "paymentId",
+              "taskId",
               "targetUserId",
             ].includes(name)
           )

@@ -10,7 +10,7 @@ import { ApiError } from "@/lib/api/errors";
 export function requireSafeRefreshCoordination(): never {
   throw new ApiError(
     "Refresh coordination unavailable",
-    409,
+    503,
     "Refresh coordination unavailable",
   );
 }

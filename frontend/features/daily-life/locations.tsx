@@ -29,6 +29,8 @@ export function LocationsPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingPlace, setEditingPlace] = useState<PlacePreference | null>(null);
   const [busy, setBusy] = useState(false);
+  const [importancePendingId, setImportancePendingId] = useState<number | null>(null);
+  const [importanceError, setImportanceError] = useState<unknown>(null);
 
   const points = useMemo<MapPoint[]>(
     () =>
@@ -77,6 +79,26 @@ export function LocationsPage() {
     if (selectedId === `place:${id}`) setSelectedId(null);
   }
 
+  async function updateImportance(id: number, importance: number) {
+    if (
+      userId === null ||
+      !Number.isInteger(importance) ||
+      importance < 1 ||
+      importance > 5
+    )
+      return;
+    setImportancePendingId(id);
+    setImportanceError(null);
+    try {
+      await placesApi.importance(id, importance);
+      await invalidateUserData(cache, userId);
+    } catch (error) {
+      setImportanceError(error);
+    } finally {
+      setImportancePendingId(null);
+    }
+  }
+
   return (
     <div className="flex min-w-0 flex-col gap-5 pb-10">
       <header className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border/70 bg-card p-5 shadow-panel">
@@ -123,6 +145,7 @@ export function LocationsPage() {
       </header>
 
       <QueryFeedback query={places} />
+      {importanceError ? <ErrorState error={importanceError} /> : null}
       {places.isPending && !places.data ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(18rem,0.8fr)]">
           <div className="h-[460px] animate-pulse rounded-3xl bg-secondary" />
@@ -196,6 +219,8 @@ export function LocationsPage() {
               setEditorOpen(true);
             }}
             onDelete={deletePlace}
+            onImportanceChange={updateImportance}
+            importancePendingId={importancePendingId}
             commute={null}
           />
         </div>

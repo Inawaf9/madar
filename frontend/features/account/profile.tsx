@@ -1,11 +1,11 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapPin, SlidersHorizontal, UserRound } from "lucide-react";
 import { ChangePasswordForm } from "@/features/auth/change-password-form";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { profileApi } from "@/lib/api/account";
-import { comparisonsApi } from "@/lib/api/comparisons";
 import { useIdentity } from "@/features/account/identity";
 import { DeleteAction } from "@/components/shared/delete-action";
 import { Panel } from "@/components/shared/panel";
@@ -13,11 +13,18 @@ import { PageHeading } from "@/components/shared/page-heading";
 import { ProfileCompletionPanel } from "./profile-completion";
 import { HomePanel } from "./current-home-panel";
 import { HousingPanel } from "./housing-preferences-panel";
+import { ErrorState } from "@/components/shared/error-state";
+import { keys } from "./api/query-hooks";
 
 function AccountSettings() {
   const ar = useLocale() === "ar";
   const t = useTranslations("Workspace");
-  const { user, logout } = useIdentity();
+  const { user, userId, logout } = useIdentity();
+  const cache = useQueryClient();
+  const notifications = useMutation({
+    mutationFn: profileApi.notifications,
+    onSuccess: async () => cache.invalidateQueries({ queryKey: keys.profile(userId) }),
+  });
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <Panel title={t("accountDetails")}>
@@ -31,21 +38,48 @@ function AccountSettings() {
             : "Name and email updates are currently unavailable."}
         </p>
       </Panel>
+      <Panel title={t("notificationPreferences")}>
+        <label className="flex items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            className="mt-1 size-4 accent-primary"
+            checked={user.notificationsEnabled ?? false}
+            disabled={notifications.isPending || user.notificationsEnabled === undefined}
+            onChange={(event) => notifications.mutate(event.currentTarget.checked)}
+            aria-describedby="notification-preferences-description"
+          />
+          <span>
+            <span className="block font-medium">{t("accountNotificationsEnabled")}</span>
+            <span
+              id="notification-preferences-description"
+              className="mt-1 block text-muted-foreground"
+            >
+              {t("accountNotificationsDescription")}
+            </span>
+          </span>
+        </label>
+        {user.notificationsEnabled === undefined ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            {t("notificationPreferenceUnavailable")}
+          </p>
+        ) : null}
+        {notifications.isError ? <ErrorState error={notifications.error} /> : null}
+      </Panel>
       <Panel title={ar ? "تغيير كلمة المرور" : "Change password"}>
         <ChangePasswordForm />
       </Panel>
       <details className="rounded-xl border border-destructive/20 p-4">
         <summary className="cursor-pointer text-sm font-medium text-destructive">
-          {ar ? "إدارة الحساب وحذفه" : "Account management and deletion"}
+          {t("accountStatus")}
         </summary>
-        <p className="my-4 text-sm text-muted-foreground">{t("deleteAccountHint")}</p>
+        <p className="my-4 text-sm text-muted-foreground">{t("deactivateAccountHint")}</p>
         <DeleteAction
-          label={t("deleteAccount")}
+          label={t("deactivateAccount")}
+          title={t("deactivateAccountTitle")}
+          description={t("deactivateAccountHint")}
+          confirmLabel={t("deactivateAccount")}
           onDelete={async () => {
-            const comparisons = await comparisonsApi.get();
-            for (const pair of comparisons)
-              if (pair.id) await comparisonsApi.remove(pair.id);
-            await profileApi.remove();
+            await profileApi.deactivate();
             await logout();
           }}
         />

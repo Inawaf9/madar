@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, LoaderCircle, Save } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { DeleteAction } from "@/components/shared/delete-action";
 import { ErrorState } from "@/components/shared/error-state";
 import { QueryFeedback } from "@/components/shared/query-feedback";
 import { useLifestyleInterests } from "@/features/account/api/query-hooks";
@@ -12,13 +14,14 @@ import { invalidateUserData } from "@/features/account/api/invalidation";
 import { useIdentity } from "@/features/account/identity";
 import { CategorySelector } from "@/features/account/category-selector";
 import { lifestyleInterestGroups } from "@/lib/lifestyle-interest-options";
-import { saveSelectedInterests } from "@/lib/api/lifestyle-interests";
+import { lifestyleApi, saveSelectedInterests } from "@/lib/api/lifestyle-interests";
 
 const supportedCodes = new Set(
   lifestyleInterestGroups.flatMap((group) => group.options.map(([code]) => code)),
 );
 
 export function InterestsPage() {
+  const locale = useLocale();
   const t = useTranslations("Workspace");
   const { userId } = useIdentity();
   const cache = useQueryClient();
@@ -51,6 +54,25 @@ export function InterestsPage() {
       }
     },
   });
+  const removeMutation = useMutation({
+    mutationFn: lifestyleApi.remove,
+    onSuccess: async (_result, interestId) => {
+      const removed = interests.data?.find((item) => item.id === interestId);
+      if (removed)
+        setDraft((current) =>
+          (current ?? activeCodes).filter((code) => code !== removed.code),
+        );
+      if (userId !== null) await invalidateUserData(cache, userId);
+    },
+  });
+  const labels = new Map(
+    lifestyleInterestGroups.flatMap((group) =>
+      group.options.map(
+        ([code, labelAr, labelEn]) =>
+          [code, locale === "ar" ? labelAr : labelEn] as const,
+      ),
+    ),
+  );
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 pb-10">
@@ -105,6 +127,30 @@ export function InterestsPage() {
               onChange={(codes) => setDraft([...new Set([...codes, ...hiddenActive])])}
             />
           </div>
+          {interests.data?.length ? (
+            <div className="border-t border-border/70 px-5 py-4 sm:px-6">
+              <h3 className="text-sm font-semibold">{t("savedInterests")}</h3>
+              <ul className="mt-3 divide-y divide-border/60">
+                {interests.data.map((item) => {
+                  const name = labels.get(item.code) ?? item.code;
+                  return (
+                    <li
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 py-2"
+                    >
+                      <span className="min-w-0 truncate text-sm">{name}</span>
+                      <DeleteAction
+                        label={t("removeInterestNamed", { name })}
+                        title={t("removeInterestTitle")}
+                        description={t("removeInterestDescription", { name })}
+                        onDelete={() => removeMutation.mutateAsync(item.id)}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 bg-muted/20 p-5 sm:p-6">
             <p className="text-sm text-muted-foreground">
               {t("serviceInterestsPersistHint")}

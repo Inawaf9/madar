@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CheckCheck, LoaderCircle } from "lucide-react";
+import { Check, CheckCheck, LoaderCircle, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {
   useNotifications,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
+  useDeleteNotification,
 } from "./notifications-query";
 
 type NotificationFilter = "all" | "unread" | "read";
@@ -29,6 +30,7 @@ export function NotificationsPage() {
   const query = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+  const remove = useDeleteNotification();
   const all = query.data ?? [];
   const unread = all.filter((item) => !item.isRead).length;
   const notifications = all.filter((item) =>
@@ -81,7 +83,7 @@ export function NotificationsPage() {
             </Button>
           ) : null}
         </div>
-        {markRead.isError || markAllRead.isError ? (
+        {markRead.isError || markAllRead.isError || remove.isError ? (
           <p
             role="alert"
             className="px-5 pt-4 text-sm text-destructive"
@@ -142,22 +144,37 @@ export function NotificationsPage() {
                     {formatTime(item.createdAt, locale)}
                   </time>
                 </div>
-                {!item.isRead ? (
+                <div className="flex shrink-0 flex-col gap-1 sm:flex-row">
+                  {!item.isRead ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={markRead.isPending}
+                      onClick={() => markRead.mutate(item.id)}
+                      aria-label={t("markNotificationRead", { title: item.title })}
+                      className="shrink-0"
+                    >
+                      <Check
+                        aria-hidden="true"
+                        className="size-4"
+                      />
+                      <span className="hidden sm:inline">{t("markRead")}</span>
+                    </Button>
+                  ) : null}
                   <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={markRead.isPending}
-                    onClick={() => markRead.mutate(item.id)}
-                    aria-label={t("markNotificationRead", { title: item.title })}
-                    className="shrink-0"
+                    variant="ghost"
+                    size="icon"
+                    disabled={remove.isPending}
+                    onClick={() => remove.mutate(item.id)}
+                    aria-label={t("deleteNotification", { title: item.title })}
+                    className="size-9 text-muted-foreground hover:text-destructive"
                   >
-                    <Check
+                    <Trash2
                       aria-hidden="true"
                       className="size-4"
                     />
-                    <span className="hidden sm:inline">{t("markRead")}</span>
                   </Button>
-                ) : null}
+                </div>
               </li>
             ))}
           </ul>
