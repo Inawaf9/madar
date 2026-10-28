@@ -124,7 +124,9 @@ public class MovingChecklistService {
         }
         List<MovingTask> tasks = movingTaskRepository.findMovingTasksByUser_IdOrderBySortOrder(userId);
         if(tasks.isEmpty()){
-            throw new ApiException("Moving checklist not found, generate it first");
+            //no checklist yet: return an empty one, the frontend shows the generate button
+            return new MovingChecklistDTO(0, 0, new ArrayList<>(), null, new ArrayList<>());
+
         }
 
         List<MovingTaskDTO> movingTasks = new ArrayList<>();
@@ -183,8 +185,9 @@ public class MovingChecklistService {
     @Transactional
     public void resetChecklist(Integer userId){
         List<MovingTask> tasks = movingTaskRepository.findMovingTasksByUser_IdOrderBySortOrder(userId);
+        //nothing to delete: not an error, the user can generate a new one
         if(tasks.isEmpty()){
-            throw new ApiException("Moving checklist not found");
+            return;
         }
         movingTaskRepository.deleteAll(tasks);
     }
