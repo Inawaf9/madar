@@ -20,9 +20,15 @@ import { ErrorState } from "./error-state";
 export function DeleteAction({
   onDelete,
   label,
+  title,
+  description,
+  confirmLabel,
 }: {
   onDelete: () => Promise<unknown>;
   label?: string;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
 }) {
   const t = useTranslations("Workspace");
   const [open, setOpen] = useState(false);
@@ -51,8 +57,10 @@ export function DeleteAction({
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
-          <AlertDialogDescription>{t("deleteDescription")}</AlertDialogDescription>
+          <AlertDialogTitle>{title ?? t("confirmDelete")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {description ?? t("deleteDescription")}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         {error ? <ErrorState error={error} /> : null}
         <AlertDialogFooter>
@@ -73,7 +81,7 @@ export function DeleteAction({
               }
             }}
           >
-            {pending ? t("working") : t("confirm")}
+            {pending ? t("working") : (confirmLabel ?? t("confirm"))}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

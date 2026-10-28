@@ -16,6 +16,7 @@ import { PropertyLocationExperience } from "@/features/properties/components/pro
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PropertyBackButton } from "./components/property-back-button";
+import { CompareWithSavedHome } from "./compare-with-saved-home";
 
 export function PropertyDetailPage({
   source,
@@ -100,6 +101,10 @@ function PropertyDetailContent({
           />
         </div>
       </div>
+      <CompareWithSavedHome
+        source={source}
+        externalId={externalId}
+      />
       <PropertyLocationExperience
         key={`${source}:${externalId}`}
         propertyReference={{ source, externalId }}

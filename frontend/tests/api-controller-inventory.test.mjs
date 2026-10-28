@@ -4,7 +4,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-const backendControllers = fileURLToPath(new URL("../../Backend/src/main/java/com/example/madar/Controller/", import.meta.url));
+const backendControllers = fileURLToPath(
+  new URL("../../Backend/src/main/java/com/example/madar/Controller/", import.meta.url),
+);
 const frontendRoot = new URL("../", import.meta.url);
 const operationContracts = readFileSync(
   new URL("lib/api/operation-contracts.ts", frontendRoot),
@@ -17,14 +19,22 @@ const authRoute = readFileSync(
 
 function backendEndpoints() {
   const endpoints = [];
-  for (const file of readdirSync(backendControllers).filter((name) => name.endsWith("Controller.java"))) {
+  for (const file of readdirSync(backendControllers).filter((name) =>
+    name.endsWith("Controller.java"),
+  )) {
     const source = readFileSync(join(backendControllers, file), "utf8");
     const base = source.match(/@RequestMapping\("([^"]+)"\)/)?.[1];
     assert.ok(base, `${file} needs a class-level @RequestMapping`);
-    const mapping = /@(Get|Post|Put|Patch|Delete)Mapping\("([^"]*)"\)\s*public\s+/g;
+    const mapping = /@(Get|Post|Put|Patch|Delete)Mapping(?:\("([^"]*)"\))?\s*public\s+/g;
     for (const match of source.matchAll(mapping)) {
-      const method = { Get: "GET", Post: "POST", Put: "PUT", Patch: "PATCH", Delete: "DELETE" }[match[1]];
-      endpoints.push(`${method} ${base}${match[2]}`);
+      const method = {
+        Get: "GET",
+        Post: "POST",
+        Put: "PUT",
+        Patch: "PATCH",
+        Delete: "DELETE",
+      }[match[1]];
+      endpoints.push(`${method} ${base}${match[2] ?? ""}`);
     }
   }
   return endpoints;
@@ -40,16 +50,37 @@ function exposedEndpoints() {
     contracts.push(`AUTH /api/v1/auth/${match[1]}`);
   }
   for (const match of authRoute.matchAll(/\["([a-z-]+)"\s*,\s*"([a-z-]+)"\]/g))
-    for (const operation of match.slice(1)) contracts.push(`AUTH /api/v1/auth/${operation}`);
+    for (const operation of match.slice(1))
+      contracts.push(`AUTH /api/v1/auth/${operation}`);
   return contracts;
 }
 
-test("all Spring mappings are inventoried in the health audit", () => {
-  const report = readFileSync(new URL("docs/api-health-audit.md", frontendRoot), "utf8");
+test("all Spring mappings are inventoried in the endpoint audit", () => {
+  const report = readFileSync(
+    new URL("docs/unused-endpoints-audit.md", frontendRoot),
+    "utf8",
+  );
+  const inventory = report
+    .split("## قائمة Controllers الكاملة")[1]
+    ?.split("## Endpoints غير المستخدمة")[0];
+  assert.ok(inventory, "Endpoint inventory section is present");
   const count = backendEndpoints().length;
-  assert.equal(count, 121, "Controller inventory changed; review and update audit row count");
-  assert.ok(report.includes(`**${count} mapping**`));
-  assert.equal((report.match(/^\| (?:GET|POST|PUT|PATCH|DELETE) \|/gm) ?? []).length, count);
+  assert.match(report, new RegExp(`إجمالي Backend Endpoints\\s*\\|\\s*${count}\\s*\\|`));
+  assert.equal(
+    (inventory.match(/^\| (?:GET|POST|PUT|PATCH|DELETE)\s+\|/gm) ?? []).length,
+    count,
+  );
+});
+
+test("verification matrix has one status row per mapping and no runtime-only claims", () => {
+  const matrix = readFileSync(
+    new URL("docs/api-endpoint-verification.md", frontendRoot),
+    "utf8",
+  );
+  const rows = matrix.match(/^\| (?:GET|POST|PUT|PATCH|DELETE)\s+\|/gm) ?? [];
+  assert.equal(rows.length, backendEndpoints().length);
+  assert.doesNotMatch(matrix, /\*\*VERIFIED\*\*/);
+  assert.match(matrix, /\*\*BLOCKED\*\*/);
 });
 
 test("new browser API gaps are either exposed or explicitly tracked", () => {
@@ -59,7 +90,8 @@ test("new browser API gaps are either exposed or explicitly tracked", () => {
     const [method, path] = entry.split(" ");
     const key = `${method} ${path.replace(/\{[^}]+\}/g, "{}")}`;
     if (normalized.has(key)) return false;
-    if (path.startsWith("/api/v1/auth/") && contracts.includes(`AUTH ${path}`)) return false;
+    if (path.startsWith("/api/v1/auth/") && contracts.includes(`AUTH ${path}`))
+      return false;
     // Inbound integrations are intentionally not browser operations.
     if (path.startsWith("/api/v1/n8n/")) return false;
     return true;
@@ -74,12 +106,10 @@ test("new browser API gaps are either exposed or explicitly tracked", () => {
     "POST /api/v1/user/admin/users/{targetUserId}/gift-credits",
     "GET /api/v1/user/admin/audit-logs",
     "GET /api/v1/user/admin/system-health",
+    "GET /api/v1/credit-packages",
+    "POST /api/v1/credit-packages",
     "PUT /api/v1/credit-packages/{packageId}",
     "DELETE /api/v1/credit-packages/{packageId}",
-    "POST /api/v1/moving-checklist/generate",
-    "GET /api/v1/moving-checklist/get",
-    "PUT /api/v1/moving-checklist/toggle/{taskId}",
-    "DELETE /api/v1/moving-checklist/reset",
     "POST /api/v1/payments/webhook",
   ];
   assert.deepEqual(missing, knownGaps, `Review changed API gaps: ${missing.join(", ")}`);

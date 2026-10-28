@@ -18,7 +18,10 @@ import {
   type AiExplanation,
 } from "./insight-contracts";
 import { type ApiLanguage } from "./config";
-import { compareSavedPropertiesPath } from "./comparison-request-paths";
+import {
+  compareSavedPropertiesPath,
+  compareTwoPropertiesPath,
+} from "./comparison-request-paths";
 const enc = encodeURIComponent;
 const languageHeaders = (language: ApiLanguage) => ({ "Accept-Language": language });
 export const insights = {
@@ -78,7 +81,7 @@ export const insights = {
     signal?: AbortSignal,
   ) =>
     apiRequest<ComputedComparison>(
-      `/api/v1/property-comparison/me/compare-two/${enc(firstSource)}/${enc(firstId)}/${enc(secondSource)}/${enc(secondId)}`,
+      compareTwoPropertiesPath(firstSource, firstId, secondSource, secondId),
       { headers: languageHeaders(language), signal },
     ),
   compareMultiple: (savedIds: number[], language: ApiLanguage, signal?: AbortSignal) =>

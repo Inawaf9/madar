@@ -43,6 +43,7 @@ import {
 } from "@/lib/maps/place-presentation";
 import { NeighborhoodAnalysisPanel } from "./neighborhood-analysis";
 import { NeighborhoodCommute } from "./neighborhood-commute";
+import { NeighborhoodInventory } from "./neighborhood-inventory";
 
 type SearchMode = "category" | "text" | "essentials";
 type SearchRequest = {
@@ -388,6 +389,8 @@ function HomeNeighborhoodWorkspace({
         latitude={home.latitude}
         longitude={home.longitude}
       />
+
+      <NeighborhoodInventory homeId={homeId} />
 
       <section className="rounded-3xl border border-border/70 bg-card p-5 shadow-panel sm:p-6">
         <header className="flex items-start gap-3">

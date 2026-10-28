@@ -77,8 +77,8 @@ export type ComputedProperty = {
   areaSqm: number | null;
   image: string | null;
   listingUrl: string | null;
-  matchScore: number;
-  housingScore: number;
+  matchScore: number | null;
+  housingScore: number | null;
   commuteScore: number | null;
   servicesScore: number | null;
 };

@@ -1,11 +1,10 @@
 "use client";
 import { getProductCopy } from "@/messages/product-copy";
-import { useState } from "react";
-import { useLocale } from "next-intl";
-import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { insights } from "@/lib/api/insights";
 import { apiLanguage } from "@/lib/api/config";
-import type { ApiLanguage } from "@/lib/api/config";
 import { weightsSchema, type RecommendationWeights } from "@/lib/api/insight-contracts";
 import { useHousing } from "@/features/account/api/query-hooks";
 import { Link } from "@/i18n/navigation";
@@ -15,7 +14,6 @@ import { PropertyCardView } from "@/features/properties/property-card-view";
 import { propertyCardData } from "@/lib/property-card";
 import { Badge } from "@/components/ui/badge";
 import { propertyHref } from "@/features/properties/format";
-import { QueryFeedback } from "@/components/shared/query-feedback";
 import { ErrorState } from "@/components/shared/error-state";
 import { useIdentity } from "@/features/account/identity";
 import {
@@ -25,32 +23,63 @@ import {
 } from "@/features/insights/analysis-ui";
 import { PropertyActions } from "@/features/properties/property-card";
 import { safeUrl } from "@/lib/safe-url";
+import { credits } from "@/lib/api/credits";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function SmartRecommendationsPanel({
   actionLabel,
 }: { actionLabel?: string } = {}) {
   const { userId } = useIdentity();
   const locale = useLocale();
+  const t = useTranslations("Workspace");
+  const cache = useQueryClient();
   const text = getProductCopy(locale);
   const preference = useHousing(userId);
   const [weights, setWeights] = useState<RecommendationWeights | null>(null);
-  const [request, setRequest] = useState<{
-    weights?: RecommendationWeights;
-    nonce: string;
-    language: ApiLanguage;
-    userId: number;
-  } | null>(null);
-  const activeRequest = request?.userId === userId ? request : null;
-  const query = useQuery({
-    queryKey: ["smart", userId, activeRequest],
-    queryFn: ({ signal }) =>
-      insights.smart(activeRequest!.language, activeRequest!.weights, signal),
-    enabled: !!activeRequest && !!preference.data,
-    retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const requestInFlight = useRef(false);
+  const prices = useQuery({
+    queryKey: ["credit-service-prices", userId],
+    queryFn: ({ signal }) => credits.servicePrices(signal),
+    enabled: userId !== null,
   });
+  const balance = useQuery({
+    queryKey: ["credit-balance", userId],
+    queryFn: ({ signal }) => credits.balance(signal),
+    enabled: userId !== null,
+  });
+  const cost = prices.data?.TOP_3_RECOMMENDATIONS;
+  const request = useMutation({
+    mutationFn: (requestWeights?: RecommendationWeights) =>
+      insights.smart(apiLanguage(locale), requestWeights),
+    retry: 0,
+    onSuccess: () => setConfirmOpen(false),
+    onSettled: async () => {
+      requestInFlight.current = false;
+      await Promise.all([
+        cache.invalidateQueries({ queryKey: ["credit-balance", userId] }),
+        cache.invalidateQueries({ queryKey: ["credit-transactions", userId] }),
+      ]);
+    },
+  });
+  const canRequest =
+    userId !== null &&
+    !!preference.data &&
+    cost != null &&
+    balance.data != null &&
+    balance.data.balance >= cost &&
+    !request.isPending &&
+    (!weights || weightsSchema.safeParse(weights).success);
+  const number = (value: number) => new Intl.NumberFormat(locale).format(value);
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-section font-medium">{text.smartTitle}</h2>
@@ -59,44 +88,59 @@ export function SmartRecommendationsPanel({
         className="self-start"
         disabled={
           !preference.data ||
-          query.isFetching ||
+          prices.isPending ||
+          balance.isPending ||
+          prices.isError ||
+          balance.isError ||
+          request.isPending ||
+          cost == null ||
+          (balance.data != null && cost > balance.data.balance) ||
           (!!weights && !weightsSchema.safeParse(weights).success)
         }
-        onClick={() => {
-          if (userId === null) return;
-          setRequest({
-            weights: weights || undefined,
-            nonce: crypto.randomUUID(),
-            language: apiLanguage(locale),
-            userId,
-          });
-        }}
+        onClick={() => setConfirmOpen(true)}
       >
-        {query.isFetching ? text.smartBusy : (actionLabel ?? text.smartAction)}
+        {request.isPending ? text.smartBusy : (actionLabel ?? text.smartAction)}
       </Button>
+      {cost != null ? (
+        <p className="text-xs text-muted-foreground">
+          {t("smartRecommendationsCost", {
+            cost: number(cost),
+            balance: number(balance.data?.balance ?? 0),
+          })}
+        </p>
+      ) : null}
+      {balance.data && cost != null && balance.data.balance < cost ? (
+        <p className="text-sm text-destructive">
+          {t("recommendationInsufficientCredits")}{" "}
+          <Link
+            href="/payments"
+            className="underline"
+          >
+            {t("payments")}
+          </Link>
+        </p>
+      ) : null}
+      {prices.isError || balance.isError ? (
+        <ErrorState error={prices.error ?? balance.error} />
+      ) : null}
       <WeightsControl
         value={weights}
         onChange={setWeights}
       />
-      {activeRequest ? (
+      {request.isPending ? (
+        <PropertyGridSkeleton
+          count={2}
+          className="lg:grid-cols-2"
+        />
+      ) : request.isError ? (
+        <ErrorState error={request.error} />
+      ) : request.data ? (
         <>
-          <QueryFeedback query={query} />
-          {query.isPending ? (
-            <PropertyGridSkeleton
-              count={2}
-              className="lg:grid-cols-2"
-            />
-          ) : query.isError && !query.data ? (
-            <ErrorState
-              error={query.error}
-              retry={() => void query.refetch()}
-              retryDisabled={query.isFetching}
-            />
-          ) : !query.data?.recommendations.length ? (
+          {!request.data.recommendations.length ? (
             <p>{text.noCandidates}</p>
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
-              {query.data.recommendations.slice(0, 10).map((item) => (
+              {request.data.recommendations.slice(0, 10).map((item) => (
                 <PropertyCardView
                   key={`${item.source}:${item.propertyId}`}
                   listing={propertyCardData(
@@ -188,6 +232,37 @@ export function SmartRecommendationsPanel({
           )}
         </>
       ) : null}
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(open) => !request.isPending && setConfirmOpen(open)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirmSmartRecommendationsTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("confirmSmartRecommendationsDescription", {
+                cost: number(cost ?? 0),
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={request.isPending}>
+              {t("cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!canRequest}
+              onClick={(event) => {
+                event.preventDefault();
+                if (!canRequest || requestInFlight.current) return;
+                requestInFlight.current = true;
+                request.mutate(weights ?? undefined);
+              }}
+            >
+              {request.isPending ? t("working") : t("confirmAndContinue")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

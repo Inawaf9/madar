@@ -3,6 +3,7 @@ import {
   Bell,
   CircleUserRound,
   Columns3,
+  ClipboardCheck,
   CreditCard,
   Heart,
   House,
@@ -27,6 +28,7 @@ export const productNavigation = [
       { href: "/locations", label: "locations", icon: MapPin },
       { href: "/interests", label: "interests", icon: Heart },
       { href: "/neighborhood", label: "neighborhood", icon: Trees },
+      { href: "/moving-checklist", label: "movingChecklist", icon: ClipboardCheck },
     ],
   },
   {

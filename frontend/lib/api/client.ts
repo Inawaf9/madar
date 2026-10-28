@@ -20,7 +20,10 @@ export async function apiRequest<T>(
   try {
     const csrf =
       (options.method && options.method !== "GET") ||
-      /^\/api\/v1\/payments\/me\/\d+\/verify(?:\?|$)/.test(path)
+      /^\/api\/v1\/payments\/me\/\d+\/verify(?:\?|$)/.test(path) ||
+      /^\/api\/v1\/(?:property-comparison\/me\/compare-(?:two|multiple)\/|place-preference\/me\/commutes(?:\?|$))/.test(
+        path,
+      )
         ? await csrfHeaders()
         : {};
     const response = await fetch(`${BACKEND_PROXY_PREFIX}${path}`, {

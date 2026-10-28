@@ -8,6 +8,7 @@ import { placesApi } from "@/lib/api/places";
 import { savedPropertiesApi } from "@/lib/api/saved-properties";
 import { comparisonsApi } from "@/lib/api/comparisons";
 import { lifestyleApi } from "@/lib/api/lifestyle-interests";
+import { movingChecklistApi } from "@/lib/api/moving-checklist";
 
 export const keys = {
   profile: (id: number | null) => ["profile", id] as const,
@@ -17,6 +18,8 @@ export const keys = {
   saved: (id: number | null) => ["saved-properties", id] as const,
   comparisons: (id: number | null) => ["comparisons", id] as const,
   interests: (id: number | null) => ["lifestyle-interests", id] as const,
+  movingChecklist: (id: number | null, language: string) =>
+    ["moving-checklist", id, language] as const,
 };
 
 export function useProfile(userId: number | null) {
@@ -66,6 +69,15 @@ export function useLifestyleInterests(userId: number | null) {
     queryKey: keys.interests(userId),
     queryFn: ({ signal }) => lifestyleApi.get(signal),
     enabled: userId !== null,
+  });
+}
+
+export function useMovingChecklist(userId: number | null, language: "ar" | "en") {
+  return useQuery({
+    queryKey: keys.movingChecklist(userId, language),
+    queryFn: ({ signal }) => movingChecklistApi.get(language, signal),
+    enabled: userId !== null,
+    retry: false,
   });
 }
 

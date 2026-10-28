@@ -40,7 +40,7 @@ export async function authMutation(
 // Redirect only to known local product destinations. Never accept protocol-relative URLs.
 export function safeReturnTo(value: string | null): string {
   if (!value || /[\\#\x00-\x20]/.test(value)) return "/dashboard";
-  return /^\/(dashboard|profile|saved|interests|locations|neighborhood|compare|payments)(\/[A-Za-z0-9_-]+)*$/.test(
+  return /^\/(dashboard|profile|saved|interests|locations|neighborhood|moving-checklist|compare|payments)(\/[A-Za-z0-9_-]+)*$/.test(
     value,
   )
     ? value

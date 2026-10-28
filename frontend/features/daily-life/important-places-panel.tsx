@@ -22,6 +22,8 @@ export function ImportantPlacesPanel({
   onAdd,
   onEdit,
   onDelete,
+  onImportanceChange,
+  importancePendingId,
   commute,
 }: {
   places: PlacePreference[];
@@ -33,6 +35,8 @@ export function ImportantPlacesPanel({
   onAdd: () => void;
   onEdit: (place: PlacePreference) => void;
   onDelete: (id: number) => Promise<void>;
+  onImportanceChange: (id: number, importance: number) => Promise<void>;
+  importancePendingId: number | null;
   commute: CommuteReport | null;
 }) {
   const t = useTranslations("Workspace");
@@ -232,6 +236,29 @@ export function ImportantPlacesPanel({
                     </span>
                   ) : null}
                 </div>
+                {place.id != null ? (
+                  <label className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <span>{t("importance")}</span>
+                    <select
+                      className="h-9 min-w-24 rounded-lg border border-input bg-background px-2 text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                      value={place.importance}
+                      aria-label={t("setPlaceImportance", { name: place.name })}
+                      disabled={importancePendingId === place.id}
+                      onChange={(event) =>
+                        void onImportanceChange(place.id!, Number(event.target.value))
+                      }
+                    >
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <option
+                          key={value}
+                          value={value}
+                        >
+                          {t("importanceValue", { value })}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
                 {place.id != null ? (
                   <div className="mt-2 border-t border-border/60 pt-1">
                     <DeleteAction
