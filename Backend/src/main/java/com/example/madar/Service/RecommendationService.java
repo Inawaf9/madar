@@ -554,7 +554,8 @@ public class RecommendationService {
 
 
         // Build a lookup map without fetching property details again
-        Map<String, PropertyDTO> propertyMap = selected.stream()
+        String cardLang = language != null && language.toLowerCase(Locale.ROOT).startsWith("en") ? "en" : "ar";
+        Map<String, PropertyDTO> propertyMap = propertyService.localize(selected, cardLang).stream()
                 .collect(Collectors.toMap(
                         PropertyDTO::getExternalId,
                         Function.identity(),
@@ -593,7 +594,7 @@ public class RecommendationService {
                             ? explanation.tradeOff()
                             : null;
 
-                    return new RecommendedPropertyDTO(index + 1, score.propertyId(), score.source(), property.getTitle(), property.getCity(), property.getNeighborhood(), property.getPrice(), property.getBedrooms(), property.getAreaSqm(), property.getImage(), property.getListingUrl(), score.matchScore(), score.housingScore(), score.commuteScore(), score.servicesScore(), reason, tradeOff);}).toList();
+                    return new RecommendedPropertyDTO(index + 1, score.propertyId(), score.source(), property.getTitle(), property.getCityName() != null ? property.getCityName() : property.getCity(), property.getNeighborhood(), property.getPrice(), property.getBedrooms(), property.getAreaSqm(), property.getImage(), property.getListingUrl(), score.matchScore(), score.housingScore(), score.commuteScore(), score.servicesScore(), reason, tradeOff);}).toList();
 
         return new SmartRecommendationResponseDTO(recommendations);
     }
