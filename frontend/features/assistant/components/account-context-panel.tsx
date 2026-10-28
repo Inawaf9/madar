@@ -121,7 +121,7 @@ export function AccountContextPanel() {
             ? ar
               ? "نحمّل قوائمك"
               : "Loading lists"
-            : `${data.account.places.length} ${ar ? "أماكن" : "places"} · ${data.account.saved.length} ${ar ? "عقارات محفوظة" : "saved properties"}`}
+            : `${data.account.places.length} ${ar ? "أماكن" : "places"} · ${data.account.saved.length} ${ar ? "بيوت محفوظة" : "saved Properties"}`}
       </p>
       {[data.housing, data.places, data.saved, data.home]
         .filter((query) => query.isError)

@@ -132,7 +132,9 @@ export function PropertySearchPage() {
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-2">
-        <DisplayHeading>{ar ? "البحث عن عقار" : "Property search"}</DisplayHeading>
+        <DisplayHeading>
+          {ar ? "اكتشف بيتك القادم" : "Find your next home"}
+        </DisplayHeading>
         <p className="text-sm leading-7 text-muted-foreground">
           {t("searchDescription")}
         </p>
@@ -199,7 +201,7 @@ export function PropertySearchPage() {
         />
       </div>
       <section
-        aria-label={ar ? "نتائج العقارات" : "Property results"}
+        aria-label={ar ? "نتائج البيوت" : "Home results"}
         className="flex min-w-0 flex-col gap-5"
       >
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -212,7 +214,7 @@ export function PropertySearchPage() {
           {properties.length ? (
             <p className="text-xs text-muted-foreground">
               {ar
-                ? `عقارات معروضة: ${properties.length}`
+                ? `بيوت معروضة: ${properties.length}`
                 : `${properties.length} properties shown`}
             </p>
           ) : null}
@@ -289,17 +291,15 @@ export function PropertySearchPage() {
             ) : null}
             {!result.isError && !properties.length ? (
               <EmptyState
-                title={
-                  ar ? "ما لقينا عقارات تطابق بحثك" : "No properties match your search"
-                }
+                title={ar ? "ما لقينا بيوت تطابق بحثك" : "No homes match your search"}
                 description={
                   preferencesApplied
                     ? ar
-                      ? "ما لقينا عقارات تطابق تفضيلاتك ضمن النتائج المتاحة. جرّب توسّع البحث."
-                      : "No available properties matched your saved preferences. You can broaden the search."
+                      ? "ما لقينا بيوت تطابق تفضيلاتك ضمن النتائج المتاحة. جرّب توسّع البحث."
+                      : "No available homes matched your saved preferences. You can broaden the search."
                     : ar
-                      ? "جرّب تعديل الميزانية أو نوع العقار أو الفلاتر الأخرى."
-                      : "Try adjusting the budget, property type or other filters."
+                      ? "جرّب تعديل الميزانية أو نوع البيت أو الفلاتر الأخرى."
+                      : "Try adjusting the budget, home type or other filters."
                 }
               >
                 <Button

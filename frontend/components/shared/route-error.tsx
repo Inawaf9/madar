@@ -20,18 +20,18 @@ type RecoveryProps = RouteErrorProps & {
 };
 const recoveryEnglish: Record<string, string> = {
   "تعذّر عرض هذه الصفحة": "This page could not be displayed",
-  "صار خطأ في عرض الصفحة. حاول مرة ثانية أو تابع تصفح العقارات.":
-    "This page could not load. Try again or continue browsing properties.",
+  "صار خطأ في عرض الصفحة. حاول مرة ثانية أو تابع تصفح البيوت.":
+    "This page could not load. Try again or continue browsing homes.",
   "تعذّر عرض صفحة الملف": "Your profile could not be displayed",
-  "ما قدرنا نعرض ملفك الآن. حاول مرة ثانية أو تابع تصفح العقارات.":
-    "Your profile could not load. Try again or continue browsing properties.",
+  "ما قدرنا نعرض ملفك الآن. حاول مرة ثانية أو تابع تصفح البيوت.":
+    "Your profile could not load. Try again or continue browsing homes.",
   "تعذّر عرض اهتماماتك": "Your interests could not be displayed",
-  "ما قدرنا نعرض اهتماماتك الآن. حاول مرة ثانية أو تصفّح العقارات.":
-    "Your interests could not load. Try again or browse properties.",
+  "ما قدرنا نعرض اهتماماتك الآن. حاول مرة ثانية أو تصفّح البيوت.":
+    "Your interests could not load. Try again or browse homes.",
   "تعذّر عرض البحث": "Search could not be displayed",
   "ما قدرنا نعرض البحث الآن. حاول مرة ثانية أو ارجع للرئيسية.":
     "Search could not load. Try again or return home.",
-  "تعذّر عرض تفاصيل العقار": "Property details could not be displayed",
+  "تعذّر عرض تفاصيل البيت": "Home details could not be displayed",
   "ما قدرنا نعرض تفاصيل هذا الإعلان. حاول مرة ثانية أو شوف خيارات ثانية.":
     "This listing could not load. Try again or explore other options.",
   "تعذّر عرض ملفك": "Your profile could not be displayed",
@@ -40,32 +40,32 @@ const recoveryEnglish: Record<string, string> = {
   "تعذّر عرض المدفوعات": "Payments could not be displayed",
   "ما قدرنا نعرض حالة المدفوعات. تحقق منها قبل تبدأ عملية دفع ثانية.":
     "Payment status could not load. Check it before starting another payment.",
-  "تعذّر عرض المحفوظات": "Saved properties could not be displayed",
-  "ما قدرنا نعرض العقارات المحفوظة. حاول مرة ثانية. عقاراتك ما انحذفت بسبب خطأ العرض.":
-    "Saved properties could not load. Try again. This display error did not delete them.",
-  "تعذّر عرض العقار المحفوظ": "Saved property could not be displayed",
-  "ما قدرنا نعرض مرجع العقار. حاول مرة ثانية أو ارجع للعقارات المحفوظة.":
-    "This saved property could not load. Try again or return to saved properties.",
+  "تعذّر عرض المحفوظات": "Saved homes could not be displayed",
+  "ما قدرنا نعرض بيوتي المحفوظة. حاول مرة ثانية. بيوتك ما انحذفت بسبب خطأ العرض.":
+    "Saved homes could not load. Try again. This display error did not delete them.",
+  "تعذّر عرض البيت المحفوظ": "Saved home could not be displayed",
+  "ما قدرنا نعرض مرجع البيت. حاول مرة ثانية أو ارجع للبيوت المحفوظة.":
+    "This saved home could not load. Try again or return to saved homes.",
   "تعذّر عرض ملخصك": "Your overview could not be displayed",
-  "ما قدرنا نعرض لوحة التحكم. حاول مرة ثانية أو افتح عقاراتك المحفوظة.":
-    "Your dashboard could not load. Try again or open saved properties.",
+  "ما قدرنا نعرض لوحة التحكم. حاول مرة ثانية أو افتح بيوتك المحفوظة.":
+    "Your dashboard could not load. Try again or open saved homes.",
   "تعذّر عرض أماكنك المهمة": "Your places could not be displayed",
   "ما قدرنا نعرض أماكنك المحفوظة. حاول مرة ثانية أو ارجع للوحة التحكم.":
     "Your saved places could not load. Try again or return to the dashboard.",
   "تعذّر عرض المقارنة": "Comparison could not be displayed",
-  "ما قدرنا نعرض المقارنات. حاول مرة ثانية أو ارجع للعقارات المحفوظة.":
-    "Your comparisons could not load. Try again or return to saved properties.",
+  "ما قدرنا نعرض المقارنات. حاول مرة ثانية أو ارجع للبيوت المحفوظة.":
+    "Your comparisons could not load. Try again or return to saved homes.",
   "تعذّر عرض التحقق من الدفع": "Payment verification could not be displayed",
   "حالة الدفع ما تأكدت في هذه الصفحة. حاول مرة ثانية أو تحقق من سجل المدفوعات قبل تدفع مجددًا.":
     "Payment status is unconfirmed here. Try again or check payment history before paying again.",
   "تعذّر عرض معلومات الحي": "Neighborhood information could not be displayed",
   "ما قدرنا نعرض بيانات البيت والخدمات القريبة. حاول مرة ثانية أو راجع موقع بيتك في حسابك.":
     "Home and nearby services could not load. Try again or review your home location in your account.",
-  "استكشف العقارات": "Explore properties",
+  "استكشف البيوت": "Explore Properties",
   "العودة للرئيسية": "Back home",
   "العودة للبحث": "Back to search",
   "لوحة التحكم": "Dashboard",
-  المحفوظات: "Saved properties",
+  المحفوظات: "Saved Properties",
   "سجل المدفوعات": "Payment history",
   "الحساب والبيت": "Account and home",
 };
@@ -73,9 +73,9 @@ export function RouteError({
   reset,
   retry,
   title = "تعذّر عرض هذه الصفحة",
-  description = "صار خطأ في عرض الصفحة. حاول مرة ثانية أو تابع تصفح العقارات.",
+  description = "صار خطأ في عرض الصفحة. حاول مرة ثانية أو تابع تصفح البيوت.",
   backHref = "/properties",
-  backLabel = "استكشف العقارات",
+  backLabel = "استكشف البيوت",
 }: RecoveryProps) {
   const ar = useLocale() === "ar";
   const localize = (value: string) => (ar ? value : (recoveryEnglish[value] ?? value));

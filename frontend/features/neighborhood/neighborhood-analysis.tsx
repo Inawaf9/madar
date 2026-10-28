@@ -107,7 +107,15 @@ function NeighborhoodResult({ data }: { data: NeighborhoodSuitability }) {
     </article>
   );
 }
-export function NeighborhoodAnalysisPanel({ initial }: { initial: NeighborhoodInput }) {
+export function NeighborhoodAnalysisPanel({
+  initial,
+  title,
+  description,
+}: {
+  initial: NeighborhoodInput;
+  title?: string;
+  description?: string;
+}) {
   const text = getProductCopy(useLocale());
   const userId = useCurrentUserId();
   return userId ? (
@@ -115,6 +123,8 @@ export function NeighborhoodAnalysisPanel({ initial }: { initial: NeighborhoodIn
       key={userId}
       userId={userId}
       initial={initial}
+      title={title}
+      description={description}
     />
   ) : (
     <p className="text-sm">{text.chooseProfile}</p>
@@ -123,9 +133,13 @@ export function NeighborhoodAnalysisPanel({ initial }: { initial: NeighborhoodIn
 function NeighborhoodAnalysisContent({
   userId,
   initial,
+  title,
+  description,
 }: {
   userId: number;
   initial: NeighborhoodInput;
+  title?: string;
+  description?: string;
 }) {
   const locale = useLocale();
   const text = getProductCopy(locale);
@@ -158,8 +172,8 @@ function NeighborhoodAnalysisContent({
   });
   return (
     <Panel
-      title={text.siteAnalysis}
-      description={text.siteAnalysisHint}
+      title={title ?? text.siteAnalysis}
+      description={description ?? text.siteAnalysisHint}
     >
       <div className="flex flex-col gap-5">
         <QueryFeedback query={housing} />

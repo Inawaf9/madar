@@ -1,291 +1,307 @@
 "use client";
-import { getProductCopy } from "@/messages/product-copy";
+
 import { useState } from "react";
-import { useLocale } from "next-intl";
-import { useQuery } from "@tanstack/react-query";
-import { useHousing, useSaved } from "@/features/account/api/query-hooks";
-import { insights } from "@/lib/api/insights";
-import { apiLanguage } from "@/lib/api/config";
-import type { PropertyComparison } from "@/lib/api/contracts";
-import type { ComputedComparison } from "@/lib/api/insight-contracts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
+import { Sparkles, LoaderCircle } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
-import { FieldSet, FieldLegend, FieldLabel } from "@/components/ui/field";
-import { MadarLoader } from "@/components/branding/madar-loader";
-import { ComparisonTableSkeleton } from "@/features/comparisons/skeletons";
-import { QueryFeedback } from "@/components/shared/query-feedback";
-import { useIdentity } from "@/features/account/identity";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/shared/error-state";
-import { Panel } from "@/components/shared/panel";
-import { ScoreFacts, SafeMarkdown } from "@/features/insights/analysis-ui";
-import { propertyHref } from "@/features/properties/format";
-import { PropertyFacts } from "@/features/properties/property-facts";
-import { safeUrl } from "@/lib/safe-url";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { SafeMarkdown } from "@/features/insights/analysis-ui";
+import { useIdentity } from "@/features/account/identity";
+import type { SavedProperty } from "@/lib/api/contracts";
+import { apiLanguage } from "@/lib/api/config";
+import { credits } from "@/lib/api/credits";
+import { insights } from "@/lib/api/insights";
+import type { ComputedComparison } from "@/lib/api/insight-contracts";
+import { ApiError } from "@/lib/api/errors";
 
-function ComparisonResults({ data }: { data: ComputedComparison }) {
+function formatCredits(value: number, locale: string) {
+  return `${new Intl.NumberFormat(locale).format(value)} ${locale === "ar" ? "رصيد" : "credits"}`;
+}
+
+function ComparisonScores({ data }: { data: ComputedComparison }) {
+  const t = useTranslations("Workspace");
   const locale = useLocale();
-  const text = getProductCopy(locale);
-  const maxScore = Math.max(
-    ...data.properties.map((item) =>
-      Number.isFinite(item.matchScore) ? item.matchScore : -Infinity,
-    ),
-  );
-  const leaders = data.properties.filter((item) => item.matchScore === maxScore);
-  const analysis = data.aiAnalysis;
-  const identified =
-    analysis?.recommendedSavedPropertyId != null
-      ? leaders.find(
-          (item) => item.savedPropertyId === analysis.recommendedSavedPropertyId,
-        )
-      : analysis?.recommendedExternalPropertyId
-        ? leaders.find(
-            (item) => item.externalPropertyId === analysis.recommendedExternalPropertyId,
-          )
-        : undefined;
-  const winner = identified ?? (leaders.length === 1 ? leaders[0] : null);
+  const values = [
+    ["matchScore", "match"],
+    ["housingScore", "housing"],
+    ["commuteScore", "commute"],
+    ["servicesScore", "servicesScore"],
+  ] as const;
   return (
-    <>
-      <div className="grid gap-4 md:grid-cols-2">
-        {data.properties.map((item) => (
-          <article
-            key={item.savedPropertyId ?? `${item.source}:${item.externalPropertyId}`}
-            className="flex min-w-0 flex-col gap-3 rounded-xl bg-secondary/30 p-4"
-          >
-            <h3
-              dir="auto"
-              className="break-words text-start font-semibold"
+    <Card className="rounded-2xl border-border/70 shadow-panel">
+      <CardHeader>
+        <CardTitle>{t("comparisonSuitability")}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-5">
+        <div className="grid gap-3 md:grid-cols-2">
+          {data.properties.map((property) => (
+            <div
+              key={
+                property.savedPropertyId ??
+                `${property.source}:${property.externalPropertyId}`
+              }
+              className="rounded-xl bg-secondary/40 p-4"
             >
-              {item.title || text.untitled}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              {item.neighborhood || text.noDistrict}
-            </p>
-            <p className="text-sm font-medium">
-              {item.price == null
-                ? text.unavailable
-                : `${new Intl.NumberFormat(locale).format(item.price)} ${locale === "ar" ? "ر.س" : "SAR"}`}
-            </p>
-            <PropertyFacts
-              property={{
-                bedrooms: item.bedrooms,
-                bathrooms: null,
-                areaSqm: item.areaSqm,
-              }}
-              locale={locale}
-            />
-            <ScoreFacts
-              match={item.matchScore}
-              housing={item.housingScore}
-              commute={item.commuteScore}
-              services={item.servicesScore}
-            />
-            <Link
-              href={propertyHref({
-                source: item.source,
-                externalId: item.externalPropertyId,
-              })}
-              className="text-sm text-primary underline"
-            >
-              {text.propertyDetails}
-            </Link>
-            {safeUrl(item.listingUrl) ? (
-              <a
-                href={safeUrl(item.listingUrl)!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary underline"
-              >
-                {locale === "ar" ? "الإعلان الأصلي" : "Original listing"}
-              </a>
-            ) : null}
-          </article>
-        ))}
-      </div>
-      {analysis ? (
-        <div className="flex flex-col gap-3 border-t border-border/60 pt-5">
-          <h3 className="font-semibold">
-            {text.recommended}:{" "}
-            {winner?.title || (winner ? winner.externalPropertyId : text.unavailable)}
-          </h3>
-          {leaders.length > 1 && !winner ? (
-            <p className="text-sm text-muted-foreground">
-              {locale === "ar"
-                ? "الخيارات الأعلى متعادلة في درجة المطابقة."
-                : "The leading properties have equal match scores."}
-            </p>
-          ) : null}
-          <SafeMarkdown text={analysis.reason} />
-          {analysis.alternativeReason || analysis.tradeOff ? (
-            <details>
-              <summary className="cursor-pointer py-2 text-sm text-primary">
-                {locale === "ar"
-                  ? "البدائل وما ينبغي مراعاته"
-                  : "Alternatives and trade-offs"}
-              </summary>
-              <SafeMarkdown text={analysis.alternativeReason} />
-              <SafeMarkdown text={analysis.tradeOff} />
-            </details>
-          ) : null}
+              <h3 className="font-medium">
+                {property.title || property.externalPropertyId}
+              </h3>
+              <dl className="mt-4 grid grid-cols-2 gap-3">
+                {values.map(([key, label]) => {
+                  const score = property[key];
+                  return (
+                    <div key={key}>
+                      <dt className="text-xs text-muted-foreground">
+                        {t(`comparisonMetric.${label}`)}
+                      </dt>
+                      <dd className="mt-1 text-sm font-semibold tabular-nums">
+                        {score == null
+                          ? t("comparisonUnavailable")
+                          : `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(score)}%`}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </div>
+          ))}
         </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">{text.noExplanation}</p>
-      )}
-    </>
+        {data.aiAnalysis ? (
+          <div className="border-t border-border/60 pt-4">
+            <h3 className="mb-2 font-semibold">{t("comparisonAiExplanation")}</h3>
+            {data.aiAnalysis.reason ? (
+              <SafeMarkdown text={data.aiAnalysis.reason} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t("comparisonUnavailable")}
+              </p>
+            )}
+            {data.aiAnalysis.alternativeReason || data.aiAnalysis.tradeOff ? (
+              <details className="mt-3">
+                <summary className="cursor-pointer text-sm font-medium">
+                  {t("comparisonTradeoffs")}
+                </summary>
+                {data.aiAnalysis.alternativeReason ? (
+                  <SafeMarkdown text={data.aiAnalysis.alternativeReason} />
+                ) : null}
+                {data.aiAnalysis.tradeOff ? (
+                  <SafeMarkdown text={data.aiAnalysis.tradeOff} />
+                ) : null}
+              </details>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {t("comparisonNoAiExplanation")}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-export function ComputedComparisonPanel({ pair }: { pair?: PropertyComparison }) {
-  const { userId } = useIdentity();
+export function ComputedComparisonPanel({ properties }: { properties: SavedProperty[] }) {
   const locale = useLocale();
-  const text = getProductCopy(locale);
-  const saved = useSaved(userId);
-  const housing = useHousing(userId);
-  const [selected, setSelected] = useState<number[]>([]);
-  const [submitted, setSubmitted] = useState<number[] | "pair" | null>(null);
-  const query = useQuery({
-    queryKey: ["computed-comparison", userId, apiLanguage(locale), pair, submitted],
-    queryFn: ({ signal }) => {
-      if (submitted === "pair" && pair)
-        return insights.compareTwo(
-          pair.firstPropertySource,
-          pair.firstPropertyId,
-          pair.secondPropertySource,
-          pair.secondPropertyId,
-          apiLanguage(locale),
-          signal,
-        );
-      if (Array.isArray(submitted) && submitted.length === 2) {
-        const first = saved.data?.find((item) => item.id === submitted[0]);
-        const second = saved.data?.find((item) => item.id === submitted[1]);
-        if (first && second)
-          return insights.compareTwo(
-            first.source,
-            first.externalPropertyId,
-            second.source,
-            second.externalPropertyId,
-            apiLanguage(locale),
-            signal,
-          );
-      }
-      return insights.compareMultiple(submitted as number[], apiLanguage(locale), signal);
-    },
-    enabled:
-      submitted !== null && !!housing.data && (submitted === "pair" || !!saved.data),
-    retry: false,
+  const t = useTranslations("Workspace");
+  const { userId } = useIdentity();
+  const cache = useQueryClient();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [result, setResult] = useState<ComputedComparison>();
+  const prices = useQuery({
+    queryKey: ["credit-service-prices", userId],
+    queryFn: ({ signal }) => credits.servicePrices(signal),
+    enabled: userId !== null,
   });
-  const selectionValid = pair
-    ? pair.firstPropertyId !== pair.secondPropertyId ||
-      pair.firstPropertySource.toUpperCase() !== pair.secondPropertySource.toUpperCase()
-    : selected.length >= 2 &&
-      selected.length <= 4 &&
-      selected.every((id) => saved.data?.some((p) => p.id === id));
+  const balance = useQuery({
+    queryKey: ["credit-balance", userId],
+    queryFn: ({ signal }) => credits.balance(signal),
+    enabled: userId !== null,
+  });
+  const cost = prices.data?.AI_COMPARISON;
+  const mutation = useMutation({
+    mutationFn: () =>
+      insights.compareMultiple(
+        properties.map((property) => property.id!),
+        apiLanguage(locale),
+      ),
+    retry: 0,
+    onMutate: () => setResult(undefined),
+    onSuccess: (data) => {
+      setResult(data);
+      setConfirmOpen(false);
+    },
+    onSettled: async () => {
+      await Promise.all([
+        cache.invalidateQueries({ queryKey: ["credit-balance", userId] }),
+        cache.invalidateQueries({ queryKey: ["credit-transactions", userId] }),
+      ]);
+    },
+  });
+  const canAnalyze =
+    properties.length >= 2 &&
+    properties.length <= 4 &&
+    properties.every((property) => property.id != null);
+  const insufficient =
+    cost != null && balance.data != null && balance.data.balance < cost;
+  const insufficientError =
+    mutation.error instanceof ApiError &&
+    mutation.error.backendMessage?.includes("رصيدك من الكريدت") === true;
+  const prerequisiteError =
+    mutation.error instanceof ApiError &&
+    [
+      "Housing preferences not found",
+      "Property has insufficient data for matching",
+      "Housing budget is invalid",
+    ].includes(mutation.error.backendMessage ?? "");
+  const providerError =
+    mutation.error instanceof ApiError &&
+    (mutation.error.status === 502 ||
+      [
+        "AI comparison explanation was not returned",
+        "AI explanations were not returned",
+        "AI is unavailable right now",
+      ].includes(mutation.error.backendMessage ?? ""));
+
   return (
-    <Panel
-      title={text.comparison}
-      description={text.comparisonHint}
-    >
-      <div className="flex flex-col gap-4">
-        <QueryFeedback query={housing} />
-        {housing.isPending ? (
-          <ComparisonTableSkeleton />
-        ) : housing.isError && !housing.data ? (
-          <ErrorState
-            error={housing.error}
-            retry={() => void housing.refetch()}
-          />
-        ) : !housing.isPending && !housing.data ? (
-          <Link
-            href="/profile"
-            className="text-sm text-primary underline"
+    <section className="flex flex-col gap-4">
+      <Card className="rounded-2xl border-border/70 shadow-panel">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles
+              aria-hidden="true"
+              className="size-5 text-primary"
+            />
+            {t("comparisonSuitability")}
+          </CardTitle>
+          <p className="text-sm leading-6 text-muted-foreground">
+            {t("paidComparisonDescription")}
+          </p>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-3">
+          {prices.isError ? (
+            <ErrorState
+              error={prices.error}
+              retry={() => void prices.refetch()}
+            />
+          ) : null}
+          {balance.isError ? (
+            <ErrorState
+              error={balance.error}
+              retry={() => void balance.refetch()}
+            />
+          ) : null}
+          {cost != null ? (
+            <p className="text-sm text-muted-foreground">
+              {t("paidComparisonCost", { cost: formatCredits(cost, locale) })}
+            </p>
+          ) : null}
+          {balance.data ? (
+            <p className="text-sm text-muted-foreground">
+              {t("creditBalanceLabel", {
+                balance: formatCredits(balance.data.balance, locale),
+              })}
+            </p>
+          ) : null}
+          {insufficient ? (
+            <Button
+              nativeButton={false}
+              render={<Link href="/payments" />}
+              variant="outline"
+            >
+              {t("buyCredits")}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            disabled={
+              !canAnalyze ||
+              cost == null ||
+              prices.isPending ||
+              balance.isPending ||
+              insufficient ||
+              mutation.isPending
+            }
+            onClick={() => {
+              mutation.reset();
+              setConfirmOpen(true);
+            }}
           >
-            {text.setupPreferences}
-          </Link>
-        ) : null}
-        {!pair ? (
-          <>
-            <QueryFeedback query={saved} />
-            {saved.isPending ? (
-              <ComparisonTableSkeleton />
-            ) : saved.isError && !saved.data ? (
-              <ErrorState
-                error={saved.error}
-                retry={() => void saved.refetch()}
+            {mutation.isPending ? (
+              <LoaderCircle
+                className="size-4 animate-spin"
+                aria-hidden="true"
               />
             ) : (
-              <FieldSet disabled={query.isFetching}>
-                <FieldLegend variant="label">{text.chooseProperties}</FieldLegend>
-                <div className="grid gap-2 md:grid-cols-2">
-                  {saved.data
-                    ?.filter((p) => p.id != null)
-                    .map((p) => (
-                      <FieldLabel
-                        key={p.id}
-                        className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-border/70 p-3 has-checked:border-primary/50 has-checked:bg-primary/8 has-disabled:cursor-not-allowed has-disabled:opacity-60"
-                      >
-                        <input
-                          type="checkbox"
-                          className="size-4 shrink-0 accent-primary"
-                          checked={selected.includes(p.id!)}
-                          disabled={selected.length >= 4 && !selected.includes(p.id!)}
-                          onChange={(event) =>
-                            setSelected((old) =>
-                              event.target.checked
-                                ? [...old, p.id!]
-                                : old.filter((id) => id !== p.id),
-                            )
-                          }
-                        />
-                        <span
-                          dir="auto"
-                          className="min-w-0 break-words"
-                        >
-                          {p.titleSnapshot || p.externalPropertyId}
-                        </span>
-                      </FieldLabel>
-                    ))}
-                </div>
-              </FieldSet>
+              <Sparkles aria-hidden="true" />
             )}
-          </>
-        ) : null}
-        <Button
-          className="self-start"
-          disabled={!selectionValid || !housing.data || query.isFetching}
-          onClick={() => {
-            const next = pair ? "pair" : [...selected];
-            if (JSON.stringify(next) === JSON.stringify(submitted)) void query.refetch();
-            else setSubmitted(next);
-          }}
-        >
-          {query.isFetching ? text.calculating : text.calculateComparison}
-        </Button>
-        <p className="text-xs leading-5 text-muted-foreground">
-          {text.comparisonCreditNotice}
-        </p>
-        {submitted ? (
-          <>
-            <QueryFeedback query={query} />
-            {query.isPending ? (
-              <>
-                <MadarLoader
-                  decorative
-                  size="md"
-                  className="self-center"
-                />
-                <ComparisonTableSkeleton />
-              </>
-            ) : query.isError && !query.data ? (
-              <ErrorState
-                error={query.error}
-                retry={() => void query.refetch()}
-                retryDisabled={query.isFetching}
-              />
-            ) : query.data ? (
-              <ComparisonResults data={query.data} />
+            {t("requestPaidComparison")}
+          </Button>
+        </CardContent>
+        {mutation.isError ? (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 px-6 pb-5 text-sm text-destructive"
+          >
+            <p>
+              {insufficientError
+                ? t("comparisonInsufficientCredits")
+                : prerequisiteError
+                  ? t("comparisonPrerequisiteError")
+                  : providerError
+                    ? t("comparisonProviderError")
+                    : t("paidComparisonError")}
+            </p>
+            {insufficientError ? (
+              <Button
+                nativeButton={false}
+                render={<Link href="/payments" />}
+                variant="outline"
+              >
+                {t("buyCredits")}
+              </Button>
             ) : null}
-          </>
+          </div>
         ) : null}
-      </div>
-    </Panel>
+      </Card>
+      {result ? <ComparisonScores data={result} /> : null}
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(open) => !mutation.isPending && setConfirmOpen(open)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirmPaidComparisonTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("confirmPaidComparisonDescription", {
+                cost: cost == null ? "—" : formatCredits(cost, locale),
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={mutation.isPending}>
+              {t("cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={mutation.isPending || cost == null || insufficient}
+              onClick={() => mutation.mutate()}
+            >
+              {mutation.isPending ? t("working") : t("confirmPaidComparison")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
   );
 }

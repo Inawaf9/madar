@@ -83,7 +83,7 @@ export function SearchField({
           placeholder={
             key === "q"
               ? ar
-                ? "ابحث باسم الحي أو وصف العقار"
+                ? "ابحث باسم الحي أو وصف البيت"
                 : "Search neighborhood or description"
               : undefined
           }

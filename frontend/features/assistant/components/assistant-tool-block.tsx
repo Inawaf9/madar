@@ -44,8 +44,8 @@ function InputSummary({ block, input }: { block: ToolBlock; input: ToolInput }) 
         <div>
           {input.save
             ? ar
-              ? "طلب حفظ يحتاج تأكيدًا في صفحة العقار"
-              : "Save request needs confirmation on the property page"
+              ? "طلب حفظ يحتاج تأكيدًا في صفحة البيت"
+              : "Save request needs confirmation on the home page"
             : ar
               ? "طلب إزالة لم يُنفذ"
               : "Removal request was not completed"}

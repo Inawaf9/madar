@@ -1,8 +1,8 @@
 {
-  "optional": "Personal property insights are optional.",
+  "optional": "Personal home insights are optional.",
   "signIn": "Sign in to use them",
-  "title": "This property and your preferences",
-  "description": "Compare the property with your budget and preferences if you wish. Browsing remains available without it.",
+  "title": "This home and your preferences",
+  "description": "Compare the home with your budget and preferences if you wish. Browsing remains available without it.",
   "addPreferences": "Add housing preferences to see budget and match results",
   "compareBudget": "Compare budget",
   "calculateMatch": "Calculate match",
@@ -21,6 +21,6 @@
   "unnamedPlace": "Unnamed place",
   "retrySearch": "Search again",
   "checkSaved": "Check if saved",
-  "saved": "Property saved",
-  "notSaved": "Property not saved"
+  "saved": "Home saved",
+  "notSaved": "Home not saved"
 }

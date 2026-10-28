@@ -130,8 +130,8 @@ export function HomePanel({
       </div>
       {home ? (
         <div className="mt-4 rounded-2xl border border-border/60 bg-secondary/40 p-4">
-          <p className="text-xs text-muted-foreground">{t("homeAddressLabel")}</p>
-          <p className="mt-1 text-sm font-medium">{t("homeAddressUnavailable")}</p>
+          <p className="text-xs text-muted-foreground">{t("PropertyAddressLabel")}</p>
+          <p className="mt-1 text-sm font-medium">{t("PropertyAddressUnavailable")}</p>
           {home.source && home.externalPropertyId ? (
             <Button
               nativeButton={false}
@@ -143,7 +143,7 @@ export function HomePanel({
               variant="link"
               className="mt-2 h-auto p-0"
             >
-              {t("homeListingDetails")}
+              {t("PropertyListingDetails")}
             </Button>
           ) : null}
           {onCenterHome ? (

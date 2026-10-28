@@ -1,18 +1,18 @@
 {
-  "eyebrow": "Details that help you choose",
-  "title": "See more than the listing",
-  "description": "Explore a property alongside its location, nearby services, and places that matter to you.",
+  "eyebrow": "A clearer choice, step by step",
+  "title": "See how each home fits",
+  "description": "Bring home details, location, daily journeys, and nearby services together in one useful view.",
   "flexibleTitle": "Search your way",
-  "flexibleDescription": "Search by city, budget, and property type.",
+  "flexibleDescription": "Search by city, budget, and home type.",
   "externalTitle": "Your listing references",
   "externalDescription": "Save listing sources and reference numbers to compare later.",
-  "lifestyleTitle": "Options that fit your day",
-  "lifestyleDescription": "Compare properties using your budget and regular destinations.",
+  "lifestyleTitle": "Recommendations shaped around you",
+  "lifestyleDescription": "Discover homes recommended by AI using your budget and important places.",
   "locationsTitle": "Places that matter to you",
   "locationsDescription": "Add and update the places that matter to you.",
-  "compareTitle": "Easy-to-read comparisons",
-  "compareDescription": "See the main differences between properties in one place.",
+  "compareTitle": "A clearer comparison",
+  "compareDescription": "Review the differences between homes, with optional AI analysis when you need it.",
   "insightsTitle": "Information to guide your choice",
   "insightsDescription": "Review the information available and make your own decision.",
-  "demoNote": "Some examples on this page are illustrative, not live property listings."
+  "demoNote": "Some examples on this page are illustrative, not live home listings."
 }

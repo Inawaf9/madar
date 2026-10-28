@@ -30,7 +30,7 @@ export function mapPoiErrorMessage(error: unknown, locale: string): string {
   const code = error instanceof MapPoiError ? error.code : "POI_PROVIDER_FAILED";
   const messages: Record<MapPoiErrorCode, [string, string]> = {
     INVALID_QUERY: [
-      "لا تتوفر إحداثيات صالحة للبحث حول هذا العقار.",
+      "لا تتوفر إحداثيات صالحة للبحث حول البيت.",
       "This property has no valid coordinates for nearby search.",
     ],
     POI_NOT_CONFIGURED: [

@@ -1,6 +1,6 @@
 export const stories = {
   ar: {
-    eyebrow: "مو مجرد منصة عقارية",
+    eyebrow: "مدار يفهم تفاصيل يومك",
     title: "أنا مدار…\nوهذي حكايتي.",
     intro:
       "كل شيء بدأ بفرصة جديدة، في مدينة جديدة… وسؤال واحد ما توقعت إنه بيغيّر كل شيء.",
@@ -52,15 +52,15 @@ export const stories = {
     turningQuestion:
       "ليش البحث عن السكن ينتهي عند البيت…\nوهو في الحقيقة بداية حياة كاملة؟",
     turningBody:
-      "من هالسؤال ولدت فكرة مدار. مو بس عشان نساعدك تختار عقار، بل عشان نساعدك تختار حياة تناسبك.",
+      "من هالسؤال بدأت فكرة مدار: نقرّب لك خيارات السكن من ميزانيتك وأماكنك المهمة، ونستخدم التوصيات الذكية عشان تشوف الصورة أوضح.",
     endingLabel: "من تجربتي… إلى رحلتك",
     endingTitle: "وهنا جاء دور مدار.",
-    endingBody: "نقرّب لك السكن، والمشاوير، وكل الأماكن اللي تهمك.",
-    endingPill: "كل ما يهمك، أقرب لك",
-    explore: "تصفّح العقارات",
+    endingBody: "اجمع ميزانيتك وتفضيلاتك وأماكنك المهمة، واكتشف بيوتًا اختيرت لك بذكاء.",
+    endingPill: "بيت يناسب تفاصيل حياتك",
+    explore: "اكتشف بيتك القادم",
   },
   en: {
-    eyebrow: "More than a property platform",
+    eyebrow: "A home search that starts with your day",
     title: "I’m MADAR…\nand this is my story.",
     intro:
       "It started with a new opportunity in a new city, and one question I never expected to change everything.",
@@ -113,12 +113,13 @@ export const stories = {
     turningQuestion:
       "Why should the search end at the house…\nwhen a whole life begins there?",
     turningBody:
-      "That question gave rise to MADAR. To help you choose more than a property: a life that fits you.",
+      "That question inspired MADAR: bring your budget, preferences, and important places together, then use personalized recommendations to see your options more clearly.",
     endingLabel: "From my experience to your journey",
     endingTitle: "This is where MADAR comes in.",
-    endingBody: "We bring homes, commutes, and the places that matter closer together.",
-    endingPill: "What matters to you, closer to home",
-    explore: "Explore properties",
+    endingBody:
+      "Bring your budget, preferences, and important places together to discover homes recommended for you.",
+    endingPill: "A home that fits the way you live",
+    explore: "Find your next home",
   },
 } as const;
 export type AboutCopy = typeof stories.ar | typeof stories.en;

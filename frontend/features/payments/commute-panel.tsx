@@ -36,8 +36,8 @@ export function CommutePanel({
       title={ar ? "هل يناسبك التنقل من هنا؟" : "Does the commute work for you?"}
       description={
         ar
-          ? "حلّل القيادة من موقع العقار إلى وجهاتك المحفوظة. الخدمة مدفوعة واختيارية."
-          : "Analyze driving from this property to your saved destinations. This is an optional paid service."
+          ? "حلّل القيادة من موقع البيت إلى وجهاتك المحفوظة. الخدمة مدفوعة واختيارية."
+          : "Analyze driving from this home to your saved destinations. This is an optional paid service."
       }
     >
       {userId ? (
@@ -292,7 +292,9 @@ function UserCommute({
                 {locale === "ar" ? "إجمالي التنقل الأسبوعي" : "Total weekly commute"}
               </dt>
               <dd className="mt-1 text-xl font-semibold tabular-nums">
-                {new Intl.NumberFormat(locale).format(report.totalWeeklyHours)}{" "}
+                {report.totalWeeklyHours == null
+                  ? "—"
+                  : new Intl.NumberFormat(locale).format(report.totalWeeklyHours)}{" "}
                 <span className="text-xs font-normal">
                   {locale === "ar" ? "ساعة" : "hours"}
                 </span>
@@ -303,7 +305,9 @@ function UserCommute({
                 {locale === "ar" ? "مؤشر التنقل" : "Commute score"}
               </dt>
               <dd className="mt-1 text-xl font-semibold tabular-nums">
-                {new Intl.NumberFormat(locale).format(report.commuteScore)}
+                {report.commuteScore == null
+                  ? "—"
+                  : new Intl.NumberFormat(locale).format(report.commuteScore)}
               </dd>
             </div>
           </dl>
@@ -335,8 +339,8 @@ function UserCommute({
           ) : null}
           <p className="text-xs leading-5 text-muted-foreground">
             {locale === "ar"
-              ? "التقدير الأسبوعي يحتسب الذهاب والعودة بحسب عدد الزيارات المحفوظة، وليس ترتيبًا للعقارات."
-              : "Weekly estimates include round trips based on saved visit frequency. This is not a property ranking."}
+              ? "التقدير الأسبوعي يحتسب الذهاب والعودة بحسب عدد الزيارات المحفوظة، وليس ترتيبًا للبيوت."
+              : "Weekly estimates include round trips based on saved visit frequency. This is not a home ranking."}
           </p>
           <GoogleDataAttribution />
         </section>

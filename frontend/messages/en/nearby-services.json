@@ -1,11 +1,11 @@
 {
   "title": "Nearby services",
-  "description": "Choose a service type to see available places within 2 km of the property.",
+  "description": "Choose a service type to see available places within 2 km of the home.",
   "searching": "Searching",
   "showServices": "Show services",
   "categoriesLabel": "Nearby service types",
   "resultsCount": "{count} available results",
-  "distanceNote": "Distances are approximate straight-line measurements from the property, not walking or driving distances.",
+  "distanceNote": "Distances are approximate straight-line measurements from the home, not walking or driving distances.",
   "unnamedPlace": "Unnamed place",
   "placeDetails": "Place details",
   "noResults": "No matching services",

@@ -27,7 +27,7 @@ import { SearchField } from "./search-field";
 const labels: Record<string, string> = {
   purpose: "نوع الإعلان",
   q: "كلمة بحث أو اسم حي",
-  type: "نوع العقار",
+  type: "نوع البيت",
   minPrice: "أقل سعر (ر.س)",
   maxPrice: "أعلى سعر (ر.س)",
   minArea: "أقل مساحة (م²)",
@@ -97,7 +97,7 @@ export function SearchForm({
         neighborhoodId: "Neighborhood",
         purpose: "Listing type",
         q: "Keyword or neighborhood",
-        type: "Property type",
+        type: "Home type",
         minPrice: "Minimum price (SAR)",
         maxPrice: "Maximum price (SAR)",
         minArea: "Minimum area (m²)",
@@ -413,11 +413,11 @@ export function SearchForm({
           <Search data-icon="inline-start" />
           {ar
             ? compact
-              ? "استكشف العقارات"
-              : "ابحث عن عقار"
+              ? "استكشف البيوت"
+              : "ابحث عن بيت"
             : compact
-              ? "Explore properties"
-              : "Search properties"}
+              ? "Explore Properties"
+              : "Search Properties"}
         </Button>
       </div>
       <p className="-mt-2 text-xs leading-6 text-muted-foreground">

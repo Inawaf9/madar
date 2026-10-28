@@ -4,14 +4,12 @@ import { FormPanelSkeleton } from "@/components/shared/page-skeleton";
 import {
   ComparisonListSkeleton,
   ComparisonSkeleton,
-  ComparisonTableSkeleton,
 } from "@/features/comparisons/skeletons";
 
-import { ComputedComparisonPanel } from "./computed-comparison";
-import { ComparisonListings } from "./comparison-listings";
+import { ComparisonWorkspace } from "./comparison-workspace";
 import { useState } from "react";
 import { TaskDialog } from "@/components/shared/task-dialog";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { z } from "zod";
@@ -143,84 +141,6 @@ function PairForm({
     />
   );
 }
-function ComparisonTable({
-  pair,
-  saved,
-}: {
-  pair: PropertyComparison;
-  saved: SavedProperty[];
-}) {
-  const t = useTranslations("Workspace");
-  const first = saved.find(
-    (p) =>
-      p.source === pair.firstPropertySource &&
-      p.externalPropertyId === pair.firstPropertyId,
-  );
-  const second = saved.find(
-    (p) =>
-      p.source === pair.secondPropertySource &&
-      p.externalPropertyId === pair.secondPropertyId,
-  );
-  return (
-    <div
-      tabIndex={0}
-      role="region"
-      aria-label={t("comparisonTable")}
-      className="overflow-x-auto rounded-xl border border-border/60"
-    >
-      <table className="w-full min-w-[440px] border-collapse text-start text-sm">
-        <caption className="sr-only">{t("comparisonTable")}</caption>
-        <thead className="bg-secondary/50 text-xs text-muted-foreground">
-          <tr>
-            <th
-              scope="col"
-              className="px-4 py-3 text-start"
-            >
-              {t("characteristic")}
-            </th>
-            <th
-              scope="col"
-              className="px-4 py-3 text-start"
-            >
-              {t("fields.first")}
-            </th>
-            <th
-              scope="col"
-              className="px-4 py-3 text-start"
-            >
-              {t("fields.second")}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {[
-            [
-              t("fields.titleSnapshot"),
-              first?.titleSnapshot || t("untitledProperty"),
-              second?.titleSnapshot || t("untitledProperty"),
-            ],
-            [t("fields.source"), pair.firstPropertySource, pair.secondPropertySource],
-            [t("fields.externalPropertyId"), pair.firstPropertyId, pair.secondPropertyId],
-          ].map(([label, a, b]) => (
-            <tr
-              key={label}
-              className="border-t border-border/50 even:bg-secondary/20"
-            >
-              <th
-                scope="row"
-                className="px-4 py-3 text-start font-medium"
-              >
-                {label}
-              </th>
-              <td className="max-w-60 break-words px-4 py-3">{a}</td>
-              <td className="max-w-60 break-words px-4 py-3">{b}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 function PairSummary({
   pair,
   saved,
@@ -256,126 +176,113 @@ function PairSummary({
   );
 }
 export function ComparisonsPage() {
-  const ar = useLocale() === "ar";
   const t = useTranslations("Workspace");
   const { userId } = useIdentity();
   const query = useComparisons(userId);
   const saved = useSaved(userId);
   const cache = useQueryClient();
   const params = useSearchParams();
-  const [open, setOpen] = useState(() => params.has("first") || params.has("second"));
+  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   return (
-    <>
-      <PageHeading
-        title={t("comparisonsTitle")}
-        description={
-          ar
-            ? "ضع خياراتك جنبًا إلى جنب، ثم اطلب التقييم عندما تحتاجه."
-            : "See your options side by side, then request scores when you need them."
-        }
-      >
-        <Button onClick={() => setOpen(true)}>{t("createComparison")}</Button>
-      </PageHeading>
-      <QueryFeedback query={query} />
-      <QueryFeedback query={saved} />
-      {saved.isError && !saved.data ? (
-        <div className="mb-4">
-          <ErrorState
-            error={saved.error}
-            retry={() => void saved.refetch()}
-          />
-        </div>
-      ) : null}
-      {query.isPending ? (
-        <ComparisonListSkeleton />
-      ) : query.isError && !query.data?.length ? (
-        <ErrorState
-          error={query.error}
-          retry={() => void query.refetch()}
-        />
-      ) : !query.data.length ? (
-        <EmptyState
-          title={t("noComparisons")}
-          description={t("noComparisonsHint")}
+    <div className="flex min-w-0 flex-col gap-8 pb-10">
+      <ComparisonWorkspace />
+      <section className="flex min-w-0 flex-col gap-4">
+        <PageHeading
+          title={t("savedComparisonsTitle")}
+          description={t("savedComparisonsDescription")}
         >
           <Button onClick={() => setOpen(true)}>{t("createComparison")}</Button>
-        </EmptyState>
-      ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {query.data.map((pair) => (
-            <Card
-              key={pair.id}
-              className="gap-4 rounded-2xl border-border/60 shadow-none"
-            >
-              <CardHeader>
-                <CardTitle>
-                  <h2>{t("comparisonPair")}</h2>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {saved.isPending ? (
-                  <ComparisonTableSkeleton />
-                ) : (
-                  <PairSummary
-                    pair={pair}
-                    saved={saved.data || []}
+        </PageHeading>
+        <QueryFeedback query={query} />
+        <QueryFeedback query={saved} />
+        {saved.isError && !saved.data ? (
+          <div className="mb-4">
+            <ErrorState
+              error={saved.error}
+              retry={() => void saved.refetch()}
+            />
+          </div>
+        ) : null}
+        {query.isPending ? (
+          <ComparisonListSkeleton />
+        ) : query.isError && !query.data?.length ? (
+          <ErrorState
+            error={query.error}
+            retry={() => void query.refetch()}
+          />
+        ) : !query.data.length ? (
+          <EmptyState
+            title={t("noComparisons")}
+            description={t("noComparisonsHint")}
+          >
+            <Button onClick={() => setOpen(true)}>{t("createComparison")}</Button>
+          </EmptyState>
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {query.data.map((pair) => (
+              <Card
+                key={pair.id}
+                className="gap-4 rounded-2xl border-border/60 shadow-none"
+              >
+                <CardHeader>
+                  <CardTitle>
+                    <h2>{t("comparisonPair")}</h2>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {saved.isPending ? (
+                    <ComparisonListSkeleton />
+                  ) : (
+                    <PairSummary
+                      pair={pair}
+                      saved={saved.data || []}
+                    />
+                  )}
+                </CardContent>
+                <CardFooter className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    nativeButton={false}
+                    render={<Link href={`/compare/${pair.id}`} />}
+                  >
+                    {t("viewEdit")}
+                  </Button>
+                  <DeleteAction
+                    onDelete={async () => {
+                      await comparisonsApi.remove(pair.id!);
+                      await cache.invalidateQueries({
+                        queryKey: keys.comparisons(userId),
+                      });
+                    }}
                   />
-                )}
-              </CardContent>
-              <CardFooter className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  nativeButton={false}
-                  render={<Link href={`/compare/${pair.id}`} />}
-                >
-                  {t("viewEdit")}
-                </Button>
-                <DeleteAction
-                  onDelete={async () => {
-                    await comparisonsApi.remove(pair.id!);
-                    await cache.invalidateQueries({ queryKey: keys.comparisons(userId) });
-                  }}
-                />
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
-      <TaskDialog
-        open={open}
-        onOpenChange={setOpen}
-        busy={busy}
-        title={t("createComparison")}
-      >
-        <PairForm
-          key={`${params.get("first") || "new"}:${params.get("second") || "new"}`}
-          onBusy={setBusy}
-          onSaved={() => setOpen(false)}
-        />
-      </TaskDialog>
-      <details className="mt-6 rounded-2xl border border-border/60 bg-card p-5">
-        <summary className="cursor-pointer rounded-md text-sm font-semibold">
-          {ar ? "تقييم عقارين إلى أربعة عقارات" : "Score two to four properties"}
-        </summary>
-        <div className="mt-5 [&_[data-slot=card]]:border-0 [&_[data-slot=card]]:shadow-none">
-          <ComputedComparisonPanel />
-        </div>
-      </details>
-    </>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+        <TaskDialog
+          open={open}
+          onOpenChange={setOpen}
+          busy={busy}
+          title={t("createComparison")}
+        >
+          <PairForm
+            key={`${params.get("first") || "new"}:${params.get("second") || "new"}`}
+            onBusy={setBusy}
+            onSaved={() => setOpen(false)}
+          />
+        </TaskDialog>
+      </section>
+    </div>
   );
 }
 export function ComparisonDetail({ id }: { id: number }) {
-  const ar = useLocale() === "ar";
-  const t = useTranslations("Workspace");
   const { userId } = useIdentity();
   const query = useQuery({
     queryKey: ["comparison", userId, id],
     queryFn: ({ signal }) => comparisonsApi.detail(id, signal),
   });
-  const saved = useSaved(userId);
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
   if (query.isPending) return <ComparisonSkeleton detail />;
   if (query.isError && !query.data)
     return (
@@ -384,61 +291,5 @@ export function ComparisonDetail({ id }: { id: number }) {
         retry={() => void query.refetch()}
       />
     );
-  return (
-    <>
-      <QueryFeedback query={query} />
-      <PageHeading
-        title={t("comparisonPair")}
-        description={
-          ar
-            ? "معلومات الإعلانين أولًا، والتقييم عند طلبك."
-            : "Listing details first. Scores when you request them."
-        }
-      >
-        <Button
-          variant="outline"
-          onClick={() => setOpen(true)}
-        >
-          {t("editComparison")}
-        </Button>
-      </PageHeading>
-      <div className="flex max-w-6xl flex-col gap-6">
-        <ComparisonListings pair={query.data} />
-        <ComputedComparisonPanel pair={query.data} />
-        <details className="rounded-xl border border-border/60 p-4">
-          <summary className="cursor-pointer text-sm">
-            {ar ? "مراجع الإعلانات" : "Listing references"}
-          </summary>
-          <div className="mt-4">
-            <QueryFeedback query={saved} />
-            {saved.isPending ? (
-              <ComparisonTableSkeleton />
-            ) : saved.isError && !saved.data ? (
-              <ErrorState
-                error={saved.error}
-                retry={() => void saved.refetch()}
-              />
-            ) : (
-              <ComparisonTable
-                pair={query.data}
-                saved={saved.data ?? []}
-              />
-            )}
-          </div>
-        </details>
-      </div>
-      <TaskDialog
-        open={open}
-        onOpenChange={setOpen}
-        busy={busy}
-        title={t("editComparison")}
-      >
-        <PairForm
-          pair={query.data}
-          onBusy={setBusy}
-          onSaved={() => setOpen(false)}
-        />
-      </TaskDialog>
-    </>
-  );
+  return <ComparisonWorkspace initialPair={query.data} />;
 }

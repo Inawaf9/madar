@@ -174,17 +174,11 @@ export type GooglePlace = {
   location: { latitude: number | null; longitude: number | null } | null;
   primaryType: string | null;
   types: string[] | null;
+  /** Set by Spring after filtering Google Places results to the requested radius. */
+  distanceKm?: number | null;
 };
 export type PlacesResponse = { places: (GooglePlace | null)[] | null };
 export type NearbyPlace = { place: GooglePlace; straightLineDistanceMeters: number };
-export type Neighborhood = {
-  homeId: number;
-  location: { latitude: number; longitude: number };
-  radiusMeters: number;
-  places: GooglePlace[];
-  categories: { category: string; returnedCount: number; placeIds: string[] }[];
-  completeInventory: boolean;
-};
 export type EssentialResult = {
   category: string;
   status: "FOUND" | "NO_MATCH" | "SEARCH_FAILED";
@@ -199,12 +193,12 @@ export type CommuteReport = {
     placeType: string;
     importance: number;
     visitPerWeek: number;
-    distanceKm: number;
-    durationMinutes: number;
+    distanceKm: number | null;
+    durationMinutes: number | null;
   }[];
-  totalWeeklyMinutes: number;
-  totalWeeklyHours: number;
-  commuteScore: number;
+  totalWeeklyMinutes: number | null;
+  totalWeeklyHours: number | null;
+  commuteScore: number | null;
 };
 export type Checkout = {
   paymentId: number;

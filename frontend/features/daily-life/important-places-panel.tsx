@@ -220,10 +220,14 @@ export function ImportantPlacesPanel({
                   {route ? (
                     <span className="font-medium text-primary">
                       {t("placeCommute", {
-                        minutes: new Intl.NumberFormat(locale).format(
-                          route.durationMinutes,
-                        ),
-                        distance: new Intl.NumberFormat(locale).format(route.distanceKm),
+                        minutes:
+                          route.durationMinutes == null
+                            ? "—"
+                            : new Intl.NumberFormat(locale).format(route.durationMinutes),
+                        distance:
+                          route.distanceKm == null
+                            ? "—"
+                            : new Intl.NumberFormat(locale).format(route.distanceKm),
                       })}
                     </span>
                   ) : null}

@@ -106,6 +106,7 @@ export function SavedPropertyCard({
   return (
     <>
       <PropertyCardView
+        variant="compact"
         listing={model}
         href={href}
         loading={loading && !listing}
@@ -188,7 +189,7 @@ export function SavedPropertyCard({
                     onClick={onRetry}
                   >
                     <RefreshCw />
-                    {ar ? "تحديث بيانات العقار" : "Refresh listing"}
+                    {ar ? "تحديث بيانات البيت" : "Refresh listing"}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <dl className="flex flex-col gap-1 border-t border-border/50 px-2 py-3 text-xs text-muted-foreground">
@@ -253,7 +254,7 @@ export function SavedPropertyCard({
               variant="outline"
               className="w-full justify-between"
             >
-              {ar ? "عرض العقار" : "View property"}
+              {ar ? "عرض البيت" : "View home"}
               <ArrowUpRight
                 data-icon="inline-end"
                 className="rtl:-scale-x-100"

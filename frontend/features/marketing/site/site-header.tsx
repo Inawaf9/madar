@@ -2,8 +2,6 @@
 
 import { Suspense, useEffect, useRef, useState, type ComponentProps } from "react";
 import {
-  ArrowUpRight,
-  BellRing,
   Bookmark,
   LayoutDashboard,
   LogOut,
@@ -31,6 +29,7 @@ import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { SiteBrand } from "./site-brand";
 import { getLayoutCopy } from "@/messages/layout-copy";
+import { NotificationBell } from "@/features/workspace/notification-bell";
 
 const sections = [
   ["#discover", "discover"],
@@ -176,20 +175,13 @@ export function SiteHeader() {
                     signingOut={signingOut}
                     onLogout={signOut}
                   /> */}
-                <Button
-                  size="icon-lg"
-                  className="size-10 rounded-full"
-                >
-                  <BellRing />
-                </Button>
+                <NotificationBell />
                 <RouteLink
                   href="/dashboard"
                   onClick={close}
                   className="flex min-h-11 min-w-0 items-center rounded-xl px-3 py-2 text-sm wrap-break-word hover:bg-secondary aria-[current=page]:bg-secondary aria-[current=page]:font-semibold"
                 >
-                  <span>
-                    {t("welcome")} {name}
-                  </span>
+                  <span>{t("myDashboard")}</span>
                 </RouteLink>
                 <Button
                   size="icon-lg"
@@ -226,6 +218,7 @@ export function SiteHeader() {
               />
             ) : session ? (
               <>
+                <NotificationBell />
                 <HeaderAccountMenu
                   name={name}
                   email={session.email}

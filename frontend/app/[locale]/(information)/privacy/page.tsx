@@ -13,14 +13,14 @@ const content = {
       {
         title: "1. من نحن",
         paragraphs: [
-          "مدار منصة تساعدك تبحث عن العقارات وتقارن بينها وتتعرف على الأحياء والخدمات القريبة وتحلل مشاويرك اليومية.",
+          "مدار منصة تساعدك تبحث عن البيوت وتقارن بينها وتتعرف على الأحياء والخدمات القريبة وتحلل مشاويرك اليومية.",
           "تُدار المنصة بواسطة [الاسم القانوني للمشغّل]. ويمكن التواصل مع الجهة المسؤولة عن البيانات من خلال [بريد التواصل الرسمي].",
         ],
       },
       {
         title: "2. البيانات اللي نتعامل معها",
         paragraphs: [
-          "بحسب الخدمات اللي تستخدمها، قد نتعامل مع بيانات الحساب مثل الاسم والبريد الإلكتروني، وتفضيلات السكن والميزانية، والعقارات المحفوظة، والأماكن اللي تضيفها لتحليل المشاوير.",
+          "بحسب الخدمات اللي تستخدمها، قد نتعامل مع بيانات الحساب مثل الاسم والبريد الإلكتروني، وتفضيلات السكن والميزانية، والبيوت اللي تحفظها، والأماكن اللي تضيفها لتحليل المشاوير.",
           "قد تشمل البيانات أيضًا المواقع اللي تدخلها بنفسك، ومحتوى محادثات مساعد مدار، وسجلات العمليات والمدفوعات، والبيانات التقنية اللازمة لتشغيل الخدمة وحمايتها.",
           "مو كل الخدمات تحتاج نفس البيانات. نطلب البيانات المرتبطة بالخدمة اللي تستخدمها.",
         ],
@@ -28,7 +28,7 @@ const content = {
       {
         title: "3. ليش نستخدم بياناتك",
         paragraphs: [
-          "نستخدم البيانات لتشغيل حسابك، وعرض العقارات المناسبة لتفضيلاتك، وحساب المشاوير، وتقديم المقارنات والتوصيات والخدمات اللي تطلبها.",
+          "نستخدم البيانات لتشغيل حسابك، وعرض البيوت المناسبة لتفضيلاتك، وحساب المشاوير، وتقديم المقارنات والتوصيات والخدمات اللي تطلبها.",
           "وقد نستخدم البيانات اللازمة لحماية الحسابات، ومعالجة المشكلات التقنية، وتنفيذ الالتزامات النظامية، وتحسين الخدمة ضمن الأغراض والمسوغات النظامية المطبقة.",
         ],
       },
@@ -101,21 +101,21 @@ const content = {
       {
         title: "1. Who We Are",
         paragraphs: [
-          "MADAR is a property discovery platform offering property comparisons, neighborhood insights, commute analysis, and personalized recommendations.",
+          "MADAR is a home discovery platform offering home comparisons, neighborhood insights, commute analysis, and personalized recommendations.",
           "The platform is operated by [Legal Operator Name]. For privacy inquiries, contact [Official Contact Email].",
         ],
       },
       {
         title: "2. Information We Process",
         paragraphs: [
-          "Depending on the features you use, information may include account details, housing preferences, budgets, saved properties, submitted locations, AI conversations, transaction records, and necessary technical information.",
+          "Depending on the features you use, information may include account details, housing preferences, budgets, saved homes, submitted locations, AI conversations, transaction records, and necessary technical information.",
           "Different features require different information. Data collection should be limited to what is necessary for the relevant service.",
         ],
       },
       {
         title: "3. How Information Is Used",
         paragraphs: [
-          "Information is processed to manage accounts, provide property discovery, calculate commute times, deliver comparisons and recommendations, maintain security, and fulfill applicable legal obligations.",
+          "Information is processed to manage accounts, provide home discovery, calculate commute times, deliver comparisons and recommendations, maintain security, and fulfill applicable legal obligations.",
         ],
       },
       {

@@ -37,6 +37,8 @@ const markerDrifts = {
   },
 };
 
+const entranceEase = [0.22, 1, 0.36, 1] as const;
+
 type MarkerDrift = {
   x: number[];
   y: number[];
@@ -49,23 +51,19 @@ type StoryContextMarkerProps = {
   label: string;
   className: string;
   drift: MarkerDrift;
+  entranceDelay: number;
   reducedMotion: boolean;
 };
 
 export function MadarStorySection() {
   const t = useTranslations("Hero");
   const reducedMotion = Boolean(useReducedMotion());
+  const titleLines = t("storyTitle").split("\n");
 
   return (
     <section
       id="story"
-      className={cn(
-        "relative isolate scroll-mt-24 overflow-hidden",
-        "py-12 sm:py-16 lg:py-18",
-        "bg-[#1C2D47] text-white",
-        "dark:bg-[#F1F4F8] dark:text-[#1C2D47]",
-        "transition-colors duration-300",
-      )}
+      className="relative isolate scroll-mt-24 overflow-hidden bg-[#1C2D47] py-10 text-white sm:py-12 lg:py-14"
     >
       {/* Ambient background effects */}
       <div
@@ -77,7 +75,6 @@ export function MadarStorySection() {
             "absolute -top-40 start-1/2 size-[35rem]",
             "-translate-x-1/2 rounded-full blur-3xl",
             "bg-white/5",
-            "dark:bg-[#405A80]/5",
           )}
         />
 
@@ -86,58 +83,61 @@ export function MadarStorySection() {
             "absolute -bottom-60 start-0 size-[30rem]",
             "rounded-full blur-3xl",
             "bg-[#7396C2]/10",
-            "dark:bg-[#405A80]/5",
           )}
         />
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
         {/* Story heading */}
-        <div className="mx-auto max-w-3xl text-center">
-          <p
-            className={cn(
-              "text-sm font-medium",
-              "text-[#C8D7EC]",
-              "dark:text-[#526B8E]",
-            )}
+        <div className="mx-auto max-w-5xl text-center">
+          <motion.p
+            initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: reducedMotion ? 0 : 0.4, ease: entranceEase }}
+            className="text-sm font-medium text-[#D6E2F2] motion-reduce:!transform-none motion-reduce:!opacity-100 sm:text-base"
           >
             {t("storyEyebrow")}
-          </p>
+          </motion.p>
 
-          <h1
+          <motion.h1
+            initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: reducedMotion ? 0 : 0.6,
+              delay: reducedMotion ? 0 : 0.08,
+              ease: entranceEase,
+            }}
             className={cn(
-              displayHeadingVariants({
-                variant: "hero",
-              }),
-              "mt-3",
-              "text-white",
-              "dark:text-[#1C2D47]",
+              displayHeadingVariants({ variant: "hero" }),
+              "mx-auto mt-3 max-w-4xl text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.18] ltr:tracking-tight motion-reduce:!transform-none motion-reduce:!opacity-100",
             )}
           >
-            {t("storyTitle")}
-          </h1>
+            {titleLines.map((line) => (
+              <span
+                key={line}
+                className="block"
+              >
+                {line}
+              </span>
+            ))}
+          </motion.h1>
 
-          <p
-            className={cn(
-              "mx-auto mt-4 max-w-2xl",
-              "text-base leading-8",
-              "text-white/75",
-              "dark:text-[#526176]",
-            )}
+          <motion.p
+            initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: reducedMotion ? 0 : 0.5,
+              delay: reducedMotion ? 0 : 0.2,
+              ease: entranceEase,
+            }}
+            className="mx-auto mt-4 max-w-2xl text-base leading-7 text-[#E3EAF4] motion-reduce:!transform-none motion-reduce:!opacity-100 sm:mt-5 sm:text-lg sm:leading-8"
           >
             {t("storyDescription")}
-          </p>
+          </motion.p>
         </div>
 
         {/* Avatar composition */}
-        <div
-          className={cn(
-            "relative mx-auto mt-6 flex max-w-3xl",
-            "h-64 items-center justify-center",
-            "sm:mt-8 sm:h-96",
-            "lg:h-[27rem]",
-          )}
-        >
+        <div className="relative mx-auto mt-5 flex h-56 max-w-3xl items-center justify-center sm:mt-6 sm:h-72 lg:h-[20rem]">
           {/* Ambient glow behind avatar */}
           <span
             aria-hidden="true"
@@ -145,7 +145,6 @@ export function MadarStorySection() {
               "pointer-events-none absolute",
               "bottom-[12%] size-56 rounded-full",
               "bg-[#7396C2]/10 blur-3xl",
-              "dark:bg-[#405A80]/10",
               "sm:size-72 lg:size-96",
             )}
           />
@@ -157,36 +156,52 @@ export function MadarStorySection() {
               "pointer-events-none absolute bottom-4",
               "h-12 w-3/5 rounded-full",
               "bg-black/30 blur-2xl",
-              "dark:bg-[#1C2D47]/15",
             )}
           />
 
           {/* Madar character */}
-          <Image
-            src="/images/about/madar-character.png"
-            alt={t("avatarAlt")}
-            width={587}
-            height={603}
-            sizes="(min-width: 1024px) 368px, (min-width: 640px) 288px, 208px"
-            preload
-            className={cn(
-              "relative z-10 h-auto w-52",
-              "sm:w-72 lg:w-[23rem]",
-              "drop-shadow-[0_18px_24px_rgba(0,0,0,0.25)]",
-              "dark:drop-shadow-[0_18px_24px_rgba(28,45,71,0.15)]",
-            )}
-          />
+          <motion.div
+            initial={reducedMotion ? false : { opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              duration: reducedMotion ? 0 : 0.65,
+              delay: reducedMotion ? 0 : 0.25,
+              ease: entranceEase,
+            }}
+            className="relative z-10 motion-reduce:!transform-none motion-reduce:!opacity-100"
+          >
+            <motion.div
+              initial={false}
+              animate={reducedMotion ? { y: 0 } : { y: [0, -5, 0] }}
+              transition={
+                reducedMotion
+                  ? { duration: 0 }
+                  : { duration: 8, delay: 1, repeat: Infinity, ease: "easeInOut" }
+              }
+            >
+              <Image
+                src="/images/about/madar-character.png"
+                alt={t("avatarAlt")}
+                width={587}
+                height={603}
+                sizes="(min-width: 1024px) 304px, (min-width: 640px) 256px, 208px"
+                preload
+                className="h-auto w-52 drop-shadow-[0_18px_24px_rgba(0,0,0,0.25)] sm:w-64 lg:w-[19rem]"
+              />
+            </motion.div>
+          </motion.div>
 
           {/* Home marker */}
           <StoryContextMarker
             icon={House}
             label={t("contextHome")}
             className={cn(
-              "start-0 top-[13%] -rotate-6",
+              "start-0 top-[10%] -rotate-6",
               "sm:start-[10%]",
               "lg:start-[14%]",
             )}
             drift={markerDrifts.home}
+            entranceDelay={0.42}
             reducedMotion={reducedMotion}
           />
 
@@ -194,12 +209,9 @@ export function MadarStorySection() {
           <StoryContextMarker
             icon={BriefcaseBusiness}
             label={t("contextWork")}
-            className={cn(
-              "end-0 top-[32%] rotate-6",
-              "sm:end-[10%]",
-              "lg:end-[14%]",
-            )}
+            className={cn("end-0 top-[32%] rotate-6", "sm:end-[10%]", "lg:end-[14%]")}
             drift={markerDrifts.work}
+            entranceDelay={0.52}
             reducedMotion={reducedMotion}
           />
 
@@ -213,12 +225,22 @@ export function MadarStorySection() {
               "lg:start-[18%]",
             )}
             drift={markerDrifts.interests}
+            entranceDelay={0.62}
             reducedMotion={reducedMotion}
           />
         </div>
 
         {/* Story CTA */}
-        <div className="mt-4 text-center sm:mt-5">
+        <motion.div
+          initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: reducedMotion ? 0 : 0.45,
+            delay: reducedMotion ? 0 : 0.65,
+            ease: entranceEase,
+          }}
+          className="mt-5 text-center motion-reduce:!transform-none motion-reduce:!opacity-100 sm:mt-6"
+        >
           <Button
             nativeButton={false}
             render={<Link href="/about" />}
@@ -229,10 +251,6 @@ export function MadarStorySection() {
               "bg-white text-[#1C2D47]",
               "shadow-[0_8px_30px_rgba(0,0,0,0.15)]",
               "hover:-translate-y-0.5 hover:bg-[#EAF0F8]",
-              "dark:border-[#1C2D47]/15",
-              "dark:bg-[#1C2D47] dark:text-white",
-              "dark:shadow-[0_8px_30px_rgba(28,45,71,0.12)]",
-              "dark:hover:bg-[#304563]",
               "transition-all duration-300",
               "motion-reduce:transform-none",
             )}
@@ -250,7 +268,7 @@ export function MadarStorySection() {
               )}
             />
           </Button>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -261,12 +279,20 @@ function StoryContextMarker({
   label,
   className,
   drift,
+  entranceDelay,
   reducedMotion,
 }: StoryContextMarkerProps) {
   return (
-    <span
+    <motion.span
+      initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: reducedMotion ? 0 : 0.4,
+        delay: reducedMotion ? 0 : entranceDelay,
+        ease: entranceEase,
+      }}
       className={cn(
-        "pointer-events-none absolute z-20",
+        "pointer-events-none absolute z-20 motion-reduce:!transform-none motion-reduce:!opacity-100",
         className,
       )}
     >
@@ -276,19 +302,19 @@ function StoryContextMarker({
           reducedMotion
             ? { x: 0, y: 0 }
             : {
-              x: drift.x,
-              y: drift.y,
-            }
+                x: drift.x,
+                y: drift.y,
+              }
         }
         transition={
           reducedMotion
             ? { duration: 0 }
             : {
-              duration: drift.duration,
-              delay: drift.delay,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }
+                duration: drift.duration,
+                delay: drift.delay,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }
         }
         className={cn(
           "inline-flex items-center gap-1.5",
@@ -299,23 +325,15 @@ function StoryContextMarker({
           "bg-white/95 text-[#1C2D47]",
           "shadow-[0_8px_24px_rgba(0,0,0,0.18)]",
           "backdrop-blur-sm",
-          "dark:border-[#1C2D47]/15",
-          "dark:bg-[#1C2D47]/95 dark:text-white",
-          "dark:shadow-[0_8px_24px_rgba(28,45,71,0.12)]",
-          "transition-colors duration-300",
         )}
       >
         <Icon
           aria-hidden="true"
-          className={cn(
-            "size-3.5",
-            "text-[#405A80]",
-            "dark:text-[#C8D7EC]",
-          )}
+          className={cn("size-3.5", "text-[#405A80]")}
         />
 
         {label}
       </motion.span>
-    </span>
+    </motion.span>
   );
 }

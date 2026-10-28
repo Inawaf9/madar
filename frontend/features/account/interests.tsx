@@ -1,437 +1,145 @@
-
 "use client";
 
 import { useMemo, useState } from "react";
-import { useLocale } from "next-intl";
-import {
-  Check,
-  CheckCheck,
-  Heart,
-  Search,
-  Sparkles,
-  X,
-  RotateCcw,
-  ArrowUpLeft,
-  type LucideIcon,
-} from "lucide-react";
-
-import { cn } from "@/lib/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Heart, LoaderCircle, Save } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/shared/error-state";
+import { QueryFeedback } from "@/components/shared/query-feedback";
+import { useLifestyleInterests } from "@/features/account/api/query-hooks";
+import { invalidateUserData } from "@/features/account/api/invalidation";
+import { useIdentity } from "@/features/account/identity";
+import { CategorySelector } from "@/features/account/category-selector";
+import { lifestyleInterestGroups } from "@/lib/lifestyle-interest-options";
+import { saveSelectedInterests } from "@/lib/api/lifestyle-interests";
 
-type Locale = "ar" | "en";
-
-type Interest = {
-  id: string;
-  ar: string;
-  en: string;
-  icon: string;
-};
-
-type InterestCategory = {
-  id: string;
-  ar: string;
-  en: string;
-  descriptionAr: string;
-  descriptionEn: string;
-  icon: LucideIcon;
-  interests: Interest[];
-};
-
-// بيانات مؤقتة للواجهة فقط.
-// لاحقًا نستبدلها بالخيارات المعتمدة من المشروع.
-const categories: InterestCategory[] = [
-  {
-    id: "daily",
-    ar: "احتياجاتك اليومية",
-    en: "Daily essentials",
-    descriptionAr: "الخدمات اللي تحتاجها باستمرار",
-    descriptionEn: "Services you use regularly",
-    icon: Heart,
-    interests: [
-      { id: "supermarket", ar: "سوبرماركت", en: "Supermarkets", icon: "🛒" },
-      { id: "pharmacy", ar: "صيدليات", en: "Pharmacies", icon: "💊" },
-      { id: "hospital", ar: "مستشفيات", en: "Hospitals", icon: "🏥" },
-      { id: "atm", ar: "صراف آلي", en: "ATMs", icon: "🏧" },
-      { id: "gas_station", ar: "محطات وقود", en: "Gas stations", icon: "⛽" },
-      { id: "laundry", ar: "مغاسل ملابس", en: "Laundries", icon: "🧺" },
-    ],
-  },
-  {
-    id: "lifestyle",
-    ar: "أسلوب حياتك",
-    en: "Lifestyle",
-    descriptionAr: "الأماكن اللي تحب تقضي فيها وقتك",
-    descriptionEn: "Places you enjoy spending time at",
-    icon: Sparkles,
-    interests: [
-      { id: "cafe", ar: "مقاهي", en: "Cafés", icon: "☕" },
-      { id: "restaurant", ar: "مطاعم", en: "Restaurants", icon: "🍽️" },
-      { id: "gym", ar: "نوادي رياضية", en: "Gyms", icon: "🏋️" },
-      { id: "park", ar: "حدائق", en: "Parks", icon: "🌳" },
-      { id: "mall", ar: "مراكز تسوق", en: "Shopping malls", icon: "🛍️" },
-      { id: "cinema", ar: "سينما", en: "Cinemas", icon: "🎬" },
-    ],
-  },
-  {
-    id: "family",
-    ar: "العائلة والتعليم",
-    en: "Family & education",
-    descriptionAr: "خدمات تهمك وتهم أفراد عائلتك",
-    descriptionEn: "Services for you and your family",
-    icon: Heart,
-    interests: [
-      { id: "school", ar: "مدارس", en: "Schools", icon: "🏫" },
-      { id: "kindergarten", ar: "رياض أطفال", en: "Kindergartens", icon: "🧸" },
-      { id: "university", ar: "جامعات", en: "Universities", icon: "🎓" },
-      { id: "playground", ar: "ملاعب أطفال", en: "Playgrounds", icon: "🛝" },
-      { id: "library", ar: "مكتبات", en: "Libraries", icon: "📚" },
-      { id: "clinic", ar: "عيادات", en: "Clinics", icon: "🩺" },
-    ],
-  },
-];
+const supportedCodes = new Set(
+  lifestyleInterestGroups.flatMap((group) => group.options.map(([code]) => code)),
+);
 
 export function InterestsPage() {
-  const locale: Locale = useLocale() === "ar" ? "ar" : "en";
-  const ar = locale === "ar";
+  const t = useTranslations("Workspace");
+  const { userId } = useIdentity();
+  const cache = useQueryClient();
+  const interests = useLifestyleInterests(userId);
+  const [draft, setDraft] = useState<string[] | null>(null);
 
-  const [selected, setSelected] = useState<string[]>([]);
-  const [search, setSearch] = useState("");
-  const [saved, setSaved] = useState(false);
-
-  const total = categories.reduce(
-    (sum, category) => sum + category.interests.length,
-    0,
+  const activeCodes = useMemo(
+    () =>
+      (interests.data ?? [])
+        .filter((item) => item.active === true)
+        .map((item) => item.code),
+    [interests.data],
   );
+  const selected = draft ?? activeCodes;
+  const changed = [...selected].sort().join("\0") !== [...activeCodes].sort().join("\0");
+  const hiddenActive = activeCodes.filter((code) => !supportedCodes.has(code));
 
-  const filteredCategories = useMemo(() => {
-    const term = search.trim().toLowerCase();
-
-    if (!term) return categories;
-
-    return categories
-      .map((category) => ({
-        ...category,
-        interests: category.interests.filter((interest) =>
-          [interest.ar, interest.en].some((label) =>
-            label.toLowerCase().includes(term),
-          ),
-        ),
-      }))
-      .filter((category) => category.interests.length > 0);
-  }, [search]);
-
-  function toggleInterest(id: string) {
-    setSaved(false);
-
-    setSelected((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id],
-    );
-  }
-
-  function clearSelection() {
-    setSelected([]);
-    setSaved(false);
-  }
-
-  function selectAll() {
-    setSelected(
-      categories.flatMap((category) =>
-        category.interests.map((interest) => interest.id),
-      ),
-    );
-    setSaved(false);
-  }
-
-  function handleSave() {
-    // UI only — سيتم ربطه بالـAPI لاحقًا.
-    setSaved(true);
-  }
+  const saveMutation = useMutation({
+    mutationFn: async (codes: string[]) => {
+      await saveSelectedInterests(codes, interests.data ?? []);
+      if (userId !== null) await invalidateUserData(cache, userId);
+    },
+    retry: 0,
+    onSuccess: () => setDraft(null),
+    onError: async () => {
+      if (userId !== null) {
+        await cache.invalidateQueries({
+          queryKey: ["lifestyle-interests", userId],
+        });
+      }
+    },
+  });
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
-      {/* Page header */}
-      <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary">
-            <Sparkles className="size-3.5" />
-            {ar ? "تجربة تناسب حياتك" : "Made for your lifestyle"}
-          </div>
-
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            {ar ? "وش يهمك حول بيتك؟" : "What matters near your home?"}
-          </h1>
-
-          <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-            {ar
-              ? "اختر الأماكن والخدمات اللي تهمك، وخل مدار يساعدك تكتشف العقارات والأحياء الأقرب لأسلوب حياتك."
-              : "Choose the places and services that matter to you, and let Madar help you discover neighborhoods that fit your lifestyle."}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-3 rounded-2xl border bg-card px-5 py-3 shadow-sm">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <CheckCheck className="size-5" />
-          </div>
-          <div>
-            <div className="text-xl font-semibold tabular-nums">
-              {selected.length}
-              <span className="mx-1 text-sm font-normal text-muted-foreground">
-                / {total}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {ar ? "اهتمامات مختارة" : "Selected interests"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Main selection panel */}
-      <div className="overflow-hidden rounded-3xl border border-border/70 bg-card shadow-sm">
-        {/* Toolbar */}
-        <div className="flex flex-col gap-4 border-b border-border/70 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold">
-              {ar ? "اختر اهتماماتك" : "Choose your interests"}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {ar
-                ? "تقدر تختار أكثر من اهتمام وتعدلها بأي وقت."
-                : "Select as many as you like. You can change them anytime."}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={selectAll}
-              disabled={selected.length === total}
-            >
-              <CheckCheck className="size-4" />
-              {ar ? "تحديد الكل" : "Select all"}
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={clearSelection}
-              disabled={selected.length === 0}
-            >
-              <RotateCcw className="size-4" />
-              {ar ? "مسح الاختيارات" : "Clear all"}
-            </Button>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="px-5 pt-5 sm:px-6">
-          <div className="relative max-w-md">
-            <Search
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 pb-10">
+      <header className="flex flex-col gap-4 rounded-3xl border border-border/70 bg-card p-5 shadow-panel sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="flex items-start gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-secondary text-primary">
+            <Heart
               aria-hidden="true"
-              className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground"
+              className="size-5"
             />
-
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={
-                ar ? "ابحث عن اهتمام أو خدمة..." : "Search interests or services..."
-              }
-              aria-label={ar ? "البحث في الاهتمامات" : "Search interests"}
-              className="h-11 rounded-xl bg-background ps-10 pe-10"
-            />
-
-            {search && (
-              <button
-                type="button"
-                aria-label={ar ? "مسح البحث" : "Clear search"}
-                onClick={() => setSearch("")}
-                className="absolute top-1/2 end-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <X className="size-4" />
-              </button>
-            )}
+          </span>
+          <div>
+            <h1 className="text-page font-semibold tracking-tight">{t("interests")}</h1>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+              {t("preferredServicesDescription")}
+            </p>
           </div>
         </div>
+        {!interests.isPending && !interests.isError ? (
+          <p className="text-sm font-medium text-primary">
+            {t("activeServiceInterestsCount", { count: selected.length })}
+          </p>
+        ) : null}
+      </header>
 
-        {/* Categories */}
-        <div className="space-y-9 p-5 sm:p-6">
-          {filteredCategories.map((category) => {
-            const CategoryIcon = category.icon;
-
-            const categorySelected = category.interests.filter(
-              (interest) => selected.includes(interest.id),
-            ).length;
-
-            return (
-              <section key={category.id} className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground">
-                      <CategoryIcon className="size-5" />
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-semibold sm:text-base">
-                        {ar ? category.ar : category.en}
-                      </h3>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {ar
-                          ? category.descriptionAr
-                          : category.descriptionEn}
-                      </p>
-                    </div>
-                  </div>
-
-                  {categorySelected > 0 && (
-                    <Badge variant="secondary" className="shrink-0">
-                      {categorySelected}{" "}
-                      {ar ? "مختار" : "selected"}
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-                  {category.interests.map((interest) => {
-                    const active = selected.includes(interest.id);
-
-                    return (
-                      <button
-                        key={interest.id}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() => toggleInterest(interest.id)}
-                        className={cn(
-                          "group relative flex min-h-20 items-center gap-3 rounded-2xl border p-3.5 text-start transition-all duration-200",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                          active
-                            ? "border-primary bg-primary/5 shadow-sm dark:bg-primary/10"
-                            : "border-border/70 bg-background hover:border-primary/40 hover:bg-muted/50",
-                        )}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "flex size-10 shrink-0 items-center justify-center rounded-xl text-xl transition-colors",
-                            active ? "bg-primary/10" : "bg-muted/70",
-                          )}
-                        >
-                          {interest.icon}
-                        </span>
-
-                        <span className="min-w-0 flex-1 text-xs font-medium leading-5 sm:text-sm">
-                          {ar ? interest.ar : interest.en}
-                        </span>
-
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "absolute end-2.5 top-2.5 flex size-4 items-center justify-center rounded-full border transition-all",
-                            active
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-background",
-                          )}
-                        >
-                          {active && <Check className="size-3" />}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
-
-          {filteredCategories.length === 0 && (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-                <Search className="size-5 text-muted-foreground" />
-              </div>
-
-              <p className="text-sm font-medium">
-                {ar ? "ما لقينا نتائج مطابقة" : "No matching interests"}
-              </p>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSearch("")}
-              >
-                {ar ? "مسح البحث" : "Clear search"}
-              </Button>
+      {interests.isPending && !interests.data ? (
+        <div className="h-96 animate-pulse rounded-3xl bg-secondary" />
+      ) : interests.isError && !interests.data ? (
+        <ErrorState
+          error={interests.error}
+          retry={() => void interests.refetch()}
+        />
+      ) : (
+        <section className="rounded-3xl border border-border/70 bg-card shadow-panel">
+          <QueryFeedback query={interests} />
+          <div className="border-b border-border/70 p-5 sm:p-6">
+            <h2 className="text-lg font-semibold">{t("chooseServiceInterests")}</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              {t("serviceInterestsHint")}
+            </p>
+          </div>
+          {hiddenActive.length ? (
+            <div className="mx-5 mt-5 rounded-xl border border-border/70 bg-secondary/40 p-4 text-sm text-muted-foreground sm:mx-6">
+              {t("unsupportedSavedInterests", { count: hiddenActive.length })}
             </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex flex-col gap-4 border-t border-border/70 bg-muted/20 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "flex size-10 items-center justify-center rounded-xl",
-                selected.length
-                  ? "bg-primary/10 text-primary"
-                  : "bg-muted text-muted-foreground",
-              )}
+          ) : null}
+          <div className="p-5 sm:p-6">
+            <CategorySelector
+              lifestyle
+              value={selected}
+              disabled={interests.isFetching || saveMutation.isPending}
+              onChange={(codes) => setDraft([...new Set([...codes, ...hiddenActive])])}
+            />
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 bg-muted/20 p-5 sm:p-6">
+            <p className="text-sm text-muted-foreground">
+              {t("serviceInterestsPersistHint")}
+            </p>
+            <Button
+              type="button"
+              disabled={!changed || interests.isFetching || saveMutation.isPending}
+              onClick={() => saveMutation.mutate([...selected])}
             >
-              <Heart className="size-5" />
-            </div>
-
-            <div>
-              <p className="text-sm font-medium">
-                {selected.length
-                  ? ar
-                    ? `اخترت ${selected.length} من اهتماماتك`
-                    : `${selected.length} interests selected`
-                  : ar
-                    ? "ما اخترت اهتمامات للحين"
-                    : "No interests selected yet"}
-              </p>
-
-              <p className="text-xs text-muted-foreground">
-                {ar
-                  ? "اختياراتك تساعد مدار يفهم أولوياتك."
-                  : "Your choices help Madar understand your priorities."}
-              </p>
-            </div>
+              {saveMutation.isPending ? (
+                <LoaderCircle
+                  className="size-4 animate-spin"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Save aria-hidden="true" />
+              )}
+              {saveMutation.isPending ? t("working") : t("saveServiceInterests")}
+            </Button>
           </div>
-
-          <Button
-            type="button"
-            size="lg"
-            onClick={handleSave}
-            disabled={selected.length === 0 || saved}
-            className="w-full rounded-xl px-6 sm:w-auto"
-          >
-            {saved
-              ? ar
-                ? "تم تأكيد الاختيارات"
-                : "Selection confirmed"
-              : ar
-                ? "تأكيد الاهتمامات"
-                : "Confirm interests"}
-
-            {saved ? (
-              <Check className="size-4" />
-            ) : (
-              <ArrowUpLeft className="size-4" />
-            )}
-          </Button>
-        </div>
-      </div>
-
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        {ar
-          ? "هذه نسخة تجريبية للواجهة. الاختيارات لا تُحفظ في الحساب حاليًا."
-          : "This is a UI preview. Selections are not saved to your account yet."}
-      </p>
+          {saveMutation.isError ? (
+            <div className="p-5 pt-0 sm:p-6 sm:pt-0">
+              <ErrorState error={saveMutation.error} />
+            </div>
+          ) : null}
+          {saveMutation.isSuccess ? (
+            <p
+              role="status"
+              className="px-5 pb-5 text-sm text-primary sm:px-6"
+            >
+              {t("savedSuccess")}
+            </p>
+          ) : null}
+        </section>
+      )}
     </main>
   );
 }

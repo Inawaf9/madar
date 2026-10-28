@@ -11,6 +11,7 @@ import {
   Trees,
 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import { useLocale } from "next-intl";
 import type { AboutCopy } from "./about-copy";
 
 const viewport = { once: true, amount: 0.3 } as const;
@@ -79,6 +80,7 @@ export function OpportunityScene({ copy }: { copy: AboutCopy }) {
 
 export function DecisionScene({ copy }: { copy: AboutCopy }) {
   const reduced = useReducedMotion();
+  const isArabic = useLocale() === "ar";
   return (
     <motion.figure
       aria-label={copy.mapAlt}
@@ -104,26 +106,28 @@ export function DecisionScene({ copy }: { copy: AboutCopy }) {
           stroke="var(--card)"
           strokeWidth="24"
         />
-        <path
-          d="M365 165 C345 230 260 215 260 325 S205 390 160 410"
-          fill="none"
-          stroke="var(--accent)"
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeDasharray="12 10"
-          opacity="0.28"
-        />
-        <motion.path
-          d="M365 165 C345 230 260 215 260 325 S205 390 160 410"
-          fill="none"
-          stroke="var(--accent)"
-          strokeWidth="6"
-          strokeLinecap="round"
-          initial={reduced ? false : { pathLength: 0 }}
-          whileInView={{ pathLength: 1 }}
-          viewport={viewport}
-          transition={{ duration: 1.25, delay: reduced ? 0 : 0.4, ease: "easeInOut" }}
-        />
+        <g transform={isArabic ? "translate(500 0) scale(-1 1)" : undefined}>
+          <path
+            d="M365 165 C345 230 260 215 260 325 S205 390 160 410"
+            fill="none"
+            stroke="var(--accent)"
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray="12 10"
+            opacity="0.28"
+          />
+          <motion.path
+            d="M365 165 C345 230 260 215 260 325 S205 390 160 410"
+            fill="none"
+            stroke="var(--accent)"
+            strokeWidth="6"
+            strokeLinecap="round"
+            initial={reduced ? false : { pathLength: 0 }}
+            whileInView={{ pathLength: 1 }}
+            viewport={viewport}
+            transition={{ duration: 1.25, delay: reduced ? 0 : 0.4, ease: "easeInOut" }}
+          />
+        </g>
       </svg>
       <motion.span
         className="absolute end-[20%] top-[28%] grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-panel"

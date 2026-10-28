@@ -1,11 +1,11 @@
 {
-  "eyebrow": "Choose a home around your day",
-  "title": "Find a home\nthat fits your day",
-  "description": "Explore and compare properties by budget, the places you visit, and your daily commute.",
-  "primaryCta": "Explore properties",
-  "secondaryCta": "How MADAR works",
+  "eyebrow": "A more personal way to find home",
+  "title": "Your next home\nshould fit your life.",
+  "description": "Discover homes within your budget and close to the places that matter, with AI-powered recommendations to help you choose with confidence.",
+  "primaryCta": "Find your next home",
+  "secondaryCta": "See how MADAR helps",
   "previewLabel": "Comparison example",
-  "previewTitle": "Compare what matters to you",
+  "previewTitle": "Compare the details that matter",
   "propertyOne": "Modern apartment in Al Malqa",
   "propertyTwo": "Quiet home in Al Narjis",
   "rent": "Monthly rent",
@@ -18,8 +18,8 @@
   "contextHome": "Home",
   "contextWork": "Work",
   "contextInterests": "Interests",
-  "storyEyebrow": "Your guide to finding a home",
-  "storyTitle": "I’m MADAR... and this is my story",
-  "storyDescription": "My story began with a question: Where will I live? Today, I help you find a home that fits your budget, commute, and the places that matter to you.",
-  "storyLink": "Discover MADAR’s story"
+  "storyEyebrow": "Your next home starts with your everyday life",
+  "storyTitle": "Choosing a home\nstarts with how you live.",
+  "storyDescription": "Add the places you care about and set your budget. MADAR’s personalized recommendations bring home options closer to your everyday needs.",
+  "storyLink": "Get to know MADAR"
 }

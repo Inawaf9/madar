@@ -100,7 +100,7 @@ export function SavedPropertyGrid({
       ref={container}
       className="@container/saved-grid min-w-0"
     >
-      <div className="grid auto-rows-fr gap-5@min-[38rem]/saved-grid:grid-cols-2">
+      <div className="grid auto-rows-fr gap-4 @min-[44rem]/saved-grid:grid-cols-2">
         {properties.map((property, index) => {
           const query = details[index];
           const valid =

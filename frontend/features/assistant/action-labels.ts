@@ -2,7 +2,7 @@ import { categoryLabel } from "@/lib/maps/place-presentation";
 import { categories } from "@/lib/api/discovery-contracts";
 const labels: Record<string, [string, string]> = {
   affordability: ["ملاءمة الميزانية", "Affordability"],
-  match: ["مطابقة العقار", "Property match"],
+  match: ["مدى مناسبة البيت", "Home match"],
   neighborhood: ["ملاءمة الحي", "Neighborhood suitability"],
   rent: ["إيجار", "Rent"],
   sale: ["شراء", "Buy"],
@@ -28,8 +28,8 @@ const labels: Record<string, [string, string]> = {
   family: ["العائلة", "Family"],
   other: ["أخرى", "Other"],
   "/dashboard": ["لوحة التحكم", "Dashboard"],
-  "/properties": ["البحث", "Property search"],
-  "/saved": ["المحفوظات", "Saved properties"],
+  "/properties": ["اكتشاف البيوت", "Home search"],
+  "/saved": ["المحفوظات", "Saved Properties"],
   "/profile": ["الحساب والتفضيلات", "Profile and preferences"],
   "/locations": ["الأماكن", "Places"],
   "/interests": ["الاهتمامات", "Interests"],

@@ -13,7 +13,7 @@ import { normalizeLocationName } from "@/lib/locations/normalize-name";
 const groups: { id: string; label: [string, string]; tools: ToolName[] }[] = [
   {
     id: "properties",
-    label: ["عقارات", "Properties"],
+    label: ["بيوت", "Homes"],
     tools: [
       "search",
       "budget",
@@ -37,7 +37,7 @@ const groups: { id: string; label: [string, string]; tools: ToolName[] }[] = [
       "commute",
       "home",
       "confirm-move",
-      "home-remove",
+      "property-remove",
     ],
   },
   {

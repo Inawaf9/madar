@@ -55,5 +55,5 @@ export function propertyDistanceLabel(meters: number | null, locale: string): st
     minimumFractionDigits: kilometers ? 1 : 0,
     maximumFractionDigits: kilometers ? 1 : 0,
   });
-  return `${number.format(kilometers ? meters / 1000 : meters)} ${kilometers ? (locale === "ar" ? "كم" : "km") : locale === "ar" ? "م" : "m"} ${locale === "ar" ? "عن العقار" : "from property"}`;
+  return `${number.format(kilometers ? meters / 1000 : meters)} ${kilometers ? (locale === "ar" ? "كم" : "km") : locale === "ar" ? "م" : "m"} ${locale === "ar" ? "عن البيت" : "from home"}`;
 }

@@ -6,7 +6,7 @@ export default function Error(props: RouteErrorProps) {
       {...props}
       title={"تعذّر عرض المحفوظات"}
       description={
-        "ما قدرنا نعرض العقارات المحفوظة. حاول مرة ثانية. عقاراتك ما انحذفت بسبب خطأ العرض."
+        "ما قدرنا نعرض بيوتي المحفوظة. حاول مرة ثانية. بيوتك ما انحذفت بسبب خطأ العرض."
       }
       backHref={"/dashboard"}
       backLabel={"لوحة التحكم"}

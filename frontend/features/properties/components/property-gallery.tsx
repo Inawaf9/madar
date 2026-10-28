@@ -134,7 +134,7 @@ export function PropertyGallery({
   );
   const [current, total] = snapshot.split(":").map(Number);
   const number = new Intl.NumberFormat(locale);
-  const label = ar ? "صور العقار" : "Property photos";
+  const label = ar ? "صور البيت" : "Home photos";
   if (!images.length)
     return (
       <section
@@ -143,7 +143,7 @@ export function PropertyGallery({
       >
         <GalleryFallback
           message={
-            ar ? "لا تتوفر صور لهذا العقار" : "No photos are available for this property"
+            ar ? "لا تتوفر صور لهذا البيت" : "No photos are available for this home"
           }
         />
       </section>

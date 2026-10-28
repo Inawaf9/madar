@@ -5,7 +5,7 @@ export default function Error(props: RouteErrorProps) {
     <RouteError
       {...props}
       title={"تعذّر عرض ملخصك"}
-      description={"ما قدرنا نعرض لوحة التحكم. حاول مرة ثانية أو افتح عقاراتك المحفوظة."}
+      description={"ما قدرنا نعرض لوحة التحكم. حاول مرة ثانية أو افتح بيوتك المحفوظة."}
       backHref={"/saved"}
       backLabel={"المحفوظات"}
     />

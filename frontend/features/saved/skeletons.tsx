@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 export function SavedCardsSkeleton({ className }: { className?: string }) {
   return (
-    <LoadingStatus label="جارٍ تحميل العقارات المحفوظة">
+    <LoadingStatus label="جارٍ تحميل بيوتي المحفوظة">
       <div className="@container/saved-skeleton">
         <div
           className={cn(

@@ -242,7 +242,7 @@ export function PropertyCard({
               />
             }
           >
-            {ar ? "عرض العقار" : "View property"}
+            {ar ? "عرض البيت" : "View home"}
             <ArrowUpLeft
               data-icon="inline-end"
               className="ltr:-scale-x-100"

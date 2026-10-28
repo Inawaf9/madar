@@ -86,7 +86,7 @@ export function propertyOptions(
     .filter((item) => item.id != null)
     .map((item) => ({
       id: `account:property:${item.id}`,
-      title: item.titleSnapshot || (ar ? "عقار محفوظ" : "Saved property"),
+      title: item.titleSnapshot || (ar ? "بيت محفوظ" : "Saved home"),
       origin: "account" as const,
       source: item.source,
       externalId: item.externalPropertyId,

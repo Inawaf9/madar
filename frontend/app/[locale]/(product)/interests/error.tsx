@@ -5,9 +5,9 @@ export default function Error(props: RouteErrorProps) {
     <RouteError
       {...props}
       title={"تعذّر عرض اهتماماتك"}
-      description={"ما قدرنا نعرض اهتماماتك الآن. حاول مرة ثانية أو تصفّح العقارات."}
+      description={"ما قدرنا نعرض اهتماماتك الآن. حاول مرة ثانية أو تصفّح البيوت."}
       backHref={"/properties"}
-      backLabel={"استكشف العقارات"}
+      backLabel={"استكشف البيوت"}
     />
   );
 }

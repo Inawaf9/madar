@@ -63,13 +63,13 @@ function PropertyDetailContent({
       />
     );
   const p = query.data;
-  const title = p.title || "تفاصيل العقار";
+  const title = p.title || "تفاصيل البيت";
   return (
     <div className="flex flex-col gap-8">
       <QueryFeedback query={query} />
       <header className="flex min-w-0 flex-col gap-3">
         <p className="text-xs text-muted-foreground">
-          تفاصيل العقار · <bdi>{p.sourceName || p.source}</bdi>
+          تفاصيل الإعلان · <bdi>{p.sourceName || p.source}</bdi>
         </p>
         <DisplayHeading
           dir="auto"
@@ -109,12 +109,12 @@ function PropertyDetailContent({
           latitude: p.latitude,
           longitude: p.longitude,
           provenance: "listing",
-          kind: "property",
+          kind: "home",
         }}
       />
       <p className="text-xs leading-6 text-muted-foreground">
-        الخيارات المشابهة دفعة محدودة تراعي السعر والغرف؛ عند توفر إحداثيات العقار تُقيّد
-        بنطاق 5 كم بخط مستقيم، وإلا تكون على مستوى المدينة.
+        الخيارات المشابهة تظهر بعدد محدود، وتراعي السعر والغرف. وإذا توفرت إحداثيات البيت،
+        نستخدمها لضبط النتائج. بنطاق 5 كم بخط مستقيم، وإلا تكون على مستوى المدينة.
       </p>
       <Button
         variant="outline"

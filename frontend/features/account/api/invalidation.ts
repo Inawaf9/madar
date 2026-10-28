@@ -21,7 +21,6 @@ const userRoots = new Set([
   "computed-comparison",
   "affordability",
   "neighborhood",
-  "neighborhood-search",
   "neighborhood-analysis",
   "ai-explanation",
   "property-interests",
